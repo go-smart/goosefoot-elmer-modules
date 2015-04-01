@@ -202,6 +202,17 @@ class ElmerLibNumaFamily(metaclass=Family):
                 ('vessels', 'far')
             ]
 
+        nearfield = self.get_parameter('RESOLUTION_FIELD_NEAR')
+        farfield = self.get_parameter('RESOLUTION_FIELD_FAR')
+        zonefield = self.get_parameter('RESOLUTION_FIELD_ZONE')
+
+        if nearfield:
+            lengthscale_settings[0] = ('nearfield', nearfield)
+        if farfield:
+            lengthscale_settings[0] = ('farfield', farfield)
+        if zonefield:
+            lengthscale_settings[0] = ('zonefield', zonefield)
+
         for k, v in lengthscale_settings:
             lengthscales.set(k, v)
 
