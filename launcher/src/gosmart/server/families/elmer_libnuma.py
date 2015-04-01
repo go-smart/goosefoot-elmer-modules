@@ -209,9 +209,9 @@ class ElmerLibNumaFamily(metaclass=Family):
         if nearfield:
             lengthscale_settings[0] = ('nearfield', nearfield)
         if farfield:
-            lengthscale_settings[0] = ('farfield', farfield)
+            lengthscale_settings[1] = ('farfield', farfield)
         if zonefield:
-            lengthscale_settings[0] = ('zonefield', zonefield)
+            lengthscale_settings[2] = ('zonefield', zonefield)
 
         for k, v in lengthscale_settings:
             lengthscales.set(k, v)
