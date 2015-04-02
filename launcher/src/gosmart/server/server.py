@@ -90,6 +90,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         self._db = database
 
     def doInit(self, guid):
+        print("Test")
         pass
 
     def doClean(self, guid):
@@ -111,7 +112,10 @@ class GoSmartSimulationComponent(ApplicationSession):
     def doUpdateFiles(self, guid, files):
         if guid not in self.current or not isinstance(files, dict):
             return False
-
+        print("Update Files")
+        for local, remote in files.items():
+            print("remote" + remote)
+            print("Local" + local)
         current = self.current[guid]
         current.update_files(files)
 
@@ -174,6 +178,7 @@ class GoSmartSimulationComponent(ApplicationSession):
             self.eventComplete(guid)
 
     def doFinalize(self, guid, client_directory_prefix):
+        print("Converting the Xml")
         if guid not in self.current:
             return False
 
@@ -190,6 +195,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         return result
 
     def doWorkflow(self, guid, xml, input_files, request_files):
+        print("WorkflowStarted")
         self.doInit(self, guid)
         self.doUpdateSettingsXml(self, guid, xml)
         self.doUpdateFiles(self, guid, input_files)

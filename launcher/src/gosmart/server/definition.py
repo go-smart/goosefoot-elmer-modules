@@ -87,10 +87,12 @@ class GoSmartSimulationDefinition:
         return self._files
 
     def finalize(self):
+        print("Finalize - Translating Called")
         if self._xml is None or self._pull_files_cb is None:
             return False
 
         try:
+            print("Starting to Translate")
             translated_xml = self._translator.translate(self._xml)
             self._files.update(self._translator.get_files_required())
             tree = ET.ElementTree(translated_xml)
