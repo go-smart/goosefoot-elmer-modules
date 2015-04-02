@@ -177,7 +177,11 @@ class ElmerLibNumaFamily(metaclass=Family):
             innerNode.set("template", mesher_inner_coarse)
 
         extent = ET.SubElement(mesher, 'extent')
-        extent.set('radius', str(self.get_parameter("SIMULATION_DOMAIN_RADIUS")))
+        radius = self.get_parameter("SIMULATION_DOMAIN_RADIUS")
+        if radius is not None:
+            extent.set('radius', str(radius))
+        else:
+            extent.set('radius', '50') # TODO: This should be done in the parameters!!!!
 
         ET.SubElement(mesher, 'centre')
 
@@ -214,7 +218,7 @@ class ElmerLibNumaFamily(metaclass=Family):
             lengthscale_settings[2] = ('zonefield', zonefield)
 
         for k, v in lengthscale_settings:
-            lengthscales.set(k, v)
+            lengthscales.set(k, str(v))
 
         ET.SubElement(root, 'optimizer')
         ET.SubElement(root, 'elmergrid')
