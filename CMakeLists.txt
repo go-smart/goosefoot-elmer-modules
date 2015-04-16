@@ -58,7 +58,7 @@ ENDIF()
 EXEC_PROGRAM(
     "git"
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ARGS "describe" "--tags"
+    ARGS "describe" "--tags" "--always"
     OUTPUT_VARIABLE GIT_REVISION)
 
 SET(FC_STDCALLBULL " ")
