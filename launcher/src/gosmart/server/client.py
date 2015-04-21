@@ -16,13 +16,24 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from autobahn.asyncio.wamp import ApplicationSession
-from asyncio import coroutine
+import uuid
+from lxml import etree as ET
 
 
-@coroutine
 class GoSmartSimulationClientComponent(ApplicationSession):
+
+    def __init__(self, x, gssa_file, subdirectory):
+        ApplicationSession.__init__(self, x)
+        self._gssa = ET.parse(gssa_file)
+        self._guid = uuid.uuid1()
+        self._subdirectory = subdirectory
 
     def onJoin(self, details):
         print("session ready")
 
-        self.call(u'com.gosmartsimulation.doStart')
+        guid = str(self._guid)
+        gssa = ET.tostring(self._gssa, encoding="unicode")
+        self.call(u'com.gosmartsimulation.init', guid)
+        self.call(u'com.gosmartsimulation.update_settings_xml', guid, gssa)
+        self.call(u'com.gosmartsimulation.finalize', guid, self._subdirectory)
+        self.call(u'com.gosmartsimulation.start', guid)

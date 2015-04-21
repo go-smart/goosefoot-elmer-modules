@@ -50,7 +50,7 @@ class GoSmartMesherAxisymmetric(GoSmartMesher):
                 self.template_name = node.get('name')
                 for dimension in node:
                     self._geo_mapping[slugify("CONSTANT_%s" % dimension.get('name'))] = dimension.get('value')
-                    self.logger.ensure_constant(dimension.get('name'), dimension.get('value'))
+                    self.logger.ensure_constant(dimension.get('name'), dimension.get('value'), typ='float')
             elif node.tag == 'lengthscales':
                 self.nearfield = float(node.get('nearfield'))
                 self.farfield = float(node.get('farfield'))

@@ -44,6 +44,7 @@ if __name__ == "__main__":
     parser.add_argument("--sftp-host", help="server hosting SFTP", default="localhost")
     parser.add_argument("--sftp-port", help="port hosting SFTP", default="9001", type=int)
     parser.add_argument("--key-file", help="file for authenticating to SFTP", default="id_rsa")
+    parser.add_argument("--transferrer", help="means of file retrieval", default="SFTP")
     args = parser.parse_args()
 
     key_file = args.key_file
@@ -51,6 +52,7 @@ if __name__ == "__main__":
     websocket_port = args.websocket_port
     sftp_port = args.sftp_port
     sftp_host = args.sftp_host
+    transfer_method = args.transferrer
 
     if not os.path.exists(args.key_file):
         raise RuntimeError("Could not find key file for authentication")

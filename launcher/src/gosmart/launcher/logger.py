@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import re
+import traceback
 import os
 import errno
 
@@ -160,18 +161,19 @@ class GoSmartLogger(GoSmartComponent):
 
         return i
 
-    def ensure_constant(self, name, value, warn=False, group="CONSTANT"):
-        self.add_or_update_constant(name, value, warn, group, override=False)
+    def ensure_constant(self, name, value, warn=False, group="CONSTANT", typ=None):
+        self.add_or_update_constant(name, value, warn, group, override=False, typ=typ)
 
-    def add_or_update_constant(self, name, value, warn=False, group="CONSTANT", override=True):
+    def add_or_update_constant(self, name, value, warn=False, group="CONSTANT", override=True, typ=None):
         # TODO:PTW:THIS SHOULD BE REPLACED WITH SLUGIFY!!!
         if slugify(group) == "PARAMETER":
             mangled_name = slugify(name)
         else:
             mangled_name = "%s_%s" % (slugify(group), slugify(name))
 
-        if override or mangled_name in self._constant_mapping:
+        if override or mangled_name not in self._constant_mapping:
             self._constant_mapping[mangled_name] = value
+            self._constant_mapping_types[mangled_name] = typ
 
         if warn:
             self._constant_mapping_warn[mangled_name] = "constant : %s" % name

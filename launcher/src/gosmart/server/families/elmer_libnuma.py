@@ -158,6 +158,8 @@ class ElmerLibNumaFamily(metaclass=Family):
             parameterNode = ET.SubElement(parameters, "parameter")
             parameterNode.set("name", key)
             parameterNode.set("value", str(convert_parameter(parameter, typ)))
+            if typ is not None:
+                parameterNode.set("type", typ)
 
         needlelibrary = ET.SubElement(root, 'needlelibrary')
         mesher = ET.SubElement(root, "mesher")
@@ -243,6 +245,8 @@ class ElmerLibNumaFamily(metaclass=Family):
 
             content = ET.SubElement(algorithm, "content")
             content.text = definition["content"]
+            if content.text is None:
+                content.text = ''
             for fn in self._disallowed_functions:
                 if fn in content.text or fn in result:
                     raise RuntimeException("Disallowed function appeared in algorithm %s" % result)

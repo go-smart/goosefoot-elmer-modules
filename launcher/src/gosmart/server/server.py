@@ -65,6 +65,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         global use_observant
 
         ApplicationSession.__init__(self, x)
+        self.traceback_app = True
         verifyObject(ITransferrer, transferrer)
 
         self._transferrer = transferrer

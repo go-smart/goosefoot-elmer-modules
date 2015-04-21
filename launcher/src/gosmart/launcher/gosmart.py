@@ -332,12 +332,12 @@ class GoSmart:
                     if setting.tag == 'centre':
                         for c in ('x', 'y', 'z'):
                             self.logger.geometry["centre"][c] = float(setting.get(c))
-                            self.logger.add_or_update_constant(c, float(setting.get(c)), group="needle")
+                            self.logger.add_or_update_constant(c, float(setting.get(c)), group="needle", typ="float")
                     elif setting.tag == 'needleaxis':
                         self.logger.geometry["needleaxis"].append({})
                         for c in ('x', 'y', 'z'):
                             self.logger.geometry["needleaxis"][0][c] = float(setting.get(c))
-                            self.logger.add_or_update_constant("axis " + c, float(setting.get(c)), group="needle")
+                            self.logger.add_or_update_constant("axis " + c, float(setting.get(c)), group="needle", typ="float")
                     elif setting.tag == 'simulationscaling':
                         self.logger.geometry["simulationscaling"] = float(setting.get("ratio"))
                     else:
@@ -449,7 +449,7 @@ class GoSmart:
                     value = constant.get("value")
                     if value is None:
                         value = constant
-                    self.logger.add_or_update_constant(constant.get("name"), value, True, constant.tag)
+                    self.logger.add_or_update_constant(constant.get("name"), value, True, constant.tag, typ=constant.get("type"))
             elif not skip:
                 self.logger.print_fatal("Unknown top-level section %s in %s" % (section.tag, filename))
 

@@ -20,6 +20,7 @@ import string
 import shutil
 import re
 import uuid
+import json
 
 import gosmart.config
 from gosmart.launcher.component import GoSmartComponent
@@ -31,6 +32,15 @@ from gosmart.launcher.globals import \
     slugify
 from gosmart.launcher.elmer_probelocation import GoSmartElmerProbeLocationFactory, probe_location_factories
 from gosmart.launcher.elmer_powerovertime import power_over_time_factories
+
+
+def _type_to_sif_type(typ, var):
+    if (typ == 'float'):
+        return 'Real %s' % var
+    elif (typ == 'array(Time,float)'):
+        ret = "Variable Time\nReal \n%s\nEnd" % "\n".join(map(lambda row: " ".join(map(str, row)), sorted(json.loads(var).items())))
+        return ret
+    return var
 
 
 # Class to hold settings specific to the Go-Smart/Elmer solver
@@ -135,10 +145,23 @@ class GoSmartElmer(GoSmartComponent):
             sif_filename = os.path.join(gosmart.config.template_directory, "templates", "go-smart-template%s.sif" % sif_suffix)
             self.logger.print_debug("SIF template filename %s" % sif_filename)
             sif_template_stream = open(sif_filename, "r")
-            sif_template = string.Template(sif_template_stream.read())
+            sif_definition = sif_template_stream.read()
             sif_template_stream.close()
         else:
-            sif_template = string.Template(self._sif)
+            sif_definition = self._sif
+
+        def type_substitution(match):
+            typ = self.logger.get_constant_type(match.group(2))
+
+            if typ is not None:
+                altered = match.group(1) + _type_to_sif_type(typ, self.logger.get_constant(match.group(2)))
+                self.logger.print_debug(altered)
+                return altered
+
+            return match.group(0)
+
+        sif_definition = re.sub(r'(=\s*)\$((CONSTANT|SETTING)_[A-Za-z_0-9]+)', type_substitution, sif_definition)
+        sif_template = string.Template(sif_definition)
 
         if self._restarting:
             self._sif_mapping["RESTART_SECTION"] = """
@@ -154,6 +177,7 @@ class GoSmartElmer(GoSmartComponent):
             """
         self._prepare_algorithms()
         self._check_sif_mapping_set(sif_template)
+
         self._sif_mapping.update(self.get_constants())
         self._sif_mapping.update(self.logger.get_region_ids())
         self._sif_mapping.update(dict((r, a["call"]) for r, a in self._algorithms.items()))
@@ -358,14 +382,16 @@ class GoSmartElmer(GoSmartComponent):
                     value = constant.get("value")
                     if value is None:
                         value = constant
-                    self.add_or_update_constant(constant.get("name"), value, True, "SETTING")
+                    self.add_or_update_constant(constant.get("name"), value, True, "SETTING", typ=constant.get("type"))
             elif element.tag == 'algorithms':
                 for algorithm in element:
                     arguments = map(lambda a: a.get("name"), algorithm.find("arguments"))
-                    self._algorithms[algorithm.get("result")] = {
-                        "definition": algorithm.find("content").text,
-                        "arguments": list(arguments)
-                    }
+                    definition = algorithm.find("content").text
+                    if definition is not None:
+                        self._algorithms[algorithm.get("result")] = {
+                            "definition": definition,
+                            "arguments": list(arguments)
+                        }
             else:
                 self.logger.print_error("Unknown element %s in %s" %
                                         (element.tag, config_node.tag))

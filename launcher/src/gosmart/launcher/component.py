@@ -47,6 +47,7 @@ class GoSmartComponent:
         self.cwd = "."
 
         self._constant_mapping = {}
+        self._constant_mapping_types = {}
         self._constant_mapping_warn = {}
 
         self._timings = {}
@@ -88,13 +89,24 @@ class GoSmartComponent:
         self.print_timing("    ====")
         self.print_timing(" -- %d" % total)
 
-    def add_or_update_constant(self, name, value, warn=False, group="CONSTANT"):
+    def add_or_update_constant(self, name, value, warn=False, group="CONSTANT", typ=None):
         mangled_name = "%s_%s" % (slugify(group), slugify(name))
         self._constant_mapping[mangled_name] = value
+        self._constant_mapping_types[mangled_name] = typ
         if warn:
             self._constant_mapping_warn[mangled_name] = "constant : %s" % name
 
-        self.logger.add_or_update_constant(name, value, False, group)
+        self.logger.add_or_update_constant(name, value, False, group, typ=typ)
+
+    def get_constant_type(self, name, group="CONSTANT"):
+        mangled_name = "%s_%s" % (slugify(group), slugify(name))
+
+        if name in self._constant_mapping_types:
+            return self._constant_mapping_types[name]
+        elif mangled_name in self._constant_mapping_types:
+            return self._constant_mapping_types[mangled_name]
+
+        return self.logger.get_constant(name, group)
 
     def get_constant(self, name, group="CONSTANT"):
         mangled_name = "%s_%s" % (slugify(group), slugify(name))
@@ -135,7 +147,7 @@ class GoSmartComponent:
                 value = constant.get("value")
                 if value is None:
                     value = constant
-                self.add_or_update_constant(constant.get("name"), value, True, constant.tag)
+                self.add_or_update_constant(constant.get("name"), value, True, constant.tag, typ=constant.get("type"))
 
     def _load_constant_set(self, setname):
         constant_filename = "constants/constants-%s.xml" % setname.lower()
@@ -147,7 +159,7 @@ class GoSmartComponent:
                 value = constant.get("value")
                 if value is None:
                     value = constant
-                self.add_or_update_constant(constant.get('name'), value, (constant.get('warn') == 'yes'))
+                self.add_or_update_constant(constant.get('name'), value, (constant.get('warn') == 'yes'), typ=constant.get("type"))
 
     def set_outfile_prefix(self, outfile):
         self.outfilename = os.path.join(self.logger.get_cwd(), outfile)

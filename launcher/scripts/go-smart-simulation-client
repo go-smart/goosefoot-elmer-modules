@@ -19,8 +19,27 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from autobahn.asyncio.wamp import ApplicationRunner
+import argparse
 
 from gosmart.server.client import GoSmartSimulationClientComponent
 
-runner = ApplicationRunner(url="ws://localhost:8080/ws", realm="realm1")
-runner.run(GoSmartSimulationClientComponent)
+
+def launch(x):
+    cpt = GoSmartSimulationClientComponent(x, gssa_file=input_file, subdirectory=subdirectory)
+    return cpt
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--gssa-file", help="GSSA-XML simulation description", default="original.xml")
+    parser.add_argument("--subdir", help="subdirectory of /tmp containing input files", default=".")
+    parser.add_argument("--host", help="host to connect to", default="localhost")
+    parser.add_argument("--websocket-port", help="port hosting websocket", default="9000", type=int)
+    args = parser.parse_args()
+    input_file = args.gssa_file
+
+    host = args.host
+    websocket_port = args.websocket_port
+    subdirectory = args.subdir
+    runner = ApplicationRunner(url="ws://%s:%d/ws" % (host, websocket_port), realm="realm1")
+    runner.run(launch)
