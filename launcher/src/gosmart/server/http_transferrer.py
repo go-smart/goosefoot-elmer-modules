@@ -78,9 +78,8 @@ class HTTPTransferrer:
             print("file "+sourcePath+" does not exist.")
          #   raise LocalError("File does not exist",-3)
         try:
-            
+           #auth=("gosmart","password"), 
             r = requests.post(destinationUrl,
-                    auth=("gosmart","password"),
                     files=f)
         except:
             print("Server error!")
