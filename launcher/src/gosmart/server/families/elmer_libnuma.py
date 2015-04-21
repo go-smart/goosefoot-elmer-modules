@@ -157,7 +157,8 @@ class ElmerLibNumaFamily(metaclass=Family):
             parameter, typ = parameterPair
             parameterNode = ET.SubElement(parameters, "parameter")
             parameterNode.set("name", key)
-            parameterNode.set("value", str(convert_parameter(parameter, typ)))
+            p = convert_parameter(parameter, typ)
+            parameterNode.set("value", json.dumps(p))
             if typ is not None:
                 parameterNode.set("type", typ)
 
