@@ -93,7 +93,8 @@ class ElmerLibNumaFamily(metaclass=Family):
                 }
                 location = needle_file.split(':', 1)
                 if location[0] in ('surface', 'zone'):
-                    self._files_required[os.path.join('input', location[1])] = location[1]  # Any changes to local/remote dirs here
+                    target_file = os.path.join('input', "%s%s" % (needle.get("index"), os.path.splitext(location[1])[1]))
+                    self._files_required[target_file] = location[1]  # Any changes to local/remote dirs here
                 self._needle_order[k] = needle.get("index")
                 k += 1
 
@@ -109,7 +110,8 @@ class ElmerLibNumaFamily(metaclass=Family):
                 "groups": json.loads(region.get('groups'))
             }
             if region.get('format') in ('surface', 'zone') and region.get('input'):
-                self._files_required[os.path.join('input', region.get('input'))] = region.get('input')  # Any changes to local/remote dirs here
+                target_file = os.path.join('input', "%s%s" % (needle.get("index"), os.path.splitext(region.get('input'))[1]))
+                self._files_required[target_file] = region.get('input')  # Any changes to local/remote dirs here
             self._regions_by_meaning[region.get('name')].append(self._regions[region.get('id')])
 
         self._parameters = parameters
