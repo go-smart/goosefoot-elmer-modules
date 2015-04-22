@@ -11,11 +11,8 @@ from gosmart.server.transferrer import ITransferrer
 
 @implementer(ITransferrer)
 class HTTPTransferrer:
-    def __init__(self, host, port, key_file):
-        self._host = host
-        self._port = 22
-        self._port = port
-        self._key_file = key_file
+    def __init__(self):
+        pass
 
     def connect(self):
         print("The Host:" + self._host)
@@ -26,7 +23,7 @@ class HTTPTransferrer:
 
     def pull_files(self, files, root, remote_root):
         for local, remote in files.items():
-            remote_url = remote
+            remote_url = "%s/%s" % (self._url, remote)
             absolute_path = os.path.join(root, local)
             print("Download File From: " + remote_url)
             print("Download File To:" + absolute_path)
@@ -82,3 +79,6 @@ class HTTPTransferrer:
             print("Server error!")
         if (r.status_code != 200):
             print("Upload Failed")
+
+    def configure_from_xml(self, xml):
+        self._url = xml.find("url").text

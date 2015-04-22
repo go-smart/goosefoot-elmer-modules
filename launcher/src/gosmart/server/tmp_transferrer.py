@@ -10,7 +10,7 @@ from gosmart.server.transferrer import ITransferrer
 
 @implementer(ITransferrer)
 class TmpTransferrer:
-    def __init__(self, host, port, key_file):
+    def __init__(self):
         pass
 
     def connect(self):
@@ -35,3 +35,6 @@ class TmpTransferrer:
             remote_absolute_path = os.path.join(remote_root, remote)
             print("Putting", absolute_path, remote_absolute_path)
             shutil.copy(absolute_path, os.path.join('/tmp', remote_absolute_path))
+
+    def configure_from_xml(self, xml):
+        pass

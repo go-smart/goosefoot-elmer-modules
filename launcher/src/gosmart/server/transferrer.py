@@ -21,6 +21,9 @@ import zope.interface
 class ITransferrer(zope.interface.Interface):
     """Transfers files to simulation directory"""
 
+    def __init__():
+        """Initialize"""
+
     def disconnect():
         """Disconnect from existing connection"""
 
@@ -32,3 +35,18 @@ class ITransferrer(zope.interface.Interface):
 
     def pull_files(files, root, remote_root):
         """Pull files from remote based on the file map. files should be dictionary mapping local paths (based at root) to remotes"""
+
+    def configure_from_xml(xml):
+        """Configure this transferrer using the transferrer node of a GSSA-XML input"""
+
+
+from gosmart.server.http_transferrer import HTTPTransferrer
+from gosmart.server.sftp_transferrer import SFTPTransferrer
+from gosmart.server.tmp_transferrer import TmpTransferrer
+
+
+transferrer_register = {
+    "http": HTTPTransferrer,
+    "sftp": SFTPTransferrer,
+    "tmp": TmpTransferrer
+}

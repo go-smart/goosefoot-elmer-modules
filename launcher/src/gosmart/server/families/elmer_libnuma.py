@@ -86,15 +86,17 @@ class ElmerLibNumaFamily(metaclass=Family):
             k = 0
             for needle in needles:
                 needle_file = needle.get("file")
+                location = needle_file.split(':', 1)
+                if location[0] in ('surface', 'zone'):
+                    target_file = "%s%s" % (needle.get("index"), os.path.splitext(location[1])[1])
+                    needle_file = "%s:%s" % (location[0], target_file)
+                    self._files_required[os.path.join('input', target_file)] = location[1]  # Any changes to local/remote dirs here
+
                 self._needles[needle.get("index")] = {
                     "parameters": read_parameters(needle.find("parameters")),
                     "file": needle_file,
                     "class": needle.get("class")
                 }
-                location = needle_file.split(':', 1)
-                if location[0] in ('surface', 'zone'):
-                    target_file = os.path.join('input', "%s%s" % (needle.get("index"), os.path.splitext(location[1])[1]))
-                    self._files_required[target_file] = location[1]  # Any changes to local/remote dirs here
                 self._needle_order[k] = needle.get("index")
                 k += 1
 
@@ -103,15 +105,15 @@ class ElmerLibNumaFamily(metaclass=Family):
             if region.get('name') not in self._regions_by_meaning:
                 self._regions_by_meaning[region.get('name')] = []
 
+            target_file = "%s%s" % (region.get("id"), os.path.splitext(region.get('input'))[1])
             self._regions[region.get('id')] = {
                 "format": region.get('format'),
                 "meaning": region.get('name'),
-                "input": region.get('input'),
+                "input": target_file,
                 "groups": json.loads(region.get('groups'))
             }
             if region.get('format') in ('surface', 'zone') and region.get('input'):
-                target_file = os.path.join('input', "%s%s" % (needle.get("index"), os.path.splitext(region.get('input'))[1]))
-                self._files_required[target_file] = region.get('input')  # Any changes to local/remote dirs here
+                self._files_required[os.path.join('input', target_file)] = region.get('input')  # Any changes to local/remote dirs here
             self._regions_by_meaning[region.get('name')].append(self._regions[region.get('id')])
 
         self._parameters = parameters
@@ -260,7 +262,7 @@ class ElmerLibNumaFamily(metaclass=Family):
                 if location[0] in ('surface', 'zone'):
                     needleNode = ET.SubElement(regions, location[0])
                     needleNode.set("name", ix)
-                    needleNode.set("input", os.path.join("input/", region["input"]))
+                    needleNode.set("input", os.path.join("input/", location[1]))
                     needleNode.set("groups", "needles")
                     needle_mesh = ET.SubElement(mesher, 'needle')
                     needle_mesh.set('region', ix)

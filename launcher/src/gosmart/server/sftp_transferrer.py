@@ -27,10 +27,7 @@ from gosmart.server.transferrer import ITransferrer
 
 @implementer(ITransferrer)
 class SFTPTransferrer:
-    def __init__(self, host, port, key_file):
-        self._host = host
-        self._port = port
-        self._key_file = key_file
+    def __init__(self):
         self._ssh_client = paramiko.SSHClient()
         self._ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self._sftp_client = None
@@ -65,3 +62,8 @@ class SFTPTransferrer:
             remote_absolute_path = os.path.join(remote_root, remote)
             print("Putting", absolute_path, remote_absolute_path)
             self._sftp_client.put(absolute_path, remote_absolute_path)
+
+    def configure_from_xml(self, xml):
+        self._host = xml.find("host").text
+        self._port = xml.find("port").text
+        self._key_file = xml.find("keyFile").text

@@ -36,7 +36,6 @@ except:
     use_observant = False
 
 from gosmart.server.definition import GoSmartSimulationDefinition
-from gosmart.server.transferrer import ITransferrer
 from gosmart.server.translator import GoSmartSimulationTranslator
 from gosmart.launcher import gosmart
 
@@ -61,14 +60,12 @@ class GoSmartSimulationComponent(ApplicationSession):
     client = None
     _db = None
 
-    def __init__(self, x, transferrer, database):
+    def __init__(self, x, database):
         global use_observant
 
         ApplicationSession.__init__(self, x)
         self.traceback_app = True
-        verifyObject(ITransferrer, transferrer)
 
-        self._transferrer = transferrer
         self._args = GoSmartArguments(configfilenames=["settings.xml"])
         self.current = {}
 
@@ -128,19 +125,8 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         current = self.current[guid]
 
-        uploaded_files = {}
-
-        for local, remote in files.items():
-            path = os.path.join(current.get_dir(), local)
-            if os.path.exists(path):
-                uploaded_files[local] = remote
-            else:
-                print("Could not find %s for SFTP PUT" % path)
-
         try:
-            self._transferrer.connect()
-            self._transferrer.push_files(uploaded_files, current.get_dir(), current.get_remote_dir())
-            self._transferrer.disconnect()
+            uploaded_files = self.current.push_files(files)
         except Exception:
             traceback.print_exc(file=sys.stderr)
             return {}
@@ -185,13 +171,10 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         current = self.current[guid]
         current.set_remote_dir(client_directory_prefix)
-        current.set_pull_files_cb(self._transferrer.pull_files)
 
         self._db.addOrUpdate(current)
 
-        self._transferrer.connect()
         result = current.finalize()
-        self._transferrer.disconnect()
 
         return result
 

@@ -22,6 +22,9 @@ import traceback
 
 # Replace with better integrated approach!
 import urllib.request
+from gosmart.server.transferrer import transferrer_register
+from zope.interface.verify import verifyObject
+from gosmart.server.transferrer import ITransferrer
 
 from lxml import etree as ET
 
@@ -41,8 +44,6 @@ class GoSmartSimulationDefinition:
         self._translator = translator
 
         try:
-            #database_xml_response = urllib.request.urlopen("http://gsmock.numa.oan/simulation/%s" % guid)
-            #xml_string = database_xml_response.read().decode('UTF-8')
             self.create_xml_from_string(xml_string)
         except Exception as e:
             print(e)
@@ -92,12 +93,21 @@ class GoSmartSimulationDefinition:
             return False
 
         try:
+            print("Instantiating transferrer")
+            transferrer_node = self._xml.find('transferrer')
+            cls = transferrer_node.get('class')
+            self._transferrer = transferrer_register[cls]()
+            verifyObject(ITransferrer, self._transferrer)
+            self._transferrer.configure_from_xml(transferrer_node)
+
             print("Starting to Translate")
             translated_xml = self._translator.translate(self._xml)
             self._files.update(self._translator.get_files_required())
             tree = ET.ElementTree(translated_xml)
 
-            self._pull_files_cb(self._files, self.get_dir(), self.get_remote_dir())
+            self._transferrer.connect()
+            self._transferrer.pull_files(self._files, self.get_dir(), self.get_remote_dir())
+            self._transferrer.disconnect()
 
             with open(os.path.join(self._dir, "settings.xml"), "wb") as f:
                 tree.write(f, pretty_print=True)
@@ -119,5 +129,18 @@ class GoSmartSimulationDefinition:
 
         return True
 
-    def set_pull_files_cb(self, pull_files_cb):
-        self._pull_files_cb = pull_files_cb
+    def push_files(self, files):
+        uploaded_files = {}
+
+        for local, remote in files.items():
+            path = os.path.join(self.get_dir(), local)
+            if os.path.exists(path):
+                uploaded_files[local] = remote
+            else:
+                print("Could not find %s for SFTP PUT" % path)
+
+        self._transferrer.connect()
+        self._transferrer.push_files(uploaded_files, self.get_dir(), self.get_remote_dir())
+        self._transferrer.disconnect()
+
+        return uploaded_files
