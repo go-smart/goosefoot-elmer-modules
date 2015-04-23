@@ -89,7 +89,7 @@ class GoSmartSimulationDefinition:
 
     def finalize(self):
         print("Finalize - Translating Called")
-        if self._xml is None or self._pull_files_cb is None:
+        if self._xml is None:
             return False
 
         try:
