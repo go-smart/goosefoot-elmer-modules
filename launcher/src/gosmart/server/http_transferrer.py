@@ -15,8 +15,7 @@ class HTTPTransferrer:
         pass
 
     def connect(self):
-        print("The Host:" + self._host)
-        print("The Port:" + str(self._port))
+        pass
 
     def disconnect(self):
         print("Disconnecting")
