@@ -126,7 +126,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         current = self.current[guid]
 
         try:
-            uploaded_files = self.current.push_files(files)
+            uploaded_files = current.push_files(files)
         except Exception:
             traceback.print_exc(file=sys.stderr)
             return {}
