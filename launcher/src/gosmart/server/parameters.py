@@ -24,6 +24,9 @@ def convert_parameter(parameter, typ=None, try_json=True):
     # none are expected by switching a counter to float. Also,
     # some Python functions, like range, require an int.
 
+    if parameter == "null" or parameter is None:
+        return None
+
     if typ == "float":
         cast = float
     elif typ == "integer":

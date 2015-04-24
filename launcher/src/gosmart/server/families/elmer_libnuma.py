@@ -302,7 +302,16 @@ class ElmerLibNumaFamily(metaclass=Family):
                     extension_node.set("length", str(extension))
 
 
-        ET.SubElement(root, 'lesion')
+        lesion = ET.SubElement(root, 'lesion')
+        lesion.set("field", self.get_parameter("SETTING_LESION_FIELD", False))
+
+        threshold_upper = self.get_parameter("SETTING_LESION_THRESHOLD_UPPER")
+        if threshold_upper is not None:
+            lesion.set("threshold_upper", str(threshold_upper))
+
+        threshold_lower = self.get_parameter("SETTING_LESION_THRESHOLD_LOWER")
+        if threshold_lower is not None:
+            lesion.set("threshold_lower", str(threshold_lower))
 
         self._xml = root
 
