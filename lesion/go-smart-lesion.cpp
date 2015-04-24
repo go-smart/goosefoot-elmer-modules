@@ -151,12 +151,21 @@ int main(int argc, char *argv[])
   vtkSmartPointer<vtkDescriptiveStatistics> statisticsfilter =
     vtkSmartPointer<vtkDescriptiveStatistics>::New();
   vtkTable* statisticsinput = vtkTable::New();
-  statisticsinput->AddColumn(grid_scaled->GetPointData()->GetArray("temperature"));
-  statisticsinput->AddColumn(grid_scaled->GetPointData()->GetArray("dead"));
   statisticsinput->Update();
   statisticsfilter->SetInput(statisticsinput);
-  statisticsfilter->AddColumn("temperature");
-  statisticsfilter->AddColumn("dead");
+  std::map<vtkIdType, std::string> xml_variables;
+  if (grid_scaled->GetPointData()->GetArray("dead"))
+  {
+      statisticsinput->AddColumn(grid_scaled->GetPointData()->GetArray("dead"));
+      statisticsfilter->AddColumn("dead");
+      xml_variables[xml_variables.size()] = "dead";
+  }
+  if (grid_scaled->GetPointData()->GetArray("temperature"))
+  {
+      statisticsinput->AddColumn(grid_scaled->GetPointData()->GetArray("temperature"));
+      statisticsfilter->AddColumn("temperature");
+      xml_variables[xml_variables.size()] = "temperature";
+  }
   statisticsfilter->Update();
 
   vtkMultiBlockDataSet* statisticsmultiblock = vtkMultiBlockDataSet::SafeDownCast(statisticsfilter->GetOutputDataObject(vtkStatisticsAlgorithm::OUTPUT_MODEL));
@@ -165,9 +174,6 @@ int main(int argc, char *argv[])
   vtkTable* statisticstable_deri = vtkTable::SafeDownCast(statisticsmultiblock->GetBlock(1));
   statisticstable_deri->Dump();
 
-  std::map<vtkIdType, std::string> xml_variables;
-  xml_variables[0] = "dead";
-  xml_variables[1] = "temperature";
   std::map<std::string, std::string> primary_statistics;
   primary_statistics["minimum"] = "Minimum";
   primary_statistics["maximum"] = "Maximum";
