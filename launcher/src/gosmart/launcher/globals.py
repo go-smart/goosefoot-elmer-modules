@@ -114,23 +114,4 @@ _sif_calculations = {
                                   "NEEDLE_AXIS_Z",),
                                  "formula": lambda x, y, z:
                                  _generate_rotation_matrix(x, y, z, backward=True)},
-    "IRE_POTENTIAL_DIFFERENCES": {"requirements":
-                                  ("SETTING_IRE_PAIRS",),
-                                  "formula": lambda pe:
-                                  " ".join([p.get('potential') for p in pe])
-                                  },
-    "IRE_SEQUENCE_COUNT": {"requirements":
-                           ("SETTING_IRE_PAIRS",),
-                           "formula": lambda pe: len(pe)
-                           },
-    "IRE_ANODE_SEQUENCE": {"requirements":
-                           ("SETTING_IRE_PAIRS",),
-                           "formula": lambda pe:
-                           " ".join([p.get('anode') for p in pe])
-                           },
-    "IRE_CATHODE_SEQUENCE": {"requirements":
-                             ("SETTING_IRE_PAIRS",),
-                             "formula": lambda pe:
-                             " ".join([p.get('cathode') for p in pe])
-                             }
 }

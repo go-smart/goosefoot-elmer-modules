@@ -35,12 +35,21 @@ from gosmart.launcher.elmer_powerovertime import power_over_time_factories
 
 
 def _type_to_sif_type(typ, var):
-    if (typ == 'float'):
-        return 'Real %s' % var
+    if (typ == 'float' or typ == 'array(float)'):
+        return 'Real %s' % _type_to_sif_string(typ, var)
+    elif (typ == 'int' or typ == 'array(int)'):
+        return 'Integer %s' % _type_to_sif_string(typ, var)
     elif (typ == 'array(Time,float)'):
         ret = "Variable Time\nReal \n%s\nEnd" % "\n".join(map(lambda row: " ".join(map(str, row)), sorted(json.loads(var).items())))
         return ret
+    var = _type_to_sif_string(typ, var)
     return var
+
+
+def _type_to_sif_string(typ, var):
+    if (typ in ('array(float)', 'array(int)')):
+        return " ".join(map(str, json.loads(var)))
+    return str(var)
 
 
 # Class to hold settings specific to the Go-Smart/Elmer solver
@@ -178,7 +187,11 @@ class GoSmartElmer(GoSmartComponent):
         self._prepare_algorithms()
         self._check_sif_mapping_set(sif_template)
 
-        self._sif_mapping.update(self.get_constants())
+        constants = self.get_constants()
+        for constant, value in constants.items():
+            constant = _type_to_sif_string(self.logger.get_constant_type(constant), value)
+
+        self._sif_mapping.update(constants)
         self._sif_mapping.update(self.logger.get_region_ids())
         self._sif_mapping.update(dict((r, a["call"]) for r, a in self._algorithms.items()))
         sources = "\n".join(a["sources"] for a in self._algorithms.values())

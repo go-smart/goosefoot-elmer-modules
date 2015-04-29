@@ -243,6 +243,8 @@ class GoSmart:
         # on it is assumed that we have consecutively numbered zones, all appearing as
         # elements in some MSH, ready to be dropped into a SIF
         exclusion = [z for z in self.logger.zones if z not in present_ids]
+        self.logger.print_debug(self.logger.zones_map)
+        self.logger.print_debug(exclusion)
         for zone in exclusion:
             self.logger.zones_map.pop(self.logger.zones[zone]['id'])
             self.logger.zones.pop(zone)

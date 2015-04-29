@@ -132,6 +132,13 @@ class ElmerLibNumaFamily(metaclass=Family):
         if centre_location is None or centre_location == "first-needle":
             if self._needles:
                 centre_location = self.get_needle_parameter(0, "NEEDLE_TIP_LOCATION")
+        elif centre_location == "centroid-of-tips":
+            if self._needles:
+                needle_tips = [self.get_needle_parameter(i, "NEEDLE_TIP_LOCATION") for i in range(len(self._needles))]
+                needle_tips = zip(*needle_tips)
+                centre_location = [sum(tips) / len(self._needles) for tips in needle_tips]
+                print(centre_location)
+
         centre_location_node = ET.Element("centre")
         for c, v in zip(('x', 'y', 'z'), centre_location):
             centre_location_node.set(c, str(v))
@@ -166,9 +173,18 @@ class ElmerLibNumaFamily(metaclass=Family):
             if typ is not None:
                 parameterNode.set("type", typ)
 
+        name_needle_regions = False
+
         needlelibrary = ET.SubElement(root, 'needlelibrary')
+        solid_needles = self.get_parameter("SETTING_SOLID_NEEDLES")
+        if solid_needles is not None:
+            needlelibrary.set("zones", "true" if solid_needles is True else "false")
+            name_needle_regions = True
+
         mesher = ET.SubElement(root, "mesher")
         mesher.set('type', 'CGAL')
+        if self.get_parameter("SETTING_SOLID_NEEDLES") is True or self.get_parameter("SETTING_ZONE_BOUNDARIES") is True:
+            mesher.set("zone_boundaries", "true")
 
         mesher_inner = self.get_parameter("SETTING_AXISYMMETRIC_INNER")
         if mesher_inner is not None:
@@ -256,9 +272,11 @@ class ElmerLibNumaFamily(metaclass=Family):
                 if fn in content.text or fn in result:
                     raise RuntimeException("Disallowed function appeared in algorithm %s" % result)
 
+        l = 0
         for ix, needle in self._needles.items():
             if needle['class'] in ('solid-boundary', 'boundary'):
                 location = needle['file'].split(':', 1)
+
                 if location[0] in ('surface', 'zone'):
                     needleNode = ET.SubElement(regions, location[0])
                     needleNode.set("name", ix)
@@ -269,13 +287,17 @@ class ElmerLibNumaFamily(metaclass=Family):
                 else:
                     needleNode = ET.SubElement(needlelibrary, 'needle')
 
+                    l += 1
+                    if name_needle_regions:
+                        needleNode.set("name", str(l))
+
                     if location[0] == 'library':
                         needleNode.set("id", location[1])
                     else:
                         needleNode.set("name", location[1])
 
-                    tip_location = self.get_needle_parameter(0, "NEEDLE_TIP_LOCATION")
-                    entry_location = self.get_needle_parameter(0, "NEEDLE_ENTRY_LOCATION")
+                    tip_location = self.get_needle_parameter(ix, "NEEDLE_TIP_LOCATION")
+                    entry_location = self.get_needle_parameter(ix, "NEEDLE_ENTRY_LOCATION")
                     needleNode.set("offset", " ".join(map(lambda c: str(c[1] - c[0]), zip(tip_location, centre_location))))
                     needleNode.set("axis", " ".join(map(lambda c: str(c[0] - c[1]), zip(entry_location, tip_location))))
 
