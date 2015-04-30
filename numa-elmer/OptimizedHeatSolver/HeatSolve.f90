@@ -197,13 +197,9 @@ MODULE HeatSolve
          CALL Allocations
     END IF
 
-<<<<<<< Updated upstream
     IF ( CellsDeath ) THEN
         CALL CellSetup(Solver, Model, SolverParams, Timestep, Temperature, TempPerm)
     END IF
-=======
-    CALL CellSetup(Solver, Model, SolverParams, Timestep, Temperature, TempPerm)
->>>>>>> Stashed changes
 
     IF( IsRadiation ) THEN
       NewtonTol     = GetConstReal( SolverParams, &

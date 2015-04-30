@@ -435,13 +435,9 @@ MODULE HeatAssemblyBulk
           HeatCapacity(1:n) = Density(1:n) * HeatCapacity(1:n)
         END IF
 
-<<<<<<< Updated upstream
         IF (CellsDeath) THEN
             CALL GetCellHeat(C1, U, V, W, HeatCapacity, Element, Material, n)
         END IF
-=======
-        CALL GetCellHeat(C1, U, V, W, HeatCapacity, Element, Material, n)
->>>>>>> Stashed changes
 
         Viscosity = 0.0d0
   !------------------------------------------------------------------------------
