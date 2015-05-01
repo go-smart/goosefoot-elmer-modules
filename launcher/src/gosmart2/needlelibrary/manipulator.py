@@ -39,10 +39,7 @@ from OCC.gp import gp_Trsf
 from OCC.TopExp import TopExp_Explorer
 from OCC.TopAbs import TopAbs_SOLID, TopAbs_SHELL
 
-try:
-    from OCC.Utils.DataExchange import STEP as STEP
-except:
-    from OCC.DataExchange import STEP as STEP
+from config import *
 from OCC import gp
 from OCC.BRepBuilderAPI import BRepBuilderAPI_Transform as BRepTransform
 
