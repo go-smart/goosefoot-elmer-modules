@@ -51,8 +51,5 @@ if __name__ == "__main__":
     sftp_port = args.sftp_port
     sftp_host = args.sftp_host
 
-    if not os.path.exists(args.key_file):
-        raise RuntimeError("Could not find key file for authentication")
-
     runner = ApplicationRunner(url="ws://%s:%d/ws" % (host, websocket_port), realm="realm1")
     runner.run(launch)
