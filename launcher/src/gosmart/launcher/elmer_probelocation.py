@@ -119,7 +119,7 @@ class GoSmartElmerProbeLocationFactoryStraightTines(GoSmartElmerProbeLocationFac
           az=az*0.001
         R = _generate_rotation_matrix_numpy(ax, ay, az, backward=False, rx=-1, ry=0, rz=0)
         print("------>", R, "<-----")
-        for i, extentry in enumerate(self.extensions.items()):
+        for i, extentry in enumerate(sorted(self.extensions.items())):
             time, extension = extentry
             location_times[i] = time
             locations[i] = GoSmartElmerProbeLocation()

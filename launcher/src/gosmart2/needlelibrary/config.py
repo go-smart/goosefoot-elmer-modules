@@ -17,16 +17,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 try:
-   	from OCC.StlAPI import *
-	from OCC.STEPControl import * 
-	OCCVersion="0.16"
+    from OCC.StlAPI import *
+    from OCC.STEPControl import *
+    OCCVersion="0.16"
 except:
     try:
-	from OCC.DataExchange import STL as STL	
-	from OCC.DataExchange import STEP as STEP
+        from OCC.DataExchange import STL as STL
+        from OCC.DataExchange import STEP as STEP
     except:
-	from OCC.Utils.DataExchange import STL as STL
-	from OCC.Utils.DataExchange import STEP as STEP
+        from OCC.Utils.DataExchange import STL as STL
+        from OCC.Utils.DataExchange import STEP as STEP
     OCCVersion="0.12"
 
 template_directory = os.path.join(os.path.dirname(__file__), 'data')

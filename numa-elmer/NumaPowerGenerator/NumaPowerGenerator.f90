@@ -150,6 +150,7 @@ SUBROUTINE NumaPowerGeneratorSolver( Model,Solver,Timestep,TransientSimulation )
 
     IF (PresentPhase /= PreviousPhase) THEN
         PRINT *, "Protocol phase changed"
+        CALL GaussianInvalidate()
         !LOAD PHASE DATA HERE IF PresentPhase != PreviousPhase
     END IF
 

@@ -157,7 +157,9 @@ MODULE NumaElectricTips
         IF(MultiTipsLocation) THEN
         !------------------------------------------------------------------------------
             PhaseVar => VariableGet(Solver % Mesh % Variables, "Phase", Found)
+                    PRINT *, "TLT!", OldTipsLocationTimesIndex, TipsLocationTimesIndex
             OldTipsLocationTimesIndex = TipsLocationTimesIndex
+                    PRINT *, "TLT?", OldTipsLocationTimesIndex, TipsLocationTimesIndex
             IF (Found) THEN
                 TipsLocationTimesIndex = FLOOR(PhaseVar % Values(1) + 0.5)
             ELSE
@@ -187,6 +189,7 @@ MODULE NumaElectricTips
                 !------------------------------------------------------------------------------
                 DEALLOCATE(TipsLocationTimesArray)
             END IF
+                    PRINT *, "TLTI", OldTipsLocationTimesIndex, TipsLocationTimesIndex
             IF(OldTipsLocationTimesIndex /= TipsLocationTimesIndex) THEN
                 FirstTime=.TRUE.
             END IF
@@ -233,10 +236,11 @@ MODULE NumaElectricTips
                 ! If variable location, add the right extension to file name:
                 !------------------------------------------------------------------------------ 
                 IF(MultiTipsLocation) THEN 
-                    WRITE(Char_TipsLocationTimesIndex,*) MAX(TipsLocationTimesIndex-1,1)
+                    WRITE(Char_TipsLocationTimesIndex,*) MAX(TipsLocationTimesIndex,1)
                     Char_TipsLocationTimesIndex = ADJUSTL(Char_TipsLocationTimesIndex)
                     TipsFile = TRIM(TipsFile) // "_"
                     TipsFile = TRIM(TipsFile) // Char_TipsLocationTimesIndex                
+                    PRINT *, "Loaded new tips from ", TipsFile
                 END IF
 
                 IF (Found) THEN
