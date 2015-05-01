@@ -56,6 +56,10 @@
 #include <vtkDescriptiveStatistics.h>
 #include <vtkDataObject.h>
 
+/* REQUIRES PARAVIEW HEADERS
+#include "vtkIsoVolume.h"
+*/
+
 #include <tinyxml2.h>
 
 namespace po = boost::program_options;
@@ -63,7 +67,8 @@ namespace po = boost::program_options;
 int main(int argc, char *argv[])
 {
   float threshold_lower, threshold_upper, scaling_value;
-  bool connected_component = false, subdivide = false, parallel = false, using_upper = false, using_lower = false;
+  bool connected_component = false, subdivide = false, parallel = false, using_upper = false, using_lower = false,
+       threshold_not_isovolume = true;
   int smoothing_iterations = 0;
   std::string input_vtu("in.vtu"), output_vtk("out.vtk"), field("dead"), analysis_xml("analysis.xml");
 
@@ -74,11 +79,12 @@ int main(int argc, char *argv[])
   po::options_description options_description("Allowed options");
   options_description.add_options()
     ("help,h,?", "produce help message")
-    ("threshold-lower,t", po::value<float>(&threshold_lower)->default_value(0.8), "threshold for chosen variable; default 0.8")
-    ("threshold-upper,t", po::value<float>(&threshold_upper)->default_value(1.0), "threshold for chosen variable; default 1")    
+    ("threshold-lower,t", po::value<float>(&threshold_lower), "threshold for chosen variable (remove cells with values below this limit)")
+    ("threshold-upper,t", po::value<float>(&threshold_upper), "threshold for chosen variable (remove cells with values above this limit)")    
     ("scale,S", po::value<float>(&scaling_value)->default_value(1), "pre-scaling of results; default 1")
     ("field,f", po::value<std::string>(&field), "field to threshold on")
     ("parallel,p", po::value(&parallel)->zero_tokens(), "assume input data is PVTU not VTU")
+    /*("threshold,p", po::value(&threshold_not_isovolume)->zero_tokens(), "switch from using an IsoVolume to using a Threshold")*/
     ("connectivity,c", po::value(&connected_component)->zero_tokens(), "extract largest connected component of thresholded surface")
     ("subdivide,s", po::value(&subdivide)->zero_tokens(), "subdivide before thresholding")
     ("smoothing-iterations,i", po::value<int>(&smoothing_iterations)->default_value(0), "number of iterations in smoother (0 to skip)")
@@ -204,23 +210,56 @@ int main(int argc, char *argv[])
       rootNode->InsertEndChild(variableNode);
   }
 
-  vtkSmartPointer<vtkThreshold> threshold = 
-    vtkSmartPointer<vtkThreshold>::New();
-  threshold->SetInput(grid_scaled);
+  vtkSmartPointer<vtkUnstructuredGrid> thresholded_grid;
+  if (threshold_not_isovolume)
+  {
+      vtkSmartPointer<vtkThreshold> threshold = 
+        vtkSmartPointer<vtkThreshold>::New();
+      threshold->SetInput(grid_scaled);
 
-  if (using_upper && using_lower)
-      threshold->ThresholdBetween(threshold_lower, threshold_upper);
-  else if (using_upper)
-      threshold->ThresholdByUpper(threshold_upper);
-  else if (using_lower)
-      threshold->ThresholdByLower(threshold_lower);
+      if (using_upper && using_lower)
+      {
+          threshold->ThresholdBetween(threshold_lower, threshold_upper);
+          std::cout << "Thresholded between limits : " << threshold_lower << " and " << threshold_upper << std::endl;
+      }
+      else if (using_upper)
+      {
+          threshold->ThresholdByLower(threshold_upper); /* Yes, but this is the only way ThresholdBetween also makes sense */
+          std::cout << "Thresholded by upper limit : " << threshold_upper << std::endl;
+      }
+      else if (using_lower)
+      {
+          threshold->ThresholdByUpper(threshold_lower);
+          std::cout << "Thresholded by lower limit : " << threshold_lower << std::endl;
+      }
+      threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, field.c_str());
+      threshold->Update();
+
+      thresholded_grid = threshold->GetOutput();
+  }
+  else
+  {
+      /*
+      vtkSmartPointer<vtkIsoVolume> isoVolume = 
+        vtkSmartPointer<vtkIsoVolume>::New();
+      isoVolume->SetInput(grid_scaled);
+
+      if (using_upper && using_lower)
+          isoVolume->ThresholdBetween(threshold_lower, threshold_upper);
+      else if (using_upper)
+          isoVolume->ThresholdBetween(-1e20, threshold_upper);
+      else if (using_lower)
+          isoVolume->ThresholdBetween(threshold_lower, 1e20);
+      isoVolume->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, field.c_str());
+      isoVolume->Update();
+
+      thresholded_grid = vtkUnstructuredGrid::SafeDownCast(isoVolume->GetOutput());
+      */
+  }
 
   // doesn't work because the array is not added as SCALARS, i.e. via SetScalars
   // threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
   // use like this:
-  threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, field.c_str());
-  threshold->Update();
-  vtkSmartPointer<vtkUnstructuredGrid> thresholded_grid = threshold->GetOutput();
   std::cout << "There are " << thresholded_grid->GetNumberOfCells() 
             << " cells after thresholding." << std::endl;
 
@@ -231,7 +270,6 @@ int main(int argc, char *argv[])
 
   vtkIdType cell_ct = grid->GetNumberOfCells(), curr_cell = 0;
   vtkTetra *tetra;
-  vtkPoints *points;
 
   vtkSmartPointer<vtkSelectionNode> selectionNode =
 	  vtkSmartPointer<vtkSelectionNode>::New();

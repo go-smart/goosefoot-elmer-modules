@@ -230,6 +230,7 @@ class ElmerLibNumaFamily(metaclass=Family):
             ]
 
         nearfield = self.get_parameter('RESOLUTION_FIELD_NEAR')
+        needlezonefield = self.get_parameter('RESOLUTION_FIELD_NEEDLE_ZONE')
         farfield = self.get_parameter('RESOLUTION_FIELD_FAR')
         zonefield = self.get_parameter('RESOLUTION_FIELD_ZONE')
 
@@ -242,6 +243,8 @@ class ElmerLibNumaFamily(metaclass=Family):
 
         for k, v in lengthscale_settings:
             lengthscales.set(k, str(v))
+        if needlezonefield:
+            lengthscales.set("needlezonefield", str(needlezonefield))
 
         ET.SubElement(root, 'optimizer')
         ET.SubElement(root, 'elmergrid')
@@ -282,8 +285,11 @@ class ElmerLibNumaFamily(metaclass=Family):
                     needleNode.set("name", ix)
                     needleNode.set("input", os.path.join("input/", location[1]))
                     needleNode.set("groups", "needles")
+
                     needle_mesh = ET.SubElement(mesher, 'needle')
                     needle_mesh.set('region', ix)
+                    if needlezonefield and location[0] == 'zone':
+                        needle_mesh.set("characteristic_length", needlezonefield)
                 else:
                     needleNode = ET.SubElement(needlelibrary, 'needle')
 

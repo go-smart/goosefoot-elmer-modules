@@ -458,6 +458,7 @@ class GoSmart:
             if skip:
                 self.logger.print_line("* Skipping %s as indicated in settings file %s" % (section.tag, filename))
 
+        self.logger.print_debug(self.logger.zones)
         if hasattr(self, "elmer"):
             self.elmer.configfiles.append(filename)
 

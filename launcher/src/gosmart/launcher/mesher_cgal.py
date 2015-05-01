@@ -60,6 +60,7 @@ class GoSmartMesherCGAL(GoSmartMesher):
         self.zones_are_zonefield = True
         self.granularity = 1.0
         self.zone_radius = 0.
+        self.needle_characteristic_length = None
 
         self.zone_priorities = {}
         self.zone_characteristic_lengths = {}
@@ -119,7 +120,11 @@ class GoSmartMesherCGAL(GoSmartMesher):
                 if node.get('zone_radius'):
                     self.zone_radius = float(node.get('zone_radius'))
 
-            if node.tag == 'zone':
+                needle_characteristic_length = node.get('needlezonefield')
+                if needle_characteristic_length:
+                    self.needle_characteristic_length = float(needle_characteristic_length)
+
+            if node.tag == 'zone' or node.tag == 'needle':
                 if node.get('characteristic_length') is not None:
                     self.zone_characteristic_lengths[node.get('region')] = node.get('characteristic_length')
                 if node.get('priority') is not None:
@@ -135,7 +140,7 @@ class GoSmartMesherCGAL(GoSmartMesher):
         out = ":".join(str(self.logger.zones[tag][k]) for k in ("filename", "id"))
 
         if tag in self.zone_characteristic_lengths:
-            out += ":" + self.zone_characteristics_lengths[tag]
+            out += ":" + self.zone_characteristic_lengths[tag]
         elif tag in self.zone_priorities:
             out += ":-1"
 
@@ -175,7 +180,10 @@ class GoSmartMesherCGAL(GoSmartMesher):
             for needle in needles:
                 if needle in self.logger.zones:
                     self.file_locations["zones"].append(needle)
-                    self.zone_priorities[needle] = "-1000"
+                    if needle not in self.zone_characteristic_lengths and self.needle_characteristic_length is not None:
+                        self.zone_characteristic_lengths[needle] = str(self.needle_characteristic_length)
+                    if needle not in self.zone_priorities:
+                        self.zone_priorities[needle] = "-1000"
                 else:
                     self.file_locations["needles"].append(needle)
 

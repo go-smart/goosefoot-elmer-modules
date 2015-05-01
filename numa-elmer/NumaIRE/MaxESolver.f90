@@ -39,7 +39,7 @@ SUBROUTINE MaxESolver( Model,Solver,Timestep,TransientSimulation)
       INTEGER, POINTER :: JouleHeatingPerm(:), ElectricConductivityPerm(:), &
           MaxEPerm(:)
       INTEGER, ALLOCATABLE :: ElementNodes(:)
-      INTEGER :: i, N, NodeCount, k
+      INTEGER :: i, N, NodeCount, k, j
       LOGICAL :: AllocationsDone = .FALSE., Found
 
       SAVE ElectricConductivity, E, ElectricConductivityVector, ElementNodes
@@ -81,14 +81,15 @@ SUBROUTINE MaxESolver( Model,Solver,Timestep,TransientSimulation)
             NodeCount, Element % NodeIndexes, Found)
 
         DO k=1,NodeCount
-            ElectricConductivityVector(MaxEPerm(Element % NodeIndexes(k))) = ElectricConductivity(k)
+            j = Element % NodeIndexes(k)
+
+            ElectricConductivityVector(MaxEPerm(j)) = ElectricConductivity(k)
+
+            jh = JouleHeating(MaxEPerm(j))
+            cond = ElectricConductivityVector(MaxEPerm(j))
+            E(MaxEPerm(j)) = SQRT(jh / cond)
+            MaxE(MaxEPerm(j)) = MAX(MaxE(MaxEPerm(j)), MaxEPrev(MaxEPerm(j)), E(MaxEPerm(j)))
         END DO
       END DO
 
-      DO i=1, N
-        jh = JouleHeating(JouleHeatingPerm(i))
-        cond = ElectricConductivityVector(MaxEPerm(i))
-        E(MaxEPerm(i)) = SQRT(jh / cond)
-        MaxE(MaxEPerm(i)) = MAX(MaxE(MaxEPerm(i)), MaxEPrev(MaxEPerm(i)), E(MaxEPerm(i)))
-      END DO
 END SUBROUTINE
