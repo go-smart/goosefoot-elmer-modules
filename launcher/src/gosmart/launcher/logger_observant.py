@@ -70,8 +70,9 @@ class GoSmartLoggerObservant(GoSmartLogger):
     def log_line(self, line='', prefix='| ', color="GREEN", color_text=True, color_bright=False, transmit=True):
         super(GoSmartLoggerObservant, self).print_line(line, prefix, color, color_text, color_bright)
 
-        if self._use_observant and transmit and self.client is not None:
-            self.client.postLogMessageForKey('go-smart-launcher', line)
+        #FIXME: this can hold up the logging until the original process chokes on the lack of pipe cleanage
+        #if self._use_observant and transmit and self.client is not None:
+        #    self.client.postLogMessageForKey('go-smart-launcher', line)
 
     def __del__(self):
         if self.client is not None:
