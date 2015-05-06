@@ -197,7 +197,7 @@ class GoSmartElmer(GoSmartComponent):
         sources = "\n".join(a["sources"] for a in self._algorithms.values())
         self._sif_mapping["SOURCES"] = sources
 
-        for regions in re.finditer(r'\$((BOUNDARIES_|BODIES_|)REGIONS_[A-Z_]*)', sif_template.template):
+        for regions in re.finditer(r'\$((BOUNDARIES_|BODIES_|)REGIONS_[A-Z0-9_]*)', sif_template.template):
             regions = regions.group(1)
             if regions not in self._sif_mapping:
                 self._sif_mapping[regions] = "!Boundary missing: %s" % regions
