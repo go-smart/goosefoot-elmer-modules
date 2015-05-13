@@ -105,7 +105,11 @@ class ElmerLibNumaFamily(metaclass=Family):
             if region.get('name') not in self._regions_by_meaning:
                 self._regions_by_meaning[region.get('name')] = []
 
-            target_file = "%s%s" % (region.get("id"), os.path.splitext(region.get('input'))[1])
+            try:
+                target_file = "%s%s" % (region.get("id"), os.path.splitext(region.get('input'))[1])
+            except AttributeError as e:
+                print(region.get('name'), region.get('input'), region.get('groups'))
+
             self._regions[region.get('id')] = {
                 "format": region.get('format'),
                 "meaning": region.get('name'),

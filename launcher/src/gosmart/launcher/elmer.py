@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
+import threading
+import asyncio
 import string
 import shutil
 import re
@@ -290,6 +292,40 @@ class GoSmartElmer(GoSmartComponent):
         self._launch_subprocess(self.restart_binary, [])
         self._generate_startinfo(nprocs)
 
+    def set_update_status(self, update_status):
+        self._update_status = update_status
+
+    def _percentage_server(self, loop):
+        cwd = self.logger.make_cwd(self.suffix)
+        address = os.path.join(cwd, "percentage.sock")
+
+        loop.run_until_complete(asyncio.start_unix_server(
+            self._handle_update_percentage,
+            path=address,
+            loop=loop
+        ))
+
+        try:
+            loop.run_forever()
+        finally:
+            loop.close()
+
+    @asyncio.coroutine
+    def _handle_update_percentage(self, client_reader, client_writer):
+        while True:
+            data = yield from client_reader.readline()
+            self.logger.print_line(data)
+
+            if self._update_status is not None:
+                self._update_status(float(data), "Elmer in progress")
+
+    #RMV: Threading and asyncio should not be mixed, but I can't seem to get working otherwise
+    def _setup_percentage_socket(self):
+        loop = asyncio.new_event_loop()
+        self._percentage_loop = loop
+        t = threading.Thread(target=self._percentage_server, args=(loop,))
+        t.start()
+
     def launch(self, nprocs=1, mesh_locations=None):
         super().launch()
 
@@ -315,6 +351,7 @@ class GoSmartElmer(GoSmartComponent):
             self.logger.print_line(" [in serial]")
             if not self.logger.leavetree:
                 self._generate_power_over_time()
+                self._setup_percentage_socket()
                 if self.probe_location_factory:
                     self._generate_probe_locations()
 
@@ -348,6 +385,8 @@ class GoSmartElmer(GoSmartComponent):
                     "--elmer-logfile", self.outfilename,
                     "--logfile-addpid"] + self.configfiles
             self._launch_subprocess("mpirun", args, mute=True)
+
+        self._percentage_loop.stop()
 
     def parse_config(self, config_node):
         super().parse_config(config_node)

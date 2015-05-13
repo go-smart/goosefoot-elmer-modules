@@ -137,10 +137,13 @@ class GoSmartSimulationComponent(ApplicationSession):
         try:
             tmpdir = tempfile.mkdtemp(prefix='gssf-')
             translator = GoSmartSimulationTranslator()
-            self.current[guid] = GoSmartSimulationDefinition(guid, xml, tmpdir, translator)
-        except Exception:
+            self.current[guid] = GoSmartSimulationDefinition(guid, xml, tmpdir, translator, lambda p, m: self.updateStatus(guid, p, m))
+            self.publish(u'com.gosmartsimulation.announce', guid, None)
+        except Exception as e:
             traceback.print_exc(file=sys.stderr)
-            return False
+            raise e
+
+        print("XML set")
 
         return True
 
@@ -153,7 +156,12 @@ class GoSmartSimulationComponent(ApplicationSession):
         print("Running simulation in %s" % current.get_dir(), file=sys.stderr)
 
         try:
-            wrapper = gosmart.GoSmart(args=self._args, global_working_directory=current.get_dir(), observant=self.client)
+            wrapper = gosmart.GoSmart(
+                args=self._args,
+                global_working_directory=current.get_dir(),
+                observant=self.client,
+                update_status_callback=lambda p, m: self.updateStatus(guid, p, m)
+            )
 
             wrapper.print_header()
 
@@ -178,6 +186,12 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         return result
 
+    def doProperties(self, guid):
+        if guid not in self.current:
+            raise RuntimeError("Simulation not found: %s" % guid)
+
+        return {"location": self.current[guid].get_dir()}
+
     def doWorkflow(self, guid, xml, input_files, request_files):
         print("WorkflowStarted")
         self.doInit(self, guid)
@@ -190,13 +204,28 @@ class GoSmartSimulationComponent(ApplicationSession):
         if guid not in self.current:
             print("Tried to send simulation-specific completion event with no current simulation definition", file=sys.stderr)
 
+        self.current[guid].set_exit_status(True)
+        print('Success', guid)
+
         self.publish(u'com.gosmartsimulation.complete', guid)
 
     def eventFail(self, guid, message):
         if guid not in self.current:
             print("Tried to send simulation-specific failure event with no current simulation definition", file=sys.stderr)
 
+        self.current[guid].set_exit_status(False, message)
+        print('Failure', guid, message)
+
         self.publish(u'com.gosmartsimulation.fail', guid, message)
+
+    def onRequestAnnounce(self):
+        for simulation in self.current:
+            exit_status = self.current[simulation].get_exit_status()
+            self.publish(u'com.gosmartsimulation.announce', simulation, exit_status)
+            print("Announced: %s" % simulation)
+
+    def updateStatus(self, id, percentage, message):
+        self.publish('com.gosmartsimulation.status', id, percentage, message)
 
     def onJoin(self, details):
         print("session ready")
@@ -210,6 +239,9 @@ class GoSmartSimulationComponent(ApplicationSession):
             self.register(self.doFinalize, u'com.gosmartsimulation.finalize')
             self.register(self.doClean, u'com.gosmartsimulation.clean')
             self.register(self.doWorkflow, u'com.gosmartsimulation.workflow')
+            self.register(self.doProperties, u'com.gosmartsimulation.properties')
+
+            self.subscribe(self.onRequestAnnounce, u'com.gosmartsimulation.request_announce')
             print("procedure registered")
         except Exception as e:
             print("could not register procedure: {0}".format(e))

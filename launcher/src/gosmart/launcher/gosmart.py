@@ -63,9 +63,11 @@ class GoSmart:
     only = None
     elmer_binary = None
 
+    _update_status_callback = None
+
     header_width = None
 
-    def __init__(self, runname='default', args=[], global_working_directory=None, observant=None):
+    def __init__(self, runname='default', args=[], global_working_directory=None, observant=None, update_status_callback=None):
         if global_working_directory is None:
             global_working_directory = os.getcwd()
 
@@ -74,12 +76,18 @@ class GoSmart:
         self.parse_args(args)
         self.parse_config_files()
 
+        self._update_status_callback = update_status_callback
+
         for component in self.components.values():
             if isinstance(component, list):
                 for cpt in component:
                     cpt.set_outfile_prefix(self.outfilename)
             else:
                 component.set_outfile_prefix(self.outfilename)
+
+    def update_status(self, percentage, message):
+        if self._update_status_callback is not None:
+            self._update_status_callback(percentage, message)
 
     def add_component(self, name, component):
         if self.only is not None and self.only != name:
@@ -125,49 +133,81 @@ class GoSmart:
         self.logger.print_line("Using GSSF version: %s" % gosmart.config.git_revision)
         self.logger.print_line("Using Elmer (NUMA-modified) version: %s" % gosmart.config.elmer_git_revision)
 
+        overall_percentage = 0.0
+        percentage_per_component = 100 / len(self.components)
+
         needle_files = {}
         extent_file = None  # os.path.join("needlelibrary", "%s-extent.stl" % self.logger.runname)
         if "needlelibrary" in self.components:
+            self.update_status(overall_percentage, "Needlelibrary starting")
+            overall_percentage = overall_percentage + percentage_per_component
             needle_files, extent_file = self.needlelibrary.launch()
+            self.update_status(overall_percentage, "Needlelibrary complete")
+        else:
+            self.update_status(overall_percentage, "Skipped needlelibrary")
 
         msh_files = {}
         default_msh_file = GoSmartMesher.get_default_msh_outfile(os.path.join('mesher', self.logger.runname), "mesher")
         if "mesher" in self.components:
+            self.update_status(overall_percentage, "Mesher starting")
             msh_files.update(self.mesher.launch(needle_files, extent_file,
                              self.preprocessor if "preprocessor" in self.components else None))
+            overall_percentage = overall_percentage + percentage_per_component
+            self.update_status(overall_percentage, "Mesher complete")
         elif os.path.exists(os.path.join(self.logger.get_cwd(), default_msh_file["-mesher"])):
             msh_files.update(default_msh_file)
+            self.update_status(overall_percentage, "Skipped mesher (and copied existing)")
+        else:
+            self.update_status(overall_percentage, "Skipped mesher")
 
         if hasattr(self, "mesher_inner"):
             for mesher_inner in self.mesher_inner:
                 if mesher_inner.skip:
                     msh_files[mesher_inner.suffix] = "%s/%s.msh" % (mesher_inner.suffix, self.logger.runname)
+                    self.update_status(overall_percentage, "Skipped mesher-inner")
                 else:
+                    self.update_status(overall_percentage, "Mesher-inner starting")
+                    overall_percentage = overall_percentage + percentage_per_component
                     msh_files.update(mesher_inner.launch(needle_files, None))
+                    self.update_status(overall_percentage, "Mesher-inner complete")
 
         if hasattr(self, "optimizer"):
+            self.update_status(overall_percentage, "Optimizer starting")
+            overall_percentage = overall_percentage + percentage_per_component
             for k, v in msh_files.items():
                 msh_files[k] = self.optimizer.launch(v, appendix=k)
+            self.update_status(overall_percentage, "Optimizer complete")
         else:
             for k, v in msh_files.items():
                 optimized_msh_file = "optimizer/%s%s-optimized.msh" % (self.logger.runname, k)
                 if os.path.exists(os.path.join(self.logger.get_cwd(), optimized_msh_file)):
                     msh_files[k] = optimized_msh_file
+            self.update_status(overall_percentage, "Optimizer complete")
 
         msh_files = self.renumber_bodies(msh_files)
         eg_trees = {}
         if "elmergrid" in self.components:
+            self.update_status(overall_percentage, "ElmerGrid starting")
+            overall_percentage = overall_percentage + percentage_per_component
             for k, v in msh_files.items():
                 eg_trees[k] = self.elmergrid.launch(v, self.child_procs, appendix=k)
+            self.update_status(overall_percentage, "ElmerGrid complete")
         else:
             for k, v in msh_files.items():
                 eg_trees[k] = "elmergrid/%s%s" % (self.logger.runname, k)
 
         if "elmer" in self.components:
+            self.update_status(overall_percentage, "Elmer starting")
+            self.elmer.set_update_status(lambda p, m: self.update_status(p / percentage_per_component + overall_percentage, m))
+            overall_percentage = overall_percentage + percentage_per_component
             self.launch_elmer(mesh_locations=eg_trees)
+            self.update_status(overall_percentage, "Elmer complete")
 
         if "lesion" in self.components:
+            self.update_status(overall_percentage, "Lesion starting")
+            overall_percentage = overall_percentage + percentage_per_component
             lesion_surface = self.lesion.launch(is_parallel=(self.child_procs is not None and self.child_procs > 1))
+            self.update_status(overall_percentage, "Lesion complete")
             final_output["lesion_surface.vtp"] = lesion_surface
 
         if len(final_output) > 0:

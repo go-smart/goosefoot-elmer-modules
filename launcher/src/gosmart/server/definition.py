@@ -35,13 +35,21 @@ class GoSmartSimulationDefinition:
     _remote_dir = ''
     _finalized = False
     _files = None
+    _exit_status = None
 
-    def __init__(self, guid, xml_string, tmpdir, translator, finalized=False):
+    def set_exit_status(self, success, message=None):
+        self._exit_status = (success, message)
+
+    def get_exit_status(self):
+        return self._exit_status
+
+    def __init__(self, guid, xml_string, tmpdir, translator, finalized=False, update_status_callback=None):
         self._guid = guid
         self._dir = tmpdir
         self._finalized = finalized
         self._files = {}
         self._translator = translator
+        self._update_status_callback = update_status_callback
 
         try:
             self.create_xml_from_string(xml_string)
@@ -74,10 +82,10 @@ class GoSmartSimulationDefinition:
         self._finalized = False
 
         try:
-            self._xml = ET.fromstring(xml)
-        except Exception:
+            self._xml = ET.fromstring(bytes(xml, 'utf-8'))
+        except Exception as e:
             traceback.print_exc(file=sys.stderr)
-            return False
+            raise e
 
         return True
 
