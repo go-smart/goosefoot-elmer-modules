@@ -1,9 +1,3 @@
-MODULE cmod
-    USE, INTRINSIC :: iso_c_binding
-    IMPLICIT NONE
-    INTEGER(c_int), bind(c, name="errno") :: errno
-END MODULE
-
 SUBROUTINE NumaProgressSolver_init( Model,Solver,Timestep,TransientSimulation )
      USE DefUtils
 
@@ -51,7 +45,6 @@ SUBROUTINE NumaProgressSolver( Model,Solver,Timestep,TransientSimulation )
     USE ElementDescription
     USE DefUtils
     USE ElementUtils
-    USE cmod
     USE, INTRINSIC :: iso_c_binding
 
     IMPLICIT NONE

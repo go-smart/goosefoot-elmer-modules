@@ -1,4 +1,3 @@
-#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdio.h>
@@ -35,7 +34,7 @@ int make_connection_()
     strcpy(perc.sun_path, "percentage.sock");
     connect(s, (struct sockaddr *)&perc, sizeof(perc));
 
-    return errno;
+    return 0;
 }
 
 int output_percentage_(double p)
