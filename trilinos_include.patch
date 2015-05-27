@@ -1,0 +1,15 @@
+diff --git a/fem/src/CMakeLists.txt b/fem/src/CMakeLists.txt
+index 79d78ad..5879426 100644
+--- a/fem/src/CMakeLists.txt
++++ b/fem/src/CMakeLists.txt
+@@ -3,6 +3,10 @@ ADD_SUBDIRECTORY(modules)
+ 
+ SET(prefix "${CMAKE_INSTALL_PREFIX}")
+ 
++IF(HAVE_TRILINOS)
++    INCLUDE_DIRECTORIES("${Trilinos_INCLUDE_DIRS}")
++ENDIF(HAVE_TRILINOS)
++
+ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/elmerf90.in.cmake
+   ${CMAKE_CURRENT_BINARY_DIR}/elmerf90)
+ 

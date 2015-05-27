@@ -1,0 +1,70 @@
+from distutils.core import setup
+import os
+import errno
+
+config_directory = "${CMAKE_CURRENT_BINARY_DIR}/gosmart_sf_config"
+try:
+    os.makedirs(config_directory)
+except OSError as e:
+    if e.errno != errno.EEXIST:
+        raise RuntimeError("Could not create directory: %s" % (str(e)))
+
+config_target = os.path.join(config_directory, "__init__.py")
+with open(config_target, "w") as f:
+    f.write("""
+fortran_modules_dir = '{0}'
+git_revision = '{1}'
+""".format(
+        "${CMAKE_Fortran_MODULE_DESTINATION}",
+        "${GIT_REVISION}"
+    ))
+
+setup(name='gosmart',
+      version='${PACKAGE_VERSION}',
+      packages=['gosmart', 'gosmart.launcher', 'gosmart.server', 'gosmart.server.families', 'gosmart_sf_config'],
+      package_dir={'gosmart': '${CMAKE_CURRENT_SOURCE_DIR}/src/gosmart', 'gosmart_sf_config': config_directory},
+      package_data={'gosmart': [
+          'data/go-smart-probe-location-template.txt',
+          'data/go-smart-power-over-time.txt',
+
+          'data/constants/constants-lung.xml',
+          'data/constants/constants-liver.xml',
+          'data/constants/constants-kidney.xml',
+          'data/constants/constants-default.xml',
+          'data/constants/constants-variant-mwa.xml',
+          'data/constants/constants-variant-mwa_nonlinear.xml',
+          'data/constants/constants-variant-cryoablation.xml',
+          'data/constants/constants-variant-ire.xml',
+          'data/constants/constants-variant-rfa_point_sources.xml',
+          'data/constants/constants-variant-rfa_point_sources_new_elmer.xml',
+          'data/constants/constants-variant-rfa_joule_heating.xml',
+
+          'data/templates/inner-basic-mwa.xml',
+          'data/templates/inner-basic-mwa-coarse.xml',
+
+          'data/templates/go-smart-axisymm_basic-mwa.geo',
+          'data/templates/go-smart-axisymm_basic-mwa_needleless.geo',
+          'data/templates/go-smart-template_ps.sif',
+          'data/templates/go-smart-template_ps-modbioheat.sif',
+          'data/templates/go-smart-template_ps-newelmer.sif',
+          'data/templates/go-smart-template_jh.sif',
+          'data/templates/go-smart-template_cryo.sif',
+          'data/templates/go-smart-template_ire.sif',
+          'data/templates/go-smart-template_mwa.sif',
+          'data/templates/go-smart-template_mwa-nl.sif',
+
+          'data/elmer_modules/mwa_RelPerm.f90',
+          'data/elmer_modules/mwa_ElecCond.f90',
+          'data/elmer_modules/mwa_PowerOverTime.f90',
+      ]},
+
+      description='Wrapper for Go-Smart simulation environment',
+      author='NUMA Engineering Services Ltd.',
+      author_email='phil.weir@numa.ie',
+      url='http://gosmart-project.eu/',
+
+      scripts=[
+          '${CMAKE_CURRENT_SOURCE_DIR}' + '/scripts/go-smart-launcher',
+          '${CMAKE_CURRENT_SOURCE_DIR}' + '/scripts/go-smart-simulation-server',
+          '${CMAKE_CURRENT_SOURCE_DIR}' + '/scripts/go-smart-simulation-client',
+      ])

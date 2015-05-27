@@ -1,0 +1,22 @@
+from distutils.core import setup
+import os
+
+needle_library = []
+for root, dirs, files in os.walk('${CMAKE_CURRENT_SOURCE_DIR}/src/gosmart2/data/needles'):
+    needle_library += [os.path.join(root, name) for name in files]
+
+setup(name='gosmart',
+      version='${PACKAGE_VERSION}',
+      packages=['gosmart2', 'gosmart2.needlelibrary', 'gosmart2.preprocessor'],
+      package_dir={'gosmart2': '${CMAKE_CURRENT_SOURCE_DIR}/src/gosmart2'},
+      package_data={'gosmart2': needle_library},
+
+      description='Wrapper for Go-Smart simulation environment (Python 2 components)',
+      author='Phil Weir - NUMA Engineering Services Ltd.',
+      author_email='phil.weir@numa.ie',
+      url='http://gosmart-project.eu/',
+
+      scripts=[
+          '${CMAKE_CURRENT_SOURCE_DIR}' + '/scripts2/go-smart-preprocessor',
+          '${CMAKE_CURRENT_SOURCE_DIR}' + '/scripts2/go-smart-needle-library',
+      ])

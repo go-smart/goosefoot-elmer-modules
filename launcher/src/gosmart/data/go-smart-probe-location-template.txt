@@ -1,0 +1,3 @@
+Electric Tips Location x y z (mm)		
+POINTS $POINTCOUNT FLOAT
+$POINTTABLE

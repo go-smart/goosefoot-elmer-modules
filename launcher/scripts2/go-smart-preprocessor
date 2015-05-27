@@ -1,0 +1,19 @@
+#!/usr/bin/python2.7
+
+from gosmart2.preprocessor import preprocessor
+import sys
+
+
+def main():
+    runname = sys.argv[0]
+    input_file = sys.argv[1]
+    output_file = sys.argv[2]
+    radius = float(sys.argv[3])
+    x = float(sys.argv[4])
+    y = float(sys.argv[5])
+    z = float(sys.argv[6])
+
+    preprocessor.Preprocessor(runname, input_file, output_file, radius, x, y, z)
+
+if __name__ == "__main__":
+    main()

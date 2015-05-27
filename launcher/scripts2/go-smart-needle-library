@@ -1,0 +1,14 @@
+#!/usr/bin/python2.7
+
+from gosmart2.needlelibrary import needlelibrary
+
+
+def main():
+    wrapper = needlelibrary.NeedleLibrary()
+
+    wrapper.print_header()
+
+    wrapper.launch()
+
+if __name__ == "__main__":
+    main()
