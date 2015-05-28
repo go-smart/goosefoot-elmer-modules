@@ -18,6 +18,7 @@
 # This is a workaround for syntastic lack of Py3 recognition
 from __future__ import print_function
 
+import asyncio
 from autobahn.asyncio.wamp import ApplicationSession
 from zope.interface.verify import verifyObject
 
@@ -85,6 +86,10 @@ class GoSmartSimulationComponent(ApplicationSession):
             self.client.postWatchPid('go-smart-launcher', os.getpid())
 
         # Convert this to a zope interface
+        loop = asyncio.get_event_loop()
+        loop.call_soon_threadsafe(lambda: self.setDatabase(database()))
+
+    def setDatabase(self, database):
         self._db = database
 
     def doInit(self, guid):
@@ -103,8 +108,10 @@ class GoSmartSimulationComponent(ApplicationSession):
         if guid not in self.current:
             return False
 
-        t = threading.Thread(target=lambda: self.doSimulate(guid))
-        t.start()
+        loop = asyncio.get_event_loop()
+        loop.run_in_executor(None, lambda: self.doSimulate(guid, loop))
+        #t = threading.Thread(target=lambda: self.doSimulate(guid))
+        #t.start()
         return True
 
     def doUpdateFiles(self, guid, files):
@@ -147,7 +154,7 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         return True
 
-    def doSimulate(self, guid):
+    def doSimulate(self, guid, loop):
         if guid not in self.current:
             self.eventFail("Not fully prepared before launching - no current simulation set")
 
@@ -160,7 +167,7 @@ class GoSmartSimulationComponent(ApplicationSession):
                 args=self._args,
                 global_working_directory=current.get_dir(),
                 observant=self.client,
-                update_status_callback=lambda p, m: self.updateStatus(guid, p, m)
+                update_status_callback=lambda p, m: self.updateStatus(guid, p, m, loop)
             )
 
             wrapper.print_header()
@@ -204,6 +211,12 @@ class GoSmartSimulationComponent(ApplicationSession):
         if guid not in self.current:
             print("Tried to send simulation-specific completion event with no current simulation definition", file=sys.stderr)
 
+        try:
+            loop = asyncio.get_event_loop()
+            loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "Success", "100"))
+        except Exception:
+            pass
+
         self.current[guid].set_exit_status(True)
         print('Success', guid)
 
@@ -213,18 +226,37 @@ class GoSmartSimulationComponent(ApplicationSession):
         if guid not in self.current:
             print("Tried to send simulation-specific failure event with no current simulation definition", file=sys.stderr)
 
+        try:
+            loop = asyncio.get_event_loop()
+            loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "Failed", None))
+        except Exception:
+            pass
+
         self.current[guid].set_exit_status(False, message)
         print('Failure', guid, message)
 
         self.publish(u'com.gosmartsimulation.fail', guid, message)
 
     def onRequestAnnounce(self):
-        for simulation in self.current:
-            exit_status = self.current[simulation].get_exit_status()
-            self.publish(u'com.gosmartsimulation.announce', simulation, exit_status)
-            print("Announced: %s" % simulation)
+        try:
+            simulations = self._db.all()
+            for simulation in simulations:
+                self.publish(u'com.gosmartsimulation.announce', simulation['guid'], (simulation['percentage'], simulation['status']))
+                print("Announced: %s" % simulation['guid'])
 
-    def updateStatus(self, id, percentage, message):
+        except Exception:
+            for simulation in self.current:
+                exit_status = self.current[simulation].get_exit_status()
+                self.publish(u'com.gosmartsimulation.announce', simulation, (100 if exit_status[0] else 0, exit_status[1]))
+                print("Announced (from map): %s" % simulation)
+
+    def updateStatus(self, id, percentage, message, loop):
+        try:
+            loop.call_soon_threadsafe(lambda: self._db.setStatus(id, message, percentage))
+        except Exception as e:
+            print(e)
+            traceback.print_exc(file=sys.stderr)
+
         self.publish('com.gosmartsimulation.status', id, percentage, message)
 
     def onJoin(self, details):

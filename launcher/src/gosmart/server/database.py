@@ -28,14 +28,39 @@ class SQLiteSimulationDatabase:
         should_create = not os.path.exists(database)
 
         self._db = sqlite3.connect(database)
+        self._db.row_factory = sqlite3.Row
 
         if should_create:
             self.create()
 
+    def setStatus(self, guid, status, percentage):
+        cursor = self._db.cursor()
+        cursor.execute('''
+            UPDATE simulations
+            SET status=:status, percentage=:percentage
+            WHERE guid=:guid
+            ''', {"guid": guid, "status": status, "percentage": percentage})
+        self._db.commit()
+
+    def getStatus(self, guid):
+        cursor = self._db.cursor()
+        cursor.execute('''
+            SELECT status, percentage
+            FROM simulations
+            WHERE guid=? AND deleted=0
+            ''', guid)
+        try:
+            simulation_row = cursor.fetchone()
+        except Exception:
+            return None
+
+        status, percentage = simulation_row
+        return percentage, status
+
     def create(self):
         cursor = self._db.cursor()
         cursor.execute('''
-            CREATE TABLE simulations(id INTEGER PRIMARY KEY, guid TEXT UNIQUE, directory TEXT, deleted TINYINT DEFAULT 0)
+            CREATE TABLE simulations(id INTEGER PRIMARY KEY, guid TEXT UNIQUE, directory TEXT, status TEXT, percentage REAL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, deleted TINYINT DEFAULT 0)
         ''')
         self._db.commit()
 
@@ -50,7 +75,18 @@ class SQLiteSimulationDatabase:
         except Exception:
             traceback.print_exc(file=sys.stderr)
 
+    def all(self):
+        cursor = self._db.cursor()
+        cursor.execute('''
+            SELECT *
+            FROM simulations
+        ''')
+
+        simulations = cursor.fetchall()
+        return simulations
+
     def retrieve(self, guid):
+        raise NotImplementedError("This doesn't seem to be working")
         cursor = self._db.cursor()
         cursor.execute('''
             SELECT directory
