@@ -54,7 +54,7 @@ SUBROUTINE Transform( Model,Solver,dt,TransientSimulation )
 
   REAL(KIND=dp) :: dt, minval
   INTEGER :: t
-  LOGICAL :: TransientSimulation, Backward, Found
+  LOGICAL :: TransientSimulation, Backward, Found, DoExtrapolate
 
   TYPE(Mesh_t), POINTER :: Mesh
   TYPE(Variable_t), POINTER :: Var
@@ -92,14 +92,14 @@ SUBROUTINE Transform( Model,Solver,dt,TransientSimulation )
         GetVarName(Solver % Variable))
 
   Var => VariableGet( Mesh % Variables, GetString(GetSolverParams(),'Interpolant'), &
-    ThisOnly=.TRUE., AffineBackTransformation=AffineBackTransformation)
+      ThisOnly=.TRUE., AffineBackTransformation=AffineBackTransformation)
 
   IF (ASSOCIATED(Var)) THEN
     Var % Valid = .FALSE.
     Var % ValuesChanged = .TRUE.
   END IF
   Var => VariableGet( Mesh % Variables, GetString(GetSolverParams(),'Interpolant'), &
-    AffineBackTransformation=AffineBackTransformation)
+      AffineBackTransformation=AffineBackTransformation)
   minval = GetCReal(GetSolverParams(), 'Minimum Value', Found)
 
   IF (Found) THEN

@@ -73,7 +73,7 @@ class GoSmartLogger(GoSmartComponent):
 
         self.logfile = open(os.path.join(self.get_cwd(), logfile), "w") if logfile is not None else None
 
-        self.add_region("tissue", None, ("zone",), primary=True, zone=True)
+        self.add_region("tissue", None, ("zone", "tissues", "background"), primary=True, zone=True)
 
     def flush_logfile(self):
         if self.logfile is not None:
@@ -123,7 +123,7 @@ class GoSmartLogger(GoSmartComponent):
             return self.files[nature][name]
         return None
 
-    def add_region(self, name, filename, groups, primary=False, unnumbered=False, zone=False, i=None):
+    def add_region(self, name, filename, groups, primary=False, unnumbered=False, zone=False, i="max"):
         if zone == "both":
             num = self.add_region(name, filename, groups, primary, unnumbered, True, i="max")
             self.add_region(name, filename, groups, primary, unnumbered, False, i=num)
@@ -157,6 +157,7 @@ class GoSmartLogger(GoSmartComponent):
             i = 1
 
         regions[name] = {"id": i, "filename": filename, "groups": ["all", name] + list(groups)}
+        self.print_debug("%s : %d" % (name, i))
         regions_map[i] = name
 
         return i

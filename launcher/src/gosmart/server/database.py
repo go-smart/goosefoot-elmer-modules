@@ -75,6 +75,15 @@ class SQLiteSimulationDatabase:
         except Exception:
             traceback.print_exc(file=sys.stderr)
 
+    def markAllOld(self):
+        cursor = self._db.cursor()
+        cursor.execute('''
+            UPDATE simulations
+            SET status=('Unfinished (' || percentage || '%)'), percentage=0
+            WHERE percentage IS NOT NULL AND percentage < 100
+        ''')
+        self._db.commit()
+
     def all(self):
         cursor = self._db.cursor()
         cursor.execute('''

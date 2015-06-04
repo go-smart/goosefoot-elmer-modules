@@ -102,6 +102,9 @@ class NeedleLibrary:
         for name, needle in self.needles.items():
             needle_manipulator = None
             needle_target = [self.target[i] + needle["offset"][i] for i in (0, 1, 2)]
+            print(self.target)
+            print(needle["offset"])
+            print(needle_target)
             if needle["id"] != 'none' and needle["id"] is not None:
                 self.logger.print_line("Using needle: %s (axis: %s; target: %s)" % (needle["id"], str(needle["axis"]), str(needle_target)))
                 needle_manipulator = manipulator.Manipulator(self.logger, needle_id=needle["id"])

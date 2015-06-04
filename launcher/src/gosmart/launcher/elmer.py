@@ -191,7 +191,7 @@ class GoSmartElmer(GoSmartComponent):
 
         constants = self.get_constants()
         for constant, value in constants.items():
-            constant = _type_to_sif_string(self.logger.get_constant_type(constant), value)
+            constants[constant] = _type_to_sif_string(self.logger.get_constant_type(constant), value)
 
         self._sif_mapping.update(constants)
         self._sif_mapping.update(self.logger.get_region_ids())
@@ -271,6 +271,10 @@ class GoSmartElmer(GoSmartComponent):
                     point_template_map = {"POINTCOUNT": len(points), "POINTTABLE": "\n".join(" ".join(map(str, list(row[0]) + [row[1]])) for row in points)}
                     probe_location_file.write(probe_location_template.substitute(point_template_map))
 
+    def _copy_power_profiles(self):
+        for profile in os.listdir(gosmart.config.power_profiles_directory):
+            shutil.copy(os.path.join(gosmart.config.power_profiles_directory, profile), self.logger.make_cwd(self.cwd))
+
     def _build_elmer_modules(self):
         elmer_modules = self._elmer_modules_required
         if self._sif_variant is not None:
@@ -323,8 +327,8 @@ class GoSmartElmer(GoSmartComponent):
     def _setup_percentage_socket(self):
         loop = asyncio.new_event_loop()
         self._percentage_loop = loop
-        t = threading.Thread(target=self._percentage_server, args=(loop,))
-        t.start()
+        self._percentage_thread = threading.Thread(target=self._percentage_server, args=(loop,))
+        self._percentage_thread.start()
 
     def launch(self, nprocs=1, mesh_locations=None):
         super().launch()
@@ -355,6 +359,7 @@ class GoSmartElmer(GoSmartComponent):
                 if self.probe_location_factory:
                     self._generate_probe_locations()
 
+                self._copy_power_profiles()
                 self._build_elmer_modules()
 
                 self._generate_sif()
@@ -368,6 +373,7 @@ class GoSmartElmer(GoSmartComponent):
             if self.probe_location_factory:
                 self._generate_probe_locations()
 
+            self._copy_power_profiles()
             self._build_elmer_modules()
 
             if self._restarting:
@@ -387,6 +393,7 @@ class GoSmartElmer(GoSmartComponent):
             self._launch_subprocess("mpirun", args, mute=True)
 
         self._percentage_loop.stop()
+        self._percentage_thread.join()
 
     def parse_config(self, config_node):
         super().parse_config(config_node)

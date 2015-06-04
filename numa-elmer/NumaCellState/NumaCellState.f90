@@ -18,6 +18,26 @@
 !  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !  */
 ! 
+SUBROUTINE NumaCellStateSolver_init( Model, Solver, Timestep, TransientSimulation)
+       USE DefUtils
+
+       IMPLICIT NONE
+       TYPE(Solver_t) :: Solver  
+       TYPE(Model_t) :: Model    
+       REAL(KIND=dp) :: Timestep
+       LOGICAL :: TransientSimulation 
+
+       !------------------------------------------------------------------------------
+       !    Local variables
+       !------------------------------------------------------------------------------
+       TYPE(ValueList_t),POINTER :: SolverParams
+
+       SolverParams => GetSolverParams()
+       CALL ListAddString( SolverParams,&
+            NextFreeKeyword('Exported Variable',SolverParams),'Vulnerable')
+
+END SUBROUTINE NumaCellStateSolver_init
+
 ! *****************************************************************************/
 ! *  Subroutines for the detection of died cells
 ! *****************************************************************************/
@@ -163,7 +183,6 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
             DO i=1,LocalNodes
                     Vulnerable(i) = 1 - CellState((i-1)*ADOFs+1) - CellState((i-1)*ADOFs+2)
             END DO
-        
             CALL VariableAdd( Solver % Mesh % Variables, Solver % Mesh, &
                 Solver, 'Vulnerable', 1, Vulnerable, CellStatePerm )
 !------------------------------------------------------------------------------

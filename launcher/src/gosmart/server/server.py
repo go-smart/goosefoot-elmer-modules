@@ -91,6 +91,7 @@ class GoSmartSimulationComponent(ApplicationSession):
 
     def setDatabase(self, database):
         self._db = database
+        self._db.markAllOld()
 
     def doInit(self, guid):
         print("Test")
@@ -109,7 +110,7 @@ class GoSmartSimulationComponent(ApplicationSession):
             return False
 
         loop = asyncio.get_event_loop()
-        loop.run_in_executor(None, lambda: self.doSimulate(guid, loop))
+        print(loop.run_in_executor(None, lambda: self.doSimulate(guid, loop)))
         #t = threading.Thread(target=lambda: self.doSimulate(guid))
         #t.start()
         return True
@@ -145,7 +146,7 @@ class GoSmartSimulationComponent(ApplicationSession):
             tmpdir = tempfile.mkdtemp(prefix='gssf-')
             translator = GoSmartSimulationTranslator()
             self.current[guid] = GoSmartSimulationDefinition(guid, xml, tmpdir, translator, lambda p, m: self.updateStatus(guid, p, m))
-            self.publish(u'com.gosmartsimulation.announce', guid, None)
+            self.publish(u'com.gosmartsimulation.announce', guid, [0, 'XML uploaded'], tmpdir)
         except Exception as e:
             traceback.print_exc(file=sys.stderr)
             raise e
@@ -175,9 +176,13 @@ class GoSmartSimulationComponent(ApplicationSession):
             wrapper.launch(default_procs=1)
         except Exception as e:
             traceback.print_exc(file=sys.stderr)
-            self.eventFail(guid, str(e))
+            self.eventFail(guid, str(e), loop)
+        except Exception:
+            pass
         else:
-            self.eventComplete(guid)
+            self.eventComplete(guid, loop)
+
+        print("Finished simulation")
 
     def doFinalize(self, guid, client_directory_prefix):
         print("Converting the Xml")
@@ -194,6 +199,9 @@ class GoSmartSimulationComponent(ApplicationSession):
         return result
 
     def doProperties(self, guid):
+        return self.getProperties(guid)
+
+    def getProperties(self, guid):
         if guid not in self.current:
             raise RuntimeError("Simulation not found: %s" % guid)
 
@@ -207,30 +215,30 @@ class GoSmartSimulationComponent(ApplicationSession):
         self.doRequestFiles(self, guid, request_files)
         self.doFinalize(self, guid, '')
 
-    def eventComplete(self, guid):
+    def eventComplete(self, guid, loop):
         if guid not in self.current:
             print("Tried to send simulation-specific completion event with no current simulation definition", file=sys.stderr)
 
         try:
-            loop = asyncio.get_event_loop()
             loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "Success", "100"))
-        except Exception:
-            pass
+        except Exception as e:
+            print(e)
+            traceback.print_exc(file=sys.stderr)
 
         self.current[guid].set_exit_status(True)
         print('Success', guid)
 
         self.publish(u'com.gosmartsimulation.complete', guid)
 
-    def eventFail(self, guid, message):
+    def eventFail(self, guid, message, loop):
         if guid not in self.current:
             print("Tried to send simulation-specific failure event with no current simulation definition", file=sys.stderr)
 
         try:
-            loop = asyncio.get_event_loop()
             loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "Failed", None))
-        except Exception:
-            pass
+        except Exception as e:
+            print(e)
+            traceback.print_exc(file=sys.stderr)
 
         self.current[guid].set_exit_status(False, message)
         print('Failure', guid, message)
@@ -241,13 +249,14 @@ class GoSmartSimulationComponent(ApplicationSession):
         try:
             simulations = self._db.all()
             for simulation in simulations:
-                self.publish(u'com.gosmartsimulation.announce', simulation['guid'], (simulation['percentage'], simulation['status']))
+                self.publish(u'com.gosmartsimulation.announce', simulation['guid'], (simulation['percentage'], simulation['status']), simulation['directory'])
                 print("Announced: %s" % simulation['guid'])
 
         except Exception:
             for simulation in self.current:
                 exit_status = self.current[simulation].get_exit_status()
-                self.publish(u'com.gosmartsimulation.announce', simulation, (100 if exit_status[0] else 0, exit_status[1]))
+                properties = self.getProperties(simulation)
+                self.publish(u'com.gosmartsimulation.announce', simulation, (100 if exit_status[0] else 0, exit_status[1]), properties['location'])
                 print("Announced (from map): %s" % simulation)
 
     def updateStatus(self, id, percentage, message, loop):

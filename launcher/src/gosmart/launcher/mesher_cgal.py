@@ -49,7 +49,6 @@ class GoSmartMesherCGAL(GoSmartMesher):
         super().__init__(logger)
 
         self.file_locations = {
-            "organ": "organ",
         }
 
         self.tetrahedralize_only = False

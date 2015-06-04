@@ -19,6 +19,7 @@ from gosmart.server.families import Family
 from gosmart.server.parameters import read_parameters, convert_parameter
 
 import os
+import math
 import json
 from lxml import etree as ET
 import string
@@ -100,6 +101,8 @@ class ElmerLibNumaFamily(metaclass=Family):
                 self._needle_order[k] = needle.get("index")
                 k += 1
 
+        self._parameters = parameters
+
         regions = xml.find('regions')
         for region in regions:
             if region.get('name') not in self._regions_by_meaning:
@@ -116,11 +119,12 @@ class ElmerLibNumaFamily(metaclass=Family):
                 "input": target_file,
                 "groups": json.loads(region.get('groups'))
             }
-            if region.get('format') in ('surface', 'zone') and region.get('input'):
+            if self.get_parameter("SETTING_ORGAN_AS_SUBDOMAIN") and region.get('name') == 'organ':
+                self._regions[region.get('id')]["format"] = 'zone'
+            if self._regions[region.get('id')]["format"] in ('surface', 'zone') and region.get('input'):
                 self._files_required[os.path.join('input', target_file)] = region.get('input')  # Any changes to local/remote dirs here
             self._regions_by_meaning[region.get('name')].append(self._regions[region.get('id')])
 
-        self._parameters = parameters
         self._algorithms = algorithms
         self._definition = xml.find('definition').text
 
@@ -143,18 +147,27 @@ class ElmerLibNumaFamily(metaclass=Family):
                 centre_location = [sum(tips) / len(self._needles) for tips in needle_tips]
                 print(centre_location)
 
-        centre_location_node = ET.Element("centre")
-        for c, v in zip(('x', 'y', 'z'), centre_location):
-            centre_location_node.set(c, str(v))
-        geometry.append(centre_location_node)
-
         if self._needles:
             needle_axis_node = ET.Element('needleaxis')
             tip_location = self.get_needle_parameter(0, "NEEDLE_TIP_LOCATION")
             entry_location = self.get_needle_parameter(0, "NEEDLE_ENTRY_LOCATION")
+            norm = 0
+            vec = []
             for c, vt, ve in zip(('x', 'y', 'z'), tip_location, entry_location):
                 needle_axis_node.set(c, str(ve - vt))
+                vec.append(ve - vt)
+                norm += (ve - vt) * (ve - vt)
             geometry.append(needle_axis_node)
+
+            offset = self.get_parameter("CENTRE_OFFSET")
+            if offset is not None:
+                for c, v in enumerate(centre_location):
+                    centre_location[c] = v + offset * vec[c] / math.sqrt(norm)
+
+        centre_location_node = ET.Element("centre")
+        for c, v in zip(('x', 'y', 'z'), centre_location):
+            centre_location_node.set(c, str(v))
+        geometry.append(centre_location_node)
 
         if self.get_parameter("SIMULATION_SCALING") is not None:
             ET.SubElement(geometry, "simulationscaling").set("ratio",
@@ -213,10 +226,13 @@ class ElmerLibNumaFamily(metaclass=Family):
         ET.SubElement(mesher, 'centre')
 
         for idx, region in self._regions.items():
-            if region['format'] == 'zone':
+            if region['meaning'] == 'organ':
+                if self.get_parameter('SETTING_ORGAN_AS_SUBDOMAIN'):
+                    ET.SubElement(mesher, 'zone').set('region', idx)
+                else:
+                    ET.SubElement(mesher, 'organ').set('region', idx)
+            elif region['format'] == 'zone':
                 ET.SubElement(mesher, 'zone').set('region', idx)
-            elif region['meaning'] == 'organ':
-                ET.SubElement(mesher, 'organ').set('region', idx)
             elif 'vessels' in region['groups'] or 'bronchi' in region['groups']:
                 ET.SubElement(mesher, 'vessel').set('region', idx)
 

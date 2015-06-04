@@ -20,6 +20,7 @@ import gosmart_sf_config
 import shutil
 
 template_directory = os.path.join(os.path.dirname(__file__), 'data')
+power_profiles_directory = os.path.join(os.path.dirname(__file__), 'data', 'power_profiles')
 fortran_template_directory = os.path.join(os.path.dirname(__file__), 'data', 'elmer_modules')
 fortran_modules_directory = gosmart_sf_config.fortran_modules_dir
 git_revision = gosmart_sf_config.git_revision

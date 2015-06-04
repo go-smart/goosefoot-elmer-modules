@@ -39,6 +39,10 @@ setup(name='gosmart',
           'data/constants/constants-variant-rfa_point_sources_new_elmer.xml',
           'data/constants/constants-variant-rfa_joule_heating.xml',
 
+          'data/power_profiles/sar-0045.dat',
+          'data/power_profiles/sar-0065.dat',
+          'data/power_profiles/sar-0085.dat',
+
           'data/templates/inner-basic-mwa.xml',
           'data/templates/inner-basic-mwa-coarse.xml',
 

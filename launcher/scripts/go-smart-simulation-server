@@ -30,9 +30,7 @@ import os
 
 
 def launch(x):
-    transferrer = HTTPTransferrer(sftp_host, sftp_port, key_file)
-    database = SQLiteSimulationDatabase("simulations.sqlite3")
-    component = GoSmartSimulationComponent(x, database)
+    component = GoSmartSimulationComponent(x, lambda: SQLiteSimulationDatabase("simulations.sqlite3"))
 
     return component
 

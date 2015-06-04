@@ -360,12 +360,27 @@ class GoSmart:
 
         self.logger.parse_config(root)
 
+        only_needle = None
         for section in root:
             skip = (section.get("skip") == "true")
 
             if section.tag == 'needlelibrary' and not skip:
                 needlelibrary = self.add_component('needlelibrary', GoSmartNeedleLibraryInterface(self.logger))
                 needlelibrary.parse_config(section)
+                # RMV Tidy up.
+                for needle in section:
+                    if needle.tag != 'needle':
+                        continue
+                    if only_needle is None:
+                        only_needle = needle
+                    else:
+                        only_needle = None
+                        break
+
+                if only_needle and only_needle.get("offset"):
+                    for c, o in zip(('x', 'y', 'z'), only_needle.get("offset").split(" ")):
+                        self.logger.add_or_update_constant(c, self.logger.get_constant(c, group="needle") + float(o), group="needle", typ="float")
+
             elif section.tag == 'preprocessor':
                 preprocessor = self.add_component('preprocessor', GoSmartPreprocessorInterface(self.logger))
                 preprocessor.parse_config(section)
@@ -499,6 +514,7 @@ class GoSmart:
                 self.logger.print_line("* Skipping %s as indicated in settings file %s" % (section.tag, filename))
 
         self.logger.print_debug(self.logger.zones)
+        self.logger.print_debug(self.logger.surfaces)
         if hasattr(self, "elmer"):
             self.elmer.configfiles.append(filename)
 

@@ -3,7 +3,7 @@ M = 1e-3;
 eps = 1e-6;
 vdelta = 0.0;
 
-R4 = $CONSTANT_MW_CATHETER_RADIUS_OUTER / 1000;
+R4 = $CONSTANT_MW_CATHETER_RADIUS_OUTER / 1000 + L / 5;
 slotelevation = $CONSTANT_MW_SLOT_ELEVATION / 1000;
 slotheight = $CONSTANT_MW_SLOT_HEIGHT / 1000;
 dielectricextension = $CONSTANT_MW_DIELECTRIC_EXTENSION / 1000;
@@ -11,7 +11,7 @@ dielectricextension = $CONSTANT_MW_DIELECTRIC_EXTENSION / 1000;
 height = $INNERHEIGHT / 1000;
 width = $INNERWIDTH / 1000;
 
-bottomclearance = 0.6 * (slotheight + R4);
+bottomclearance = 1.6 * (slotheight + R4);
 
 ncl = $NEARFIELD / 1000 / L;
 fcl = $FARFIELD / 1000 / L;

@@ -32,7 +32,7 @@ def convert_parameter(parameter, typ=None, try_json=True):
     elif typ == "integer":
         cast = int
     elif typ == "boolean":
-        cast = bool
+        cast = lambda s: (s.lower() != "false" and bool(s))
     elif typ == "string":
         cast = str
     else:
