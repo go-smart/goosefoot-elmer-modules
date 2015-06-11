@@ -21,7 +21,7 @@ git_revision = '{1}'
 
 setup(name='gosmart',
       version='${PACKAGE_VERSION}',
-      packages=['gosmart', 'gosmart.launcher', 'gosmart.server', 'gosmart.server.families', 'gosmart_sf_config'],
+      packages=['gosmart', 'gosmart.launcher', 'gosmart.comparator', 'gosmart.server', 'gosmart.server.families', 'gosmart_sf_config'],
       package_dir={'gosmart': '${CMAKE_CURRENT_SOURCE_DIR}/src/gosmart', 'gosmart_sf_config': config_directory},
       package_data={'gosmart': [
           'data/go-smart-probe-location-template.txt',
