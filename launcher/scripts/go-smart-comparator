@@ -1,0 +1,17 @@
+#!/bin/python3
+
+from gosmart.comparator import Comparator
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("files", help="files to compare", metavar="FILE", type=str, nargs=2)
+    args = parser.parse_args()
+
+    with open(args.files[0], 'r') as left, open(args.files[1], 'r') as right:
+        messages = Comparator(left, right)
+        for messages as message:
+            print(message)
+
+
+if __name__ == '__main__':
+    main()

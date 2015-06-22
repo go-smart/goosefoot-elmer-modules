@@ -71,4 +71,5 @@ setup(name='gosmart',
           '${CMAKE_CURRENT_SOURCE_DIR}' + '/scripts/go-smart-launcher',
           '${CMAKE_CURRENT_SOURCE_DIR}' + '/scripts/go-smart-simulation-server',
           '${CMAKE_CURRENT_SOURCE_DIR}' + '/scripts/go-smart-simulation-client',
+          '${CMAKE_CURRENT_SOURCE_DIR}' + '/scripts/go-smart-comparator',
       ])
