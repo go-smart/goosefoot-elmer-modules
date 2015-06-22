@@ -228,7 +228,10 @@ class ElmerLibNumaFamily(metaclass=Family):
         for idx, region in self._regions.items():
             if region['meaning'] == 'organ':
                 if self.get_parameter('SETTING_ORGAN_AS_SUBDOMAIN'):
-                    ET.SubElement(mesher, 'zone').set('region', idx)
+                    if self.get_parameter('SETTING_ORGAN_AS_SUBDOMAIN'):
+                        ET.SubElement(mesher, 'both').set('region', idx)
+                    else:
+                        ET.SubElement(mesher, 'zone').set('region', idx)
                 else:
                     ET.SubElement(mesher, 'organ').set('region', idx)
             elif region['format'] == 'zone':
@@ -300,6 +303,7 @@ class ElmerLibNumaFamily(metaclass=Family):
             if needle['class'] in ('solid-boundary', 'boundary'):
                 location = needle['file'].split(':', 1)
 
+                needle_mesh = None
                 if location[0] in ('surface', 'zone'):
                     needleNode = ET.SubElement(regions, location[0])
                     needleNode.set("name", ix)
@@ -333,6 +337,18 @@ class ElmerLibNumaFamily(metaclass=Family):
                         parameterNode = ET.SubElement(parameters, "constant")
                         parameterNode.set("name", key)
                         parameterNode.set("value", str(convert_parameter(parameter, typ)))
+
+                needle_active_length = self.get_needle_parameter(ix, "NEEDLE_ACTIVE_LENGTH")
+                if needle_active_length is not None:
+                    if needle_mesh is None:
+                        needle_mesh = ET.SubElement(mesher, 'needle' if solid_needles else 'solid')
+                        needle_mesh.set('region', ix)
+                    activity = ET.SubElement(needle_mesh, 'activity')
+                    tip_location = self.get_needle_parameter(ix, "NEEDLE_TIP_LOCATION")
+                    for c, vt in zip(('x', 'y', 'z'), tip_location):
+                        activity.set(c, str(vt))
+                    activity.set('r', str(needle_active_length))
+
             elif needle['class'] == 'point-sources':
                 point_sources = ET.SubElement(elmer, "pointsources")
                 location = needle['file'].split(':', 1)
