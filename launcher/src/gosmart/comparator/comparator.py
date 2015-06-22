@@ -1,4 +1,5 @@
 from lxml import etree as ET
+from munkres import Munkres
 from difflib import Differ
 import json
 from gosmart.server import parameters
@@ -38,7 +39,6 @@ class SimulationDefinition:
             messages = []
 
             string_comparisons = {
-                "index": (self.index, other.index),
                 "cls": (self.cls, other.cls),
                 "file": (self.file, other.file),
             }
@@ -164,14 +164,25 @@ class SimulationDefinition:
                 else:
                     messages += self.regions[id].diff(other.regions[id])
 
-            all_needles = set().union(self.needles.keys(), other.needles.keys())
-            for index in all_needles:
-                if index not in self.needles:
-                    messages += ["Numerical Model: this has no needle %s" % index]
-                elif index not in other.needles:
-                    messages += ["Numerical Model: that has no needle %s" % index]
-                else:
-                    messages += self.needles[index].diff(other.needles[index])
+            diff_matrix = []
+            this_keys = list(self.needles.keys())
+            that_keys = list(other.needles.keys())
+
+            if len(this_keys) != len(that_keys):
+                messages += ["Numerical Model: this has different needle count than that"]
+
+            if len(this_keys) > 0 and len(that_keys) > 0:
+                for this_key in this_keys:
+                    diff_row = []
+                    for that_key in that_keys:
+                        needle_messages = self.needles[this_key].diff(other.needles[that_key])
+                        diff_row.append(len(needle_messages))
+                    diff_matrix.append(diff_row)
+
+                m = Munkres()
+                indexes = m.compute(diff_matrix)
+                for row, column in indexes:
+                    messages += self.needles[this_keys[row]].diff(other.needles[that_keys[column]])
 
             return messages
 
@@ -310,8 +321,8 @@ class Comparator:
     right_text = None
 
     def __init__(self, left_text, right_text):
-        self.left = ET.fromstring(left_text)
-        self.right = ET.fromstring(right_text)
+        self.left = ET.fromstring(bytes(left_text, 'utf-8'))
+        self.right = ET.fromstring(bytes(right_text, 'utf-8'))
 
     def diff(self):
         left_structure = self.__analyse(self.left, "Left")
@@ -366,7 +377,7 @@ class Comparator:
                         raise RuntimeError("%s: Algorithm %s has a rogue tag: %s" % (result, argument.tag))
 
                 if content is None:
-                    raise RuntimeError("%s: Algorithm is missing its content")
+                    content = ""
 
                 simulationDefinition.add_algorithm(result, arguments, content.strip())
 

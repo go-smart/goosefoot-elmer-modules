@@ -118,6 +118,12 @@ class GoSmartNeedleLibraryInterface(GoSmartComponent):
                 self.add_or_update_constant(c, centre[c], group="needle")
                 target_node.set(c, str(centre[c]))
 
+        target_stl = "%s" % self.logger.runname
+        for name, n in self.needles.items():
+            sname = n['file']
+            target_path = os.path.join(self.cwd, self.suffix, target_stl)
+            self.logger.add_region('needle-%s' % n['file'], "%s-%s.stl" % (target_path, sname), ("needles", "surface"), zone=("both" if self.use_zones else False))
+
     def launch(self):
         super().launch()
 
@@ -125,7 +131,7 @@ class GoSmartNeedleLibraryInterface(GoSmartComponent):
         with open(os.path.join(self.logger.get_cwd(), self.suffix, target_xml), 'wb') as f:
             f.write(ET.tostring(self.config))
 
-        target_stl = "%s" % self.logger.runname
+            target_stl = "%s" % self.logger.runname
 
         args = [
             "--output", target_stl,
@@ -140,23 +146,22 @@ class GoSmartNeedleLibraryInterface(GoSmartComponent):
 
         self._launch_subprocess(self.command, args)
 
-        target_paths = None if len(self.needles) == 0 else {}
-        for name, n in self.needles.items():
-            sname = n['file']
-            target_path = os.path.join(self.cwd, target_stl)
-            target_paths[sname] = "%s-%s.stl" % (target_path, sname)
-            self.logger.add_region('needle-%s' % n['file'], "%s-%s.stl" % (target_path, sname), ("needles", "surface"), zone=("both" if self.use_zones else False))
-
-            inactive_path = "%s-%s.inactive.stl" % (target_path, sname)
-            if os.path.exists(inactive_path):
-                target_paths[sname + "-inactive"] = inactive_path
-                self.logger.add_region('needle-%s-inactive' % n['file'], "%s-%s.inactive.stl" % (target_path, sname), ("needles-inactive", "surface"), zone=("both" if self.use_zones else False))
-
         if self.use_extent:
             extent_path = os.path.join(self.cwd, extent_stl)
             if 'extent' not in self.logger.surfaces:
                 self.logger.add_region('extent', extent_path, ("boundary", "surface"), primary=True)
         else:
             extent_path = None
+
+        target_paths = None if len(self.needles) == 0 else {}
+
+        for name, n in self.needles.items():
+            target_path = os.path.join(self.cwd, target_stl)
+            sname = n['file']
+            target_paths[sname] = "%s-%s.stl" % (target_path, sname)
+            inactive_path = "%s-%s.inactive.stl" % (target_path, sname)
+            if os.path.exists(inactive_path):
+                target_paths[sname + "-inactive"] = inactive_path
+                self.logger.add_region('needle-%s-inactive' % n['file'], "%s-%s.inactive.stl" % (target_path, sname), ("needles-inactive", "surface"), zone=("both" if self.use_zones else False))
 
         return target_paths, extent_path

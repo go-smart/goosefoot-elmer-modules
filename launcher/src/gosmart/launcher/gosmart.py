@@ -401,7 +401,7 @@ class GoSmart:
                         raise RuntimeError("Not understood geometry tag")
             elif section.tag == 'regions' or section.tag == 'definitions':
                 for region in section:
-                    if region.tag in ('region', 'surface', 'zone'):
+                    if region.tag in ('region', 'surface', 'zone', 'both'):
                         if region.get("groups"):
                             groups = [s.strip() for s in region.get("groups").split(";")]
                         else:
@@ -409,6 +409,8 @@ class GoSmart:
                         groups.append(region.tag)
                         if region.tag == "zone":
                             self.logger.add_region(region.get("name"), region.get("input"), groups, zone=True)
+                        if region.tag == "both":
+                            self.logger.add_region(region.get("name"), region.get("input"), groups, zone="both")
                         elif region.tag == "region" or region.tag == "surface":
                             self.logger.add_region(region.get("name"), region.get("input"), groups, zone=False)
                     elif region.tag in ('cad',):
@@ -423,15 +425,17 @@ class GoSmart:
 
                 skip_outer = (section.get("skip") == "outer")
 
-                if not skip_outer and not skip:
-                    if type == "CGAL":
-                        mesher = self.add_component('mesher', GoSmartMesherCGAL(self.logger))
-                    elif type == "axisymmetric":
-                        mesher = self.add_component('mesher', GoSmartMesherAxisymmetric(self.logger))
-                    else:
-                        self.logger.print_fatal("Unknown mesher type %s in %s" % (type, filename))
+                if type == "CGAL":
+                    mesher = GoSmartMesherCGAL(self.logger)
+                elif type == "axisymmetric":
+                    mesher = GoSmartMesherAxisymmetric(self.logger)
+                else:
+                    self.logger.print_fatal("Unknown mesher type %s in %s" % (type, filename))
 
-                    mesher.parse_config(section)
+                if not skip_outer and not skip:
+                    self.add_component('mesher', mesher)
+
+                mesher.parse_config(section)
 
                 if self.has_inner:
                     self.mesher_inner = []

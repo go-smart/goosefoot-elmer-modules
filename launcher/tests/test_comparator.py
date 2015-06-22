@@ -123,12 +123,8 @@ def test_comparator_numerical_model_needles_only_fails():
     """
     comparator = Comparator(left, right)
     messages = [
-        'Needle: for index 12388, cls fields differ solid-boundary // boundary',
-        'Needle: for index 12388, file fields differ library:cryo-two-part-cylinder-1 // library:cryo-two-part-cylinder',
-        'Needle: that (12388) has no parameter NEEDLE_ENTRY_LOCATION',
-        'Needle: this (12388) has no parameter NEEDLE_ENTRY_LOC',
-        'Numerical Model: that has no needle 12398',
-        'Parameter NEEDLE_TEMPERATURE: values differ - 100.0 // 373.0'
+        'Needle: this (12398) has no parameter NEEDLE_TEMPERATURE',
+        'Numerical Model: this has different needle count than that'
     ]
     assert Counter(messages) == Counter(comparator.diff())
 

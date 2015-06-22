@@ -37,6 +37,7 @@ except:
     use_observant = False
 
 from gosmart.server.definition import GoSmartSimulationDefinition
+from gosmart.comparator import Comparator
 from gosmart.server.translator import GoSmartSimulationTranslator
 from gosmart.launcher import gosmart
 
@@ -140,6 +141,10 @@ class GoSmartSimulationComponent(ApplicationSession):
             return {}
 
         return uploaded_files
+
+    def doCompare(self, this_xml, that_xml):
+        comparator = Comparator(this_xml, that_xml)
+        return comparator.diff()
 
     def doUpdateSettingsXml(self, guid, xml):
         try:
@@ -279,6 +284,7 @@ class GoSmartSimulationComponent(ApplicationSession):
             self.register(self.doRequestFiles, u'com.gosmartsimulation.request_files')
             self.register(self.doFinalize, u'com.gosmartsimulation.finalize')
             self.register(self.doClean, u'com.gosmartsimulation.clean')
+            self.register(self.doCompare, u'com.gosmartsimulation.compare')
             self.register(self.doWorkflow, u'com.gosmartsimulation.workflow')
             self.register(self.doProperties, u'com.gosmartsimulation.properties')
 

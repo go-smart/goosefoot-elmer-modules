@@ -31,7 +31,7 @@ SUBROUTINE AlternatingBCSolver( Model,Solver,Timestep,TransientSimulation)
       TYPE(Element_t), POINTER :: BoundaryElement
       TYPE(ValueList_t), POINTER :: BC, Simulation
       INTEGER :: i, j, maxN, step, tag, partn, bndry, left, right, &
-          nodes(MAX_ELEMENT_NODES), eio_info, TYPE
+          nodes(MAX_ELEMENT_NODES), eio_info, bodyid
       REAL(KIND=dp), POINTER :: coord(:,:)
       INTEGER, POINTER :: anode(:), cathode(:)
       LOGICAL :: AllocationsDone = .FALSE., Found, AlternatingBoundary
@@ -63,16 +63,24 @@ SUBROUTINE AlternatingBCSolver( Model,Solver,Timestep,TransientSimulation)
         BoundaryElement => Solver % Mesh % Elements(i)
         bndry = BoundaryElement % BodyId
 
-        IF (anode(step) == bndry .OR. cathode(step) == bndry) THEN
-          DO j = 1, Model % NumberOfBCs
-            AlternatingBoundary = GetLogical(Model % BCs(j) % Values, &
-                       'Alternating Boundary Condition', Found )
-            IF ( Found .AND. AlternatingBoundary ) THEN
-              BoundaryElement % BoundaryInfo % Constraint = j
-            END IF
-          END DO
-        ELSE
-          BoundaryElement % BoundaryInfo % Constraint = 0
-        END IF
+        DO j = 1, Model % NumberOfBCs
+          AlternatingBoundary = GetLogical(Model % BCs(j) % Values, &
+                     'Alternating Boundary Condition', Found )
+          IF ( Found .AND. AlternatingBoundary ) THEN
+              bodyid = ListGetInteger(Model % BCs(j) % Values, &
+                         'Body Id', Found)
+              IF ( .NOT. Found ) THEN
+                  CALL Fatal('AlternatingBCSolver', &
+                      'Alternating boundary condition must have a body id')
+              END IF
+              IF ( bndry == bodyid ) THEN
+                  IF (anode(step) == bndry .OR. cathode(step) == bndry) THEN
+                      BoundaryElement % BoundaryInfo % Constraint = j
+                  ELSE
+                      BoundaryElement % BoundaryInfo % Constraint = 0
+                  END IF
+              END IF
+          END IF
+        END DO
       END DO
 END SUBROUTINE AlternatingBCSolver

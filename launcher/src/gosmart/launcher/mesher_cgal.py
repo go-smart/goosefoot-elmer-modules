@@ -63,6 +63,7 @@ class GoSmartMesherCGAL(GoSmartMesher):
 
         self.zone_priorities = {}
         self.zone_characteristic_lengths = {}
+        self.zone_activity_spheres = {}
 
     def alter_extent(self, filename):
         self.file_locations["extent"] = filename
@@ -81,6 +82,9 @@ class GoSmartMesherCGAL(GoSmartMesher):
 
             if centre_node.get("radius") is not None:
                 self.mesh['centre_radius'] = centre_node.get("radius")
+
+        self.tetrahedralize_only = (config_node.get("tetrahedralize_only") == "true")
+        self.zone_boundaries = (config_node.get("zone_boundaries") == "true")
 
         for node in config_node:
             plural = '%ss' % str(node.tag)  # Unfortunately simplistic plural spotting, if needs be use 'inflect'
@@ -124,27 +128,45 @@ class GoSmartMesherCGAL(GoSmartMesher):
                     self.needle_characteristic_length = float(needle_characteristic_length)
 
             if node.tag == 'zone' or node.tag == 'needle':
+                region = node.get('region')
                 if node.get('characteristic_length') is not None:
-                    self.zone_characteristic_lengths[node.get('region')] = node.get('characteristic_length')
+                    self.zone_characteristic_lengths[region] = node.get('characteristic_length')
                 if node.get('priority') is not None:
-                    self.zone_priorities[node.get('region')] = node.get('priority')
+                    self.zone_priorities[region] = node.get('priority')
+                activity = node.find('activity')
+                if activity is not None:
+                    inactive_region = region + " inactive"
+                    inactive_groups = tuple(g + "-inactive" for g in self.logger.zones[region]["groups"])
+                    if inactive_region not in self.logger.surfaces:
+                        self.logger.add_region(inactive_region, None, inactive_groups, zone=False)
+                    inactive_index = self.logger.surfaces[inactive_region]["id"]
+                    self.zone_activity_spheres[region] = {
+                        'x': activity.get('x'),
+                        'y': activity.get('y'),
+                        'z': activity.get('z'),
+                        'r': activity.get('r'),
+                        'i': inactive_index
+                    }
 
             if node.tag == 'extent' and node.get('radius') is not None:
                 self.mesh['bounding_radius'] = node.get('radius')
-
-        self.tetrahedralize_only = (config_node.get("tetrahedralize_only") == "true")
-        self.zone_boundaries = (config_node.get("zone_boundaries") == "true")
 
     def _prep_zone_arg(self, tag):
         out = ":".join(str(self.logger.zones[tag][k]) for k in ("filename", "id"))
 
         if tag in self.zone_characteristic_lengths:
             out += ":" + self.zone_characteristic_lengths[tag]
-        elif tag in self.zone_priorities:
+        elif tag in self.zone_priorities or tag in self.zone_activity_spheres:
             out += ":-1"
 
         if tag in self.zone_priorities:
             out += ":" + self.zone_priorities[tag]
+        elif tag in self.zone_activity_spheres:
+            out += ":0"
+
+        if tag in self.zone_activity_spheres:
+            sphere = self.zone_activity_spheres[tag]
+            out += ":" + "_".join(str(sphere[s]) for s in ('x', 'y', 'z', 'r', 'i'))
 
         return out
 
@@ -178,7 +200,8 @@ class GoSmartMesherCGAL(GoSmartMesher):
 
             for needle in needles:
                 if needle in self.logger.zones:
-                    self.file_locations["zones"].append(needle)
+                    if needle not in self.file_locations["zones"]:
+                        self.file_locations["zones"].append(needle)
                     if needle not in self.zone_characteristic_lengths and self.needle_characteristic_length is not None:
                         self.zone_characteristic_lengths[needle] = str(self.needle_characteristic_length)
                     if needle not in self.zone_priorities:
@@ -186,8 +209,12 @@ class GoSmartMesherCGAL(GoSmartMesher):
                 else:
                     self.file_locations["needles"].append(needle)
 
-        if "extent" not in self.logger.surfaces and extent_file is not None:
-            self.logger.add_region("extent", os.path.join(self.logger.make_cwd(self.suffix), "extent.stl"), ("boundary",), primary=True)
+        if "extent" not in self.logger.surfaces:
+            if extent_file is not None:
+                location = os.path.join(self.logger.make_cwd(self.suffix), "extent.stl")
+            else:
+                location = None
+            self.logger.add_region("extent", location, ("boundary",), primary=True)
 
         for k, v in self.file_locations.items():
             if isinstance(v, str):
@@ -243,6 +270,9 @@ class GoSmartMesherCGAL(GoSmartMesher):
 
         if self.solid_zonefield:
             args.append("--solid_zone")
+
+        if "extent" in self.logger.surfaces:
+            args += ["--extent_index", self.logger.surfaces["extent"]["id"]]
 
         if "tissue" in self.logger.zones:
             args += ["--tissueid", self.logger.zones["tissue"]["id"]]

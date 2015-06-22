@@ -50,7 +50,7 @@ FUNCTION AlternatingBoundaryCondition(Model, n, time) RESULT(potential)
 
       anode => ListGetIntegerArray(Simulation, 'Anode', Found)
       cathode => ListGetIntegerArray(Simulation, 'Cathode', Found)
-      potential_values => ListGetConstRealArray(BC, &
+      potential_values => ListGetConstRealArray(Simulation, &
             'Potential Consecutive Values', Found)
 
       step = MIN(SIZE(potential_values, 2), GetTimestep())
