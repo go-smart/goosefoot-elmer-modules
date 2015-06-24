@@ -19,6 +19,7 @@
 from __future__ import print_function
 
 import asyncio
+from functools import partial
 from autobahn.asyncio.wamp import ApplicationSession
 from zope.interface.verify import verifyObject
 
@@ -39,7 +40,7 @@ except:
 from gosmart.server.definition import GoSmartSimulationDefinition
 from gosmart.comparator import Comparator
 from gosmart.server.translator import GoSmartSimulationTranslator
-from gosmart.launcher import gosmart
+#from gosmart.launcher import gosmart
 
 
 class GoSmartArguments:
@@ -55,6 +56,28 @@ class GoSmartArguments:
         self.only = only
         self.leavetree = leavetree
         self.configfilenames = configfilenames
+
+    def to_list(self):
+        args = {
+            '--elmer': self.elmer_binary,
+            '--elmer-logfile': self.outfilename,
+            '--logfile-addpid': self.addpid,
+            '--silent': self.silent,
+            '--debug': self.debug,
+            '--nprocs': self.nprocs,
+            '--only': self.only,
+            '--black-and-white': self.baw,
+            '--leavetree': self.leavetree
+        }
+        command_line = []
+        for k, v in args.items():
+            if v is not None:
+                if isinstance(v, bool):
+                    if v:
+                        command_line += [k]
+                else:
+                    command_line += [k, str(v)]
+        return command_line + self.configfilenames
 
 
 class GoSmartSimulationComponent(ApplicationSession):
@@ -111,10 +134,34 @@ class GoSmartSimulationComponent(ApplicationSession):
             return False
 
         loop = asyncio.get_event_loop()
-        print(loop.run_in_executor(None, lambda: self.doSimulate(guid, loop)))
-        #t = threading.Thread(target=lambda: self.doSimulate(guid))
-        #t.start()
+        task = loop.create_task(self.doSimulate(guid))
+        task.add_done_callback(partial(self._handle_simulation_done, guid=guid))
+
         return True
+
+    def _handle_simulation_done(self, fut, guid):
+        return_code = fut.result()
+        print("EXITED")
+
+        current = self.current[guid]
+
+        if return_code == 0:
+            self.eventComplete(guid)
+        else:
+            #traceback.print_exc(file=sys.stderr)
+            error_message = "Unknown error occurred: %d" % return_code
+            error_message_path = os.path.join(current.get_dir(), 'error_message')
+
+            if (os.path.exists(error_message_path)):
+                with open(error_message_path, 'r') as f:
+                    error_message = f.read()
+                    error_message.encode('ascii', 'xmlcharrefreplace')
+                    error_message.encode('utf-8')
+
+            print("Completed simulation in %s" % current.get_dir())
+            self.eventFail(guid, error_message)
+
+        print("Finished simulation")
 
     def doUpdateFiles(self, guid, files):
         if guid not in self.current or not isinstance(files, dict):
@@ -160,7 +207,8 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         return True
 
-    def doSimulate(self, guid, loop):
+    @asyncio.coroutine
+    def doSimulate(self, guid):
         if guid not in self.current:
             self.eventFail("Not fully prepared before launching - no current simulation set")
 
@@ -168,26 +216,14 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         print("Running simulation in %s" % current.get_dir(), file=sys.stderr)
 
-        try:
-            wrapper = gosmart.GoSmart(
-                args=self._args,
-                global_working_directory=current.get_dir(),
-                observant=self.client,
-                update_status_callback=lambda p, m: self.updateStatus(guid, p, m, loop)
-            )
+        args = ["go-smart-launcher"] + self._args.to_list()
+        task = yield from asyncio.create_subprocess_exec(
+            *[a for a in args if a not in ('stdin', 'stdout', 'stderr')],
+            cwd=current.get_dir()
+        )
+        yield from task.wait()
 
-            wrapper.print_header()
-
-            wrapper.launch(default_procs=1)
-        except Exception as e:
-            traceback.print_exc(file=sys.stderr)
-            self.eventFail(guid, str(e), loop)
-        except Exception:
-            pass
-        else:
-            self.eventComplete(guid, loop)
-
-        print("Finished simulation")
+        return task.returncode
 
     def doFinalize(self, guid, client_directory_prefix):
         print("Converting the Xml")
@@ -220,11 +256,12 @@ class GoSmartSimulationComponent(ApplicationSession):
         self.doRequestFiles(self, guid, request_files)
         self.doFinalize(self, guid, '')
 
-    def eventComplete(self, guid, loop):
+    def eventComplete(self, guid):
         if guid not in self.current:
             print("Tried to send simulation-specific completion event with no current simulation definition", file=sys.stderr)
 
         try:
+            loop = asyncio.get_event_loop()
             loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "Success", "100"))
         except Exception as e:
             print(e)
@@ -235,11 +272,12 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         self.publish(u'com.gosmartsimulation.complete', guid)
 
-    def eventFail(self, guid, message, loop):
+    def eventFail(self, guid, message):
         if guid not in self.current:
             print("Tried to send simulation-specific failure event with no current simulation definition", file=sys.stderr)
 
         try:
+            loop = asyncio.get_event_loop()
             loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "Failed", None))
         except Exception as e:
             print(e)

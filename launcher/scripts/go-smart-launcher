@@ -18,6 +18,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
+import os
+import traceback
+
 from gosmart.launcher import gosmart
 from gosmart.launcher import utils
 
@@ -25,11 +29,34 @@ from gosmart.launcher import utils
 def main():
     args = utils.parse_args()
 
-    wrapper = gosmart.GoSmart(args=args)
+    error_location = 'error_message'
+    if args.global_working_directory:
+        error_location = os.path.join(args.global_working_directory, error_location)
+    try:
+        os.remove(error_location)
+    except OSError:
+        pass
+
+    try:
+        wrapper = gosmart.GoSmart(args=args, global_working_directory=args.global_working_directory)
+    except Exception as e:
+        with open('error_message', 'w') as f:
+            f.write("INIT-ERROR (%s): %s" % (type(e).__name__, str(e)))
+        traceback.print_exc()
+        return -1
 
     wrapper.print_header()
 
-    wrapper.launch(default_procs=1)
+    try:
+        wrapper.launch(default_procs=1)
+    except Exception as e:
+        with open('error_message', 'w') as f:
+            f.write("EXEC-ERROR (%s): %s" % (type(e).__name__, str(e)))
+        traceback.print_exc()
+        return -1
+
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

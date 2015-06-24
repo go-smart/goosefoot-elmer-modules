@@ -16,8 +16,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
+import select
 import threading
-import asyncio
+import socket
 import string
 import shutil
 import re
@@ -299,35 +300,47 @@ class GoSmartElmer(GoSmartComponent):
     def set_update_status(self, update_status):
         self._update_status = update_status
 
-    def _percentage_server(self, loop):
+    def _percentage_server(self):
         cwd = self.logger.make_cwd(self.suffix)
         address = os.path.join(cwd, "percentage.sock")
 
-        loop.run_until_complete(asyncio.start_unix_server(
-            self._handle_update_percentage,
-            path=address,
-            loop=loop
-        ))
-
         try:
-            loop.run_forever()
-        finally:
-            loop.close()
+            os.remove(address)
+        except OSError:
+            if os.path.exists(address):
+                return
 
-    @asyncio.coroutine
-    def _handle_update_percentage(self, client_reader, client_writer):
-        while True:
-            data = yield from client_reader.readline()
-            self.logger.print_line(data)
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.bind(address)
+        s.listen(1)
+        self._monitoring_status = True
 
-            if self._update_status is not None:
-                self._update_status(float(data), "Elmer in progress")
+        while self._monitoring_status:
+            inp, out, exc = select.select([s], [], [])
 
-    #RMV: Threading and asyncio should not be mixed, but I can't seem to get working otherwise
+            if len(inp):
+                conn, client = s.accept()
+                client_file = conn.makefile("r", buffering=0)
+
+                while True:
+                    data = client_file.readline()
+                    if data:
+                        self.logger.print_line("[status]: %s" % data)
+
+                        if self._update_status is not None:
+                            self._update_status(data)
+                    else:
+                        # Stop watching; we should only look after one process in a run
+                        self.stop_monitoring_status()
+                        break
+
+        conn.close()
+
+    def stop_monitoring_status(self):
+        self._monitoring_status = False
+
     def _setup_percentage_socket(self):
-        loop = asyncio.new_event_loop()
-        self._percentage_loop = loop
-        self._percentage_thread = threading.Thread(target=self._percentage_server, args=(loop,))
+        self._percentage_thread = threading.Thread(target=self._percentage_server)
         self._percentage_thread.start()
 
     def launch(self, nprocs=1, mesh_locations=None):
@@ -355,7 +368,6 @@ class GoSmartElmer(GoSmartComponent):
             self.logger.print_line(" [in serial]")
             if not self.logger.leavetree:
                 self._generate_power_over_time()
-                self._setup_percentage_socket()
                 if self.probe_location_factory:
                     self._generate_probe_locations()
 
@@ -366,7 +378,14 @@ class GoSmartElmer(GoSmartComponent):
                 if self._restarting:
                     self._interpolate_restart(nprocs)
                 self._generate_startinfo(nprocs)
-            self._launch_subprocess(self.elmer_binary, [])
+                try:
+                    self._setup_percentage_socket()
+                    self._launch_subprocess(self.elmer_binary, [])
+                finally:
+                    print("STOPPING MONITORING")
+                    self.stop_monitoring_status()
+            else:
+                self._launch_subprocess(self.elmer_binary, [])
         else:
 
             self._generate_power_over_time()
@@ -392,6 +411,7 @@ class GoSmartElmer(GoSmartComponent):
                     "--logfile-addpid"] + self.configfiles
             self._launch_subprocess("mpirun", args, mute=True)
 
+        self.stop_monitoring_status()
         self._percentage_loop.stop()
         self._percentage_thread.join()
 
