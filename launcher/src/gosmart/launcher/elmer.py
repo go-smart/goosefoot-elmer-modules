@@ -412,7 +412,6 @@ class GoSmartElmer(GoSmartComponent):
             self._launch_subprocess("mpirun", args, mute=True)
 
         self.stop_monitoring_status()
-        self._percentage_loop.stop()
         self._percentage_thread.join()
 
     def parse_config(self, config_node):
