@@ -54,6 +54,10 @@ FUNCTION AlternatingBoundaryCondition(Model, n, time) RESULT(potential)
             'Potential Consecutive Values', Found)
 
       step = MIN(SIZE(potential_values, 2), GetTimestep())
+      IF (step < 1) THEN
+          potential = 0
+          RETURN
+      END IF
 
       IF (bc_id == anode(step)) THEN
           potential = potential_values(1, step)

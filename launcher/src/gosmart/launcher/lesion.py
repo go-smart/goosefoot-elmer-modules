@@ -21,6 +21,7 @@ import shutil
 
 from gosmart.launcher.component import GoSmartComponent
 from gosmart.launcher.globals import EPS
+from gosmart.launcher.errors import GoSmartClientError, GoSmartServerError
 
 
 # Class to hold settings specific to the lesion post-processing
@@ -108,14 +109,14 @@ class GoSmartLesion(GoSmartComponent):
             input_prefix = self.logger.runname.lower()
             if prefix_ct(input_prefix) != 0:
                 if prefix_ct("case") != 0:
-                    raise RuntimeError("Cannot guess prefix ('%s' or 'case') as VTUs of both exist - clean one or other out" % self.logger.runname)
+                    raise GoSmartClientError("Cannot guess prefix ('%s' or 'case') as VTUs of both exist - clean one or other out" % self.logger.runname)
             else:
                 input_prefix = "case"
         else:
             input_prefix = input_prefix.lower()
 
         if prefix_ct(input_prefix) == 0:
-            raise RuntimeError("No VTU output found for prefix %s" % input_prefix)
+            raise GoSmartServerError("No VTU output found for prefix %s" % input_prefix)
 
         selection_method = self._find_input[self.selection]
         input_name = selection_method(input_cwd, input_prefix, criterion)

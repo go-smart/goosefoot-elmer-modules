@@ -15,6 +15,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from gosmart.launcher.errors import GoSmartModelError
+
 class GoSmartElmerPowerOverTimeFactory :
     def generate_powers(self) :
         return None
@@ -40,7 +42,7 @@ class GoSmartElmerPowerOverTimeFactoryPiecewiseLinear(GoSmartElmerPowerOverTimeF
     def parse_config(self, config_node):
         for node in config_node:
             if node.tag != "power":
-                raise RuntimeError("Piecewise linear power over time should have 'power' subelements")
+                raise GoSmartModelError("Piecewise linear power over time should have 'power' subelements")
             self.powers[float(node.get("time"))] = float(node.get("magnitude"))
 
 class GoSmartElmerPowerOverTimeFactoryConstant(GoSmartElmerPowerOverTimeFactory):

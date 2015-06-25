@@ -18,6 +18,7 @@
 import collections
 import csv
 import numpy as N
+from gosmart.launcher.errors import GoSmartModelError
 from gosmart.launcher.globals import \
     _generate_rotation_matrix_numpy
 M = N.matrix
@@ -100,7 +101,79 @@ class GoSmartElmerProbeLocationFactoryUmbrellaTines(GoSmartElmerProbeLocationFac
                     else:
                         self.extensions[extension.get("phase")] = float(extension.get("length"))
             else:
-                raise RuntimeError("Unrecognised tag describing needle in simulation")
+                raise GoSmartModelError("Unrecognised tag describing needle in simulation")
+
+
+# Based on Mika's needle.m file
+class GoSmartElmerProbeLocationFactoryExtrapolated(GoSmartElmerProbeLocationFactory):
+    def generate_locations(self):
+        locations = {}
+        location_times = {}
+
+        intersection = M([[self.target[i] for i in ('x', 'y', 'z')]]).T
+
+        ax, ay, az = [self.needleaxis[i] for i in ('x', 'y', 'z')]
+        VV = N.array([ax, ay, az])
+        # FIXME: this seems wrong.... surely...
+        if(N.linalg.norm(VV) >= 1.1):
+            ax = ax * 0.001
+            ay = ay * 0.001
+            az = az * 0.001
+
+        max_extension = max(self.extensions.values())
+        tuplify = lambda t: tuple(*N.array(t.T[0]))
+
+        for i, extentry in enumerate(sorted(self.extensions.items())):
+            time, extension = extentry
+            location_times[i] = time
+            locations[i] = GoSmartElmerProbeLocation()
+            locations[i].time = time
+
+            controlling_thermocouple = 0
+            for j in range(1, 9):
+                controlling_thermocouple += j % 2
+                point = M([[self.points[j][x] for x in ('x', 'y', 'z')]]).T
+
+                adjusted_end = (extension / max_extension) * (point - intersection) + intersection
+                locations[i]["ends"].append((tuplify(adjusted_end), controlling_thermocouple))
+
+                adjusted_middle = 0.5 * (extension / max_extension) * (point - intersection) + intersection
+                locations[i]["middles"].append((tuplify(adjusted_middle), controlling_thermocouple))
+
+            locations[i]["middles"].append((tuplify(intersection), -1))
+
+            locations[i]["thermocouples"] = [locations[i]["ends"][0]]
+            locations[i]["thermocouples"] += locations[i]["ends"][1:8:2]
+
+        return locations
+
+    def parse_config(self, config_node, logger):
+        self.needleaxis = logger.geometry["needleaxis"][0]
+        self.scale = logger.geometry["simulationscaling"]
+        self.target = logger.geometry["centre"]
+
+        if config_node.get('offset') is not None:
+            offset = list(map(float, config_node.get('offset').split(' ')))
+            self.target['x'] += offset[0]
+            self.target['y'] += offset[1]
+            self.target['z'] += offset[2]
+
+        for t in self.target.keys():
+            self.target[t] *= self.scale
+
+        self.extensions = {}
+        for node in config_node:
+            if node.tag == "extensions":
+                for extension in node:
+                    if extension.get("time") is not None:
+                        self.extensions[extension.get("time")] = float(extension.get("length"))
+                    else:
+                        self.extensions[extension.get("phase")] = float(extension.get("length"))
+            elif node.tag == "points":
+                for point in node:
+                    self.points[int(point.get("i"))] = [float(point.get(x)) for x in ('x', 'y', 'z')]
+            else:
+                raise GoSmartModelError("Unrecognised tag describing needle in simulation")
 
 
 # Based on Mika's needle.m file
@@ -172,7 +245,7 @@ class GoSmartElmerProbeLocationFactoryStraightTines(GoSmartElmerProbeLocationFac
                     else:
                         self.extensions[extension.get("phase")] = float(extension.get("length"))
             else:
-                raise RuntimeError("Unrecognised tag describing needle in simulation")
+                raise GoSmartModelError("Unrecognised tag describing needle in simulation")
 
 
 class GoSmartElmerProbeLocationFactoryManual(GoSmartElmerProbeLocationFactory):
@@ -201,6 +274,7 @@ class GoSmartElmerProbeLocationFactoryManual(GoSmartElmerProbeLocationFactory):
 
 probe_location_factories = {
     "manual": GoSmartElmerProbeLocationFactoryManual,
+    "extrapolated": GoSmartElmerProbeLocationFactoryExtrapolated,
     "straight tines": GoSmartElmerProbeLocationFactoryStraightTines,
     "umbrella tines": GoSmartElmerProbeLocationFactoryUmbrellaTines,
 }

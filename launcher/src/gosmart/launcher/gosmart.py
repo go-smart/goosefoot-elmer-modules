@@ -37,6 +37,7 @@ from gosmart.launcher.mesher_cgal import GoSmartMesherCGAL
 from gosmart.launcher.needlelibrary_interface import GoSmartNeedleLibraryInterface
 from gosmart.launcher.preprocessor import GoSmartPreprocessorInterface
 from gosmart.launcher.globals import colorama_imported, slugify
+from gosmart.launcher.errors import GoSmartModelError
 
 if colorama_imported:
     import colorama
@@ -398,7 +399,7 @@ class GoSmart:
                     elif setting.tag == 'simulationscaling':
                         self.logger.geometry["simulationscaling"] = float(setting.get("ratio"))
                     else:
-                        raise RuntimeError("Not understood geometry tag")
+                        raise GoSmartModelError("Not understood geometry tag")
             elif section.tag == 'regions' or section.tag == 'definitions':
                 for region in section:
                     if region.tag in ('region', 'surface', 'zone', 'both'):
@@ -416,7 +417,7 @@ class GoSmart:
                     elif region.tag in ('cad',):
                         self.logger.add_file(region.tag, region.get("name"), region.get("input"))
                     else:
-                        raise RuntimeError("Not understood region tag")
+                        raise GoSmartModelError("Not understood region tag")
             elif section.tag == 'mesher':
                 inner = section.find("inner")
                 self.has_inner = (inner is not None)

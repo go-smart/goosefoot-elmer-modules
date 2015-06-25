@@ -22,9 +22,11 @@ import errno
 import subprocess
 import math
 import threading
+import re
 
 from gosmart.launcher.globals import slugify, colorama_imported
 import gosmart.config
+from gosmart.server.error import Error as ErrorCode
 
 if colorama_imported:
     import colorama
@@ -37,6 +39,9 @@ class GoSmartComponent:
     suffix = 'unknown'
     todos = ()
     logpick_pairs = ()
+    error_regex = None
+    last_error = None
+    manual_return_code_handling = False
 
     # Tuplet - number of consecutive triggered seconds before suppressing; number of lines per second to trigger
     suppress_logging_over_per_second = None
@@ -54,6 +59,7 @@ class GoSmartComponent:
         self._timings_tmp = {}
 
         self.print_timing = lambda t: self.logger.print_line(t, color="BLUE", color_bright=True)
+        self.error_regex = re.compile(r'(error|fatal)', re.IGNORECASE)
 
         for todo in self.todos:
             self.logger.print_line("TODO (%s): %s" % (self.suffix, todo), color_bright=True)
@@ -177,6 +183,9 @@ class GoSmartComponent:
             offset = time.time() - self._start_time
             sym = self.logpick(offset, line)
 
+            if self.error_regex and self.error_regex.search(line):
+                self.last_error = line
+
             suppress = mute
             if self.suppress_logging_over_per_second is not None:
                 if math.floor(offset) == current_second:
@@ -245,14 +254,28 @@ class GoSmartComponent:
 
         # If the return code is non-zero we crash out
         # FIXME: Ignoring segfaults and other signals (negative codes indicate terminated by a given Unix signal)
-        if return_code != 0 and return_code != -11:
-            self.logger.print_fatal("A subprocess returned non-zero (Ret: %d) - see %s for more detail." % (return_code, outfile))
+        if not self.manual_return_code_handling and return_code != 0 and return_code != -11:
+            # If there is no manual return code handling, we assume this is our indicator for the Go-Smart code
+            try:
+                code = ErrorCode(return_code).name
+            except ValueError:
+                if return_code < 0:
+                    code = "E_SERVER"
+                else:
+                    code = "E_UNKNOWN"
+
+            message = "%s did not exit cleanly - returned %d (%s)" % (executable, return_code, self.suffix)
+            if self.last_error:
+                message += ": %s" % self.last_error
+            self.logger.print_fatal(message, code)
 
         # Just in case the thread gets stuck for some reason
         thread.join(timeout=1)
 
         self._end_time = time.time()
         self.print_logpick(self._end_time - self._start_time)
+
+        return return_code
 
     def launch(self):
         self.logger.print_line("Launching %s..." % self.suffix)

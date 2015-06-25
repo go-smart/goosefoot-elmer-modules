@@ -26,7 +26,6 @@ from zope.interface.verify import verifyObject
 import os
 import sys
 import tempfile
-import threading
 import traceback
 
 try:
@@ -40,6 +39,7 @@ except:
 from gosmart.server.definition import GoSmartSimulationDefinition
 from gosmart.comparator import Comparator
 from gosmart.server.translator import GoSmartSimulationTranslator
+from .error import Error, makeError
 #from gosmart.launcher import gosmart
 
 
@@ -149,17 +149,19 @@ class GoSmartSimulationComponent(ApplicationSession):
             self.eventComplete(guid)
         else:
             #traceback.print_exc(file=sys.stderr)
+            code = Error.E_UNKNOWN
             error_message = "Unknown error occurred: %d" % return_code
             error_message_path = os.path.join(current.get_dir(), 'error_message')
 
             if (os.path.exists(error_message_path)):
                 with open(error_message_path, 'r') as f:
-                    error_message = f.read()
+                    code = f.readline().strip()
+                    error_message = f.read().strip()
                     error_message.encode('ascii', 'xmlcharrefreplace')
                     error_message.encode('utf-8')
 
             print("Completed simulation in %s" % current.get_dir())
-            self.eventFail(guid, error_message)
+            self.eventFail(guid, makeError(code, error_message))
 
         print("Finished simulation")
 
@@ -210,7 +212,7 @@ class GoSmartSimulationComponent(ApplicationSession):
     @asyncio.coroutine
     def doSimulate(self, guid):
         if guid not in self.current:
-            self.eventFail("Not fully prepared before launching - no current simulation set")
+            self.eventFail(guid, makeError(Error.E_CLIENT, "Not fully prepared before launching - no current simulation set"))
 
         current = self.current[guid]
 
@@ -262,7 +264,7 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         try:
             loop = asyncio.get_event_loop()
-            loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "Success", "100"))
+            loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "SUCCESS", "Success", "100"))
         except Exception as e:
             print(e)
             traceback.print_exc(file=sys.stderr)
@@ -278,7 +280,7 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         try:
             loop = asyncio.get_event_loop()
-            loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "Failed", None))
+            loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, message["code"], message["message"], None))
         except Exception as e:
             print(e)
             traceback.print_exc(file=sys.stderr)
@@ -292,7 +294,16 @@ class GoSmartSimulationComponent(ApplicationSession):
         try:
             simulations = self._db.all()
             for simulation in simulations:
-                self.publish(u'com.gosmartsimulation.announce', simulation['guid'], (simulation['percentage'], simulation['status']), simulation['directory'])
+                exit_code = simulation['exit_code']
+
+                if exit_code is not None and exit_code != 'IN_PROGRESS':
+                    percentage = None
+                    status = makeError(exit_code, simulation['status'])
+                else:
+                    percentage = simulation['percentage']
+                    status = simulation['status']
+
+                self.publish(u'com.gosmartsimulation.announce', simulation['guid'], (percentage, status), simulation['directory'])
                 print("Announced: %s" % simulation['guid'])
 
         except Exception:
@@ -304,7 +315,7 @@ class GoSmartSimulationComponent(ApplicationSession):
 
     def updateStatus(self, id, percentage, message, loop):
         try:
-            loop.call_soon_threadsafe(lambda: self._db.setStatus(id, message, percentage))
+            loop.call_soon_threadsafe(lambda: self._db.setStatus(id, 'IN_PROGRESS', message, percentage))
         except Exception as e:
             print(e)
             traceback.print_exc(file=sys.stderr)

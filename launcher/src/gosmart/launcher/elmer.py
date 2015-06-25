@@ -316,11 +316,11 @@ class GoSmartElmer(GoSmartComponent):
         self._monitoring_status = True
 
         while self._monitoring_status:
-            inp, out, exc = select.select([s], [], [])
+            inp, out, exc = select.select([s], [], [], 1)
 
             if len(inp):
                 conn, client = s.accept()
-                client_file = conn.makefile("r", buffering=0)
+                client_file = conn.makefile("r")
 
                 while True:
                     data = client_file.readline()
@@ -328,13 +328,15 @@ class GoSmartElmer(GoSmartComponent):
                         self.logger.print_line("[status]: %s" % data)
 
                         if self._update_status is not None:
-                            self._update_status(data)
+                            try:
+                                self._update_status(float(data), "Elmer in progress")
+                            except:
+                                pass
                     else:
                         # Stop watching; we should only look after one process in a run
                         self.stop_monitoring_status()
                         break
-
-        conn.close()
+                conn.close()
 
     def stop_monitoring_status(self):
         self._monitoring_status = False
@@ -380,12 +382,11 @@ class GoSmartElmer(GoSmartComponent):
                 self._generate_startinfo(nprocs)
                 try:
                     self._setup_percentage_socket()
-                    self._launch_subprocess(self.elmer_binary, [])
+                    return_code = self._launch_subprocess(self.elmer_binary, [])
                 finally:
-                    print("STOPPING MONITORING")
                     self.stop_monitoring_status()
             else:
-                self._launch_subprocess(self.elmer_binary, [])
+                return_code = self._launch_subprocess(self.elmer_binary, [])
         else:
 
             self._generate_power_over_time()
@@ -409,7 +410,7 @@ class GoSmartElmer(GoSmartComponent):
                     "--elmer", self.elmer_mpi_binary,
                     "--elmer-logfile", self.outfilename,
                     "--logfile-addpid"] + self.configfiles
-            self._launch_subprocess("mpirun", args, mute=True)
+            return_code = self._launch_subprocess("mpirun", args, mute=True)
 
         self.stop_monitoring_status()
         self._percentage_thread.join()

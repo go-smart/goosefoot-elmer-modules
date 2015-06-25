@@ -24,6 +24,7 @@ import traceback
 
 from gosmart.launcher import gosmart
 from gosmart.launcher import utils
+from gosmart.launcher import errors
 
 
 def main():
@@ -40,8 +41,14 @@ def main():
     try:
         wrapper = gosmart.GoSmart(args=args, global_working_directory=args.global_working_directory)
     except Exception as e:
+        if isinstance(e, errors.GoSmartError):
+            code = e.code
+        else:
+            code = "E_UNKNOWN"
+
         with open('error_message', 'w') as f:
-            f.write("INIT-ERROR (%s): %s" % (type(e).__name__, str(e)))
+            f.write("%s\nINIT-ERROR (%s): %s" % (code, type(e).__name__, str(e)))
+
         traceback.print_exc()
         return -1
 
@@ -50,8 +57,14 @@ def main():
     try:
         wrapper.launch(default_procs=1)
     except Exception as e:
+        if isinstance(e, errors.GoSmartError):
+            code = e.code
+        else:
+            code = "E_UNKNOWN"
+
         with open('error_message', 'w') as f:
-            f.write("EXEC-ERROR (%s): %s" % (type(e).__name__, str(e)))
+            f.write("%s\nEXEC-ERROR (%s): %s" % (code, type(e).__name__, str(e)))
+
         traceback.print_exc()
         return -1
 

@@ -22,6 +22,7 @@ import errno
 
 from gosmart.launcher.component import GoSmartComponent
 from gosmart.launcher.globals import debug, slugify, colorama_imported
+from gosmart.launcher.errors import exceptions
 
 if colorama_imported:
     import colorama
@@ -234,7 +235,7 @@ class GoSmartLogger(GoSmartComponent):
         if self.logfile is not None:
             self.logfile.write(str(line).strip() + "\n")
 
-    def print_fatal(self, error):
+    def print_fatal(self, error, code="E_UNKNOWN"):
         self.print_error(error)
 
-        raise RuntimeError(error)
+        raise exceptions[code](error)
