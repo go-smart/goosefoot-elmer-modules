@@ -134,7 +134,12 @@ class GoSmartSimulationComponent(ApplicationSession):
             return False
 
         loop = asyncio.get_event_loop()
-        task = loop.create_task(self.doSimulate(guid))
+        coro = self.doSimulate(guid)
+        try:
+            task = loop.create_task(coro)
+        except AttributeError:
+            task = asyncio.async(coro, loop=loop)
+
         task.add_done_callback(partial(self._handle_simulation_done, guid=guid))
 
         return True
@@ -272,7 +277,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         self.current[guid].set_exit_status(True)
         print('Success', guid)
 
-        self.publish(u'com.gosmartsimulation.complete', guid)
+        self.publish(u'com.gosmartsimulation.complete', guid, makeError('SUCCESS', 'Success'))
 
     def eventFail(self, guid, message):
         if guid not in self.current:
@@ -296,12 +301,8 @@ class GoSmartSimulationComponent(ApplicationSession):
             for simulation in simulations:
                 exit_code = simulation['exit_code']
 
-                if exit_code is not None and exit_code != 'IN_PROGRESS':
-                    percentage = None
-                    status = makeError(exit_code, simulation['status'])
-                else:
-                    percentage = simulation['percentage']
-                    status = simulation['status']
+                status = makeError(exit_code, simulation['status'])
+                percentage = simulation['percentage']
 
                 self.publish(u'com.gosmartsimulation.announce', simulation['guid'], (percentage, status), simulation['directory'])
                 print("Announced: %s" % simulation['guid'])
@@ -310,7 +311,12 @@ class GoSmartSimulationComponent(ApplicationSession):
             for simulation in self.current:
                 exit_status = self.current[simulation].get_exit_status()
                 properties = self.getProperties(simulation)
-                self.publish(u'com.gosmartsimulation.announce', simulation, (100 if exit_status[0] else 0, exit_status[1]), properties['location'])
+                self.publish(
+                    u'com.gosmartsimulation.announce',
+                    simulation,
+                    (100 if exit_status[0] else 0, makeError('SUCCESS' if exit_status[0] else 'E_UNKNOWN', exit_status[1])),
+                    properties['location']
+                )
                 print("Announced (from map): %s" % simulation)
 
     def updateStatus(self, id, percentage, message, loop):
@@ -320,7 +326,7 @@ class GoSmartSimulationComponent(ApplicationSession):
             print(e)
             traceback.print_exc(file=sys.stderr)
 
-        self.publish('com.gosmartsimulation.status', id, percentage, message)
+        self.publish('com.gosmartsimulation.status', id, percentage, makeError('IN_PROGRESS', message))
 
     def onJoin(self, details):
         print("session ready")
