@@ -21,8 +21,6 @@
 from autobahn.asyncio.wamp import ApplicationRunner
 
 from gosmart.server.server import GoSmartSimulationComponent
-#from gosmart.server.sftp_transferrer import SFTPTransferrer
-from gosmart.server.http_transferrer import HTTPTransferrer
 from gosmart.server.database import SQLiteSimulationDatabase
 
 import argparse
