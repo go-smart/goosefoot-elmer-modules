@@ -24,11 +24,11 @@ from gosmart.server.server import GoSmartSimulationComponent
 from gosmart.server.database import SQLiteSimulationDatabase
 
 import argparse
-import os
+import uuid
 
 
-def launch(x):
-    component = GoSmartSimulationComponent(x, lambda: SQLiteSimulationDatabase("simulations.sqlite3"))
+def launch(x, server_id):
+    component = GoSmartSimulationComponent(x, server_id, lambda: SQLiteSimulationDatabase("simulations.sqlite3"))
 
     return component
 
@@ -39,6 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--sftp-host", help="server hosting SFTP", default="localhost")
     parser.add_argument("--sftp-port", help="port hosting SFTP", default="9001", type=int)
     parser.add_argument("--key-file", help="file for authenticating to SFTP", default="id_rsa")
+    parser.add_argument("sid", help="Server UUID (should be subdirectory of current directory", default=None, nargs='?')
     args = parser.parse_args()
 
     key_file = args.key_file
@@ -47,5 +48,10 @@ if __name__ == "__main__":
     sftp_port = args.sftp_port
     sftp_host = args.sftp_host
 
+    if not args.sid:
+        server_id = str(uuid.uuid4())
+    else:
+        server_id = args.sid
+
     runner = ApplicationRunner(url="ws://%s:%d/ws" % (host, websocket_port), realm="realm1")
-    runner.run(launch)
+    runner.run(lambda x: launch(x, server_id=server_id))

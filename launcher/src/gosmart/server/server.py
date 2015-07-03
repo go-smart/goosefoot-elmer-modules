@@ -24,7 +24,9 @@ from autobahn.asyncio.wamp import ApplicationSession
 from zope.interface.verify import verifyObject
 
 import os
+import socket
 import sys
+import multiprocessing
 import tempfile
 import traceback
 
@@ -85,13 +87,14 @@ class GoSmartSimulationComponent(ApplicationSession):
     client = None
     _db = None
 
-    def __init__(self, x, database):
+    def __init__(self, x, server_id, database):
         global use_observant
 
         ApplicationSession.__init__(self, x)
         self.traceback_app = True
 
         self._args = GoSmartArguments(configfilenames=["settings.xml"])
+        self.server_id = server_id
         self.current = {}
 
         if use_observant:
@@ -111,6 +114,16 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         # Convert this to a zope interface
         loop = asyncio.get_event_loop()
+
+        if not os.path.exists(server_id):
+            print("Creating server ID directory")
+            os.mkdir(server_id)
+
+        os.chdir(server_id)
+
+        with open("identity", "w") as f:
+            f.write(server_id)
+
         loop.call_soon_threadsafe(lambda: self.setDatabase(database()))
 
     def setDatabase(self, database):
@@ -205,7 +218,7 @@ class GoSmartSimulationComponent(ApplicationSession):
             tmpdir = tempfile.mkdtemp(prefix='gssf-')
             translator = GoSmartSimulationTranslator()
             self.current[guid] = GoSmartSimulationDefinition(guid, xml, tmpdir, translator, lambda p, m: self.updateStatus(guid, p, m))
-            self.publish(u'com.gosmartsimulation.announce', guid, [0, 'XML uploaded'], tmpdir)
+            self.publish(u'com.gosmartsimulation.announce', self.server_id, guid, [0, 'XML uploaded'], tmpdir)
         except Exception as e:
             traceback.print_exc(file=sys.stderr)
             raise e
@@ -301,10 +314,13 @@ class GoSmartSimulationComponent(ApplicationSession):
             for simulation in simulations:
                 exit_code = simulation['exit_code']
 
+                if exit_code is None:
+                    exit_code = 'E_UNKNOWN'
+
                 status = makeError(exit_code, simulation['status'])
                 percentage = simulation['percentage']
 
-                self.publish(u'com.gosmartsimulation.announce', simulation['guid'], (percentage, status), simulation['directory'])
+                self.publish(u'com.gosmartsimulation.announce', self.server_id, simulation['guid'], (percentage, status), simulation['directory'])
                 print("Announced: %s" % simulation['guid'])
 
         except Exception:
@@ -313,6 +329,7 @@ class GoSmartSimulationComponent(ApplicationSession):
                 properties = self.getProperties(simulation)
                 self.publish(
                     u'com.gosmartsimulation.announce',
+                    self.server_id,
                     simulation,
                     (100 if exit_status[0] else 0, makeError('SUCCESS' if exit_status[0] else 'E_UNKNOWN', exit_status[1])),
                     properties['location']
@@ -328,22 +345,41 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         self.publish('com.gosmartsimulation.status', id, percentage, makeError('IN_PROGRESS', message))
 
+    def onRequestIdentify(self):
+        try:
+            active_simulations = self._db.active_count()
+            score = multiprocessing.cpu_count() - active_simulations
+            server_name = socket.gethostname()
+
+            self.publish(
+                u'com.gosmartsimulation.identify',
+                self.server_id,
+                server_name,
+                score
+            )
+            print("Announced score: %d [%s]" % (score, self.server_id))
+        except Exception as e:
+            print("Didn't send score!")
+            raise e
+
     def onJoin(self, details):
         print("session ready")
 
         try:
-            self.register(self.doInit, u'com.gosmartsimulation.init')
-            self.register(self.doStart, u'com.gosmartsimulation.start')
-            self.register(self.doUpdateSettingsXml, u'com.gosmartsimulation.update_settings_xml')
-            self.register(self.doUpdateFiles, u'com.gosmartsimulation.update_files')
-            self.register(self.doRequestFiles, u'com.gosmartsimulation.request_files')
-            self.register(self.doFinalize, u'com.gosmartsimulation.finalize')
-            self.register(self.doClean, u'com.gosmartsimulation.clean')
-            self.register(self.doCompare, u'com.gosmartsimulation.compare')
-            self.register(self.doWorkflow, u'com.gosmartsimulation.workflow')
-            self.register(self.doProperties, u'com.gosmartsimulation.properties')
+            for i in ('.' + self.server_id, ''):
+                self.register(self.doInit, u'com.gosmartsimulation%s.init' % i)
+                self.register(self.doStart, u'com.gosmartsimulation%s.start' % i)
+                self.register(self.doUpdateSettingsXml, u'com.gosmartsimulation%s.update_settings_xml' % i)
+                self.register(self.doUpdateFiles, u'com.gosmartsimulation%s.update_files' % i)
+                self.register(self.doRequestFiles, u'com.gosmartsimulation%s.request_files' % i)
+                self.register(self.doFinalize, u'com.gosmartsimulation%s.finalize' % i)
+                self.register(self.doClean, u'com.gosmartsimulation%s.clean' % i)
+                self.register(self.doCompare, u'com.gosmartsimulation%s.compare' % i)
+                self.register(self.doWorkflow, u'com.gosmartsimulation%s.workflow' % i)
+                self.register(self.doProperties, u'com.gosmartsimulation%s.properties' % i)
 
-            self.subscribe(self.onRequestAnnounce, u'com.gosmartsimulation.request_announce')
+                self.subscribe(self.onRequestAnnounce, u'com.gosmartsimulation%s.request_announce' % i)
+                self.subscribe(self.onRequestIdentify, u'com.gosmartsimulation%s.request_identify' % i)
             print("procedure registered")
         except Exception as e:
             print("could not register procedure: {0}".format(e))

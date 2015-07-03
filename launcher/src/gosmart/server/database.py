@@ -45,7 +45,7 @@ class SQLiteSimulationDatabase:
     def getStatus(self, guid):
         cursor = self._db.cursor()
         cursor.execute('''
-            SELECT status, percentage
+            SELECT status, percentage, exit_code
             FROM simulations
             WHERE guid=? AND deleted=0
             ''', guid)
@@ -54,8 +54,8 @@ class SQLiteSimulationDatabase:
         except Exception:
             return None
 
-        status, percentage = simulation_row
-        return percentage, status
+        status, percentage, exit_code = simulation_row
+        return percentage, status, exit_code
 
     def create(self):
         cursor = self._db.cursor()
@@ -88,10 +88,19 @@ class SQLiteSimulationDatabase:
         cursor = self._db.cursor()
         cursor.execute('''
             UPDATE simulations
-            SET status=('Unfinished (' || percentage || '%)'), percentage=0
+            SET status=('Unfinished (' || percentage || '%)'), percentage=0, exit_code='E_UNKNOWN'
             WHERE percentage IS NOT NULL AND percentage < 100
         ''')
         self._db.commit()
+
+    def active_count(self):
+        cursor = self._db.cursor()
+        cursor.execute('''
+            SELECT COUNT(id) as active
+            FROM simulations
+            WHERE status="IN_PROGRESS"
+        ''')
+        return cursor.fetchone()['active']
 
     def all(self):
         cursor = self._db.cursor()
@@ -112,7 +121,7 @@ class SQLiteSimulationDatabase:
             WHERE guid=? AND deleted=0
         ''', guid)
         try:
-            simulation_row = cursor.fetch_one()
+            simulation_row = cursor.fetchone()
         except Exception:
             return None
 
