@@ -188,7 +188,7 @@ SUBROUTINE NumaPowerGeneratorSolver( Model,Solver,Timestep,TransientSimulation )
     AverageThermocoupleTemp = 0.0_dp
     ActiveThermocouples = 0
     DO t = 1, SIZE(ThermocoupleTemperatures)
-        IF (ThermocoupleTemperatures(t) >= 0) THEN  ! NB In Kelvin, any negative value is invalid and indicates inactive tc
+        IF (ThermocoupleTemperatures(t) >= 1e-10_dp) THEN  ! NB In Kelvin, any negative value is invalid and indicates inactive tc
             AverageThermocoupleTemp = AverageThermocoupleTemp + ThermocoupleTemperatures(t)
             ActiveThermocouples = ActiveThermocouples + 1
 
@@ -258,7 +258,7 @@ SUBROUTINE NumaPowerGeneratorSolver( Model,Solver,Timestep,TransientSimulation )
         CALL Fatal("NumaPowerGeneratorSolver", "Input power has not been given (Electric Power in Solver section)")
     END IF
     MaxPower = ParPtr(1)
-    PRINT *, "Power is ", Power, "Target Temperature is ", TargetTemperature
+    PRINT *, "Unadjusted Power is ", MaxPower, "Target Temperature is ", TargetTemperature
 
     IF ( MaxPower < -EPS .OR. PresentPhase < 0 ) THEN
         PRINT *, "Negative Power or Phase detected, taken as an indication to stop simulation"

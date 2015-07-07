@@ -134,7 +134,7 @@ MODULE HeatSolve
          XX, YY, ForceHeater, CellsDeath, &
          LocalNodes, SmartTolReached, PrevPowerScaling, &
          PowerScaling, GotMeltPoint, MeltPoint, SmartHeaterNode, SmartHeaterBC, SmartHeaterAverage, &
-         SmartTol, NonlinearTol, NonlinearIter, Relax
+         SmartTol, NonlinearTol, NonlinearIter, Relax, TransientHeaterControl
 
      REAL(KIND=dp) :: at,at0,totat,st,totst,CPUTime,RealTime
 

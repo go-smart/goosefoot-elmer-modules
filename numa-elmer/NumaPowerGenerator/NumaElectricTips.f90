@@ -98,6 +98,8 @@ MODULE NumaElectricTips
                 IF (ALL(Temperature % Perm(NodeIndexes(1:n)) > 0)) THEN
                     ElementValues(1:n) = Temperature % Values(Temperature % Perm(NodeIndexes(1:n)))
                     ThermocoupleTemperatures(i) = SUM(thermocouples % coordinatesBasis(i,1:n) * ElementValues(1:n))
+                ELSE
+                    ThermocoupleTemperatures(i) = 0_dp
                 END IF
 
                 IF (ParEnv % PEs > 1) THEN
@@ -157,9 +159,7 @@ MODULE NumaElectricTips
         IF(MultiTipsLocation) THEN
         !------------------------------------------------------------------------------
             PhaseVar => VariableGet(Solver % Mesh % Variables, "Phase", Found)
-                    PRINT *, "TLT!", OldTipsLocationTimesIndex, TipsLocationTimesIndex
             OldTipsLocationTimesIndex = TipsLocationTimesIndex
-                    PRINT *, "TLT?", OldTipsLocationTimesIndex, TipsLocationTimesIndex
             IF (Found) THEN
                 TipsLocationTimesIndex = FLOOR(PhaseVar % Values(1) + 0.5)
             ELSE

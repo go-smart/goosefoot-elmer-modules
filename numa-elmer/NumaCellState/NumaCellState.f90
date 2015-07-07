@@ -182,7 +182,9 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
 !------------------------------------------------------------------------------    
         IF (CellStateModel == 2) THEN
             DO i=1,LocalNodes
-                    Vulnerable(i) = 1 - CellState((i-1)*ADOFs+1) - CellState((i-1)*ADOFs+2)
+                    j = CellStatePerm(i)
+                    IF (j < 1) CYCLE
+                    Vulnerable(j) = 1 - CellState((j-1)*ADOFs+1) - CellState((j-1)*ADOFs+2)
             END DO
             CALL VariableAdd( Solver % Mesh % Variables, Solver % Mesh, &
                 Solver, 'Vulnerable', 1, Vulnerable, CellStatePerm )
@@ -249,6 +251,7 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
 !------------------------------------------------------------------------------
                     k = TempPerm(i)
                     m = CellStatePerm(i)
+                    IF (k < 1 .OR. m < 1) CYCLE
                     IF (Temperature((k-1)*TDOFs+k_dof) > DeathTemperature(k_dof)) THEN
                         AblationLength(k_dof,m) = AblationLength(k_dof,m) + Timestep
                     ELSE
@@ -269,7 +272,7 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
 !------------------------------------------------------------------------------
 !     Compute the norm of the variable CellState
 !------------------------------------------------------------------------------
-        Solver % Variable % Norm = SQRT( SUM( CellState**2 ) / (ADOFs*LocalNodes) )
+        Solver % Variable % Norm = SQRT( SUM( CellState**2 ) / (ADOFs*SIZE(CellStatePerm)) )
 !------------------------------------------------------------------------------
 !    Three-states model
 !------------------------------------------------------------------------------
@@ -322,7 +325,7 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
 !------------------------------------------------------------------------------ 
 !         Compute the norm of the solution
 !------------------------------------------------------------------------------         
-            Norm = SQRT( SUM( CellState**2 ) / (ADOFs*LocalNodes) )
+            Norm = SQRT( SUM( CellState**2 ) / (ADOFs*SIZE(CellStatePerm)) )
 !------------------------------------------------------------------------------    
 !          Non linear iterations
 !------------------------------------------------------------------------------
@@ -398,6 +401,8 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
                     k = CellStatePerm(t)
                     i = TempPerm(t)
 
+                    IF (k < 1 .OR. i < 1) CYCLE
+
                     A_km1 = CellStateKm1(2 * k - 1)
                     D_km1 = CellStateKm1(2 * k)
                     V_km1 = 1 - A_km1 - D_km1
@@ -444,7 +449,7 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
                 arealt = RealTime() -arealt
                 st = CPUTime()
                 srealt = RealTime()
-                Solver % Variable % Norm = SQRT( SUM( CellState**2 ) / (ADOFs*LocalNodes) )
+                Solver % Variable % Norm = SQRT( SUM( CellState**2 ) / (ADOFs*SIZE(CellStatePerm)) )
 
 !------------------------------------------------------------------------------
 !                Test to enforce bounding of the variables:
@@ -452,7 +457,9 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
                 EnforceVariableBounds = ListGetLogical( SolverParams, 'Enforce Variable Bounds ', Found )
                 IF (.NOT. Found) EnforceVariableBounds = .FALSE.
                 IF (EnforceVariableBounds) THEN
-                    DO i=1,LocalNodes
+                    DO j=1,LocalNodes
+                        i = CellStatePerm(j)
+                        IF (i < 1) CYCLE
                         IF(CellState((i-1)*ADOFs+1)>1.0) CellState((i-1)*ADOFs+1)=1.0
                         IF(CellState((i-1)*ADOFs+2)>1.0) CellState((i-1)*ADOFs+2)=1.0
                         IF(CellState((i-1)*ADOFs+1)<0.0) CellState((i-1)*ADOFs+1)=0.0
@@ -480,7 +487,7 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
 !             Compute the change in norm of the solution 
 !------------------------------------------------------------------------------
                 PrevNorm = Norm
-                Norm = SQRT( SUM( CellState**2 ) / (ADOFs*LocalNodes) )
+                Norm = SQRT( SUM( CellState**2 ) / (ADOFs*SIZE(CellStatePerm)) )
                 IF ( PrevNorm + Norm /= 0.0d0 ) THEN
                     RelativeChange = 2.0d0 * ABS( PrevNorm-Norm ) / (PrevNorm + Norm)
                 ELSE
@@ -504,6 +511,7 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
 !            open(unit=1099,status='unknown',file=Panchfile)
             Do t=1,LocalNodes
                 k = CellStatePerm(t)
+                IF (k < 1) CYCLE
                 CellState(2 * k - 1) = MIN(MAX(CellState(2 * k - 1), 0.0), 1.0)
                 CellState(2 * k) = MIN(MAX(CellState(2 * k), 0.0), 1.0)
 !                PanchCells(t,8)=CellState(2 * k - 1)
@@ -539,7 +547,9 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
 !        Compute vulnerable state
 !------------------------------------------------------------------------------
         DO i=1,LocalNodes
-            Vulnerable(i) = 1 - CellState((i-1)*ADOFs+1) - CellState((i-1)*ADOFs+2)
+            j = CellStatePerm(i)
+            IF (j < 1) CYCLE
+            Vulnerable(j) = 1 - CellState((j-1)*ADOFs+1) - CellState((j-1)*ADOFs+2)
         END DO
 !------------------------------------------------------------------------------
 !        For multi mesh resolution:
