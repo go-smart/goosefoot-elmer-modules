@@ -28,6 +28,7 @@ import socket
 import sys
 import multiprocessing
 import tempfile
+import time
 import traceback
 
 try:
@@ -218,7 +219,7 @@ class GoSmartSimulationComponent(ApplicationSession):
             tmpdir = tempfile.mkdtemp(prefix='gssf-')
             translator = GoSmartSimulationTranslator()
             self.current[guid] = GoSmartSimulationDefinition(guid, xml, tmpdir, translator, lambda p, m: self.updateStatus(guid, p, m))
-            self.publish(u'com.gosmartsimulation.announce', self.server_id, guid, [0, 'XML uploaded'], tmpdir)
+            self.publish(u'com.gosmartsimulation.announce', self.server_id, guid, [0, 'XML uploaded'], tmpdir, time.time())
         except Exception as e:
             traceback.print_exc(file=sys.stderr)
             raise e
@@ -241,6 +242,7 @@ class GoSmartSimulationComponent(ApplicationSession):
             *[a for a in args if a not in ('stdin', 'stdout', 'stderr')],
             cwd=current.get_dir()
         )
+        self.updateStatus(guid, 0, "Launched subprocess")
         yield from task.wait()
 
         return task.returncode
@@ -280,9 +282,11 @@ class GoSmartSimulationComponent(ApplicationSession):
         if guid not in self.current:
             print("Tried to send simulation-specific completion event with no current simulation definition", file=sys.stderr)
 
+        timestamp = time.time()
+
         try:
             loop = asyncio.get_event_loop()
-            loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "SUCCESS", "Success", "100"))
+            loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "SUCCESS", "Success", "100", timestamp))
         except Exception as e:
             print(e)
             traceback.print_exc(file=sys.stderr)
@@ -290,15 +294,17 @@ class GoSmartSimulationComponent(ApplicationSession):
         self.current[guid].set_exit_status(True)
         print('Success', guid)
 
-        self.publish(u'com.gosmartsimulation.complete', guid, makeError('SUCCESS', 'Success'))
+        self.publish(u'com.gosmartsimulation.complete', guid, makeError('SUCCESS', 'Success'), time.time())
 
     def eventFail(self, guid, message):
         if guid not in self.current:
             print("Tried to send simulation-specific failure event with no current simulation definition", file=sys.stderr)
 
+        timestamp = time.time()
+
         try:
             loop = asyncio.get_event_loop()
-            loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, message["code"], message["message"], None))
+            loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, message["code"], message["message"], None, timestamp))
         except Exception as e:
             print(e)
             traceback.print_exc(file=sys.stderr)
@@ -306,7 +312,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         self.current[guid].set_exit_status(False, message)
         print('Failure', guid, message)
 
-        self.publish(u'com.gosmartsimulation.fail', guid, message)
+        self.publish(u'com.gosmartsimulation.fail', guid, message, time.time())
 
     def onRequestAnnounce(self):
         try:
@@ -320,7 +326,7 @@ class GoSmartSimulationComponent(ApplicationSession):
                 status = makeError(exit_code, simulation['status'])
                 percentage = simulation['percentage']
 
-                self.publish(u'com.gosmartsimulation.announce', self.server_id, simulation['guid'], (percentage, status), simulation['directory'])
+                self.publish(u'com.gosmartsimulation.announce', self.server_id, simulation['guid'], (percentage, status), simulation['directory'], time.time())
                 print("Announced: %s" % simulation['guid'])
 
         except Exception:
@@ -332,18 +338,22 @@ class GoSmartSimulationComponent(ApplicationSession):
                     self.server_id,
                     simulation,
                     (100 if exit_status[0] else 0, makeError('SUCCESS' if exit_status[0] else 'E_UNKNOWN', exit_status[1])),
-                    properties['location']
+                    properties['location'],
+                    time.time()
                 )
                 print("Announced (from map): %s" % simulation)
 
-    def updateStatus(self, id, percentage, message, loop):
+    def updateStatus(self, id, percentage, message):
+        timestamp = time.time()
+
         try:
-            loop.call_soon_threadsafe(lambda: self._db.setStatus(id, 'IN_PROGRESS', message, percentage))
+            loop = asyncio.get_event_loop()
+            loop.call_soon_threadsafe(lambda: self._db.setStatus(id, 'IN_PROGRESS', message, percentage, timestamp))
         except Exception as e:
             print(e)
             traceback.print_exc(file=sys.stderr)
 
-        self.publish('com.gosmartsimulation.status', id, percentage, makeError('IN_PROGRESS', message))
+        self.publish('com.gosmartsimulation.status', id, percentage, makeError('IN_PROGRESS', message), timestamp)
 
     def onRequestIdentify(self):
         try:

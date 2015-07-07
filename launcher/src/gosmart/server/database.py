@@ -33,19 +33,19 @@ class SQLiteSimulationDatabase:
         if should_create:
             self.create()
 
-    def setStatus(self, guid, exit_code, status, percentage):
+    def setStatus(self, guid, exit_code, status, percentage, timestamp):
         cursor = self._db.cursor()
         cursor.execute('''
             UPDATE simulations
-            SET exit_code=:exit_code, status=:status, percentage=:percentage
+            SET exit_code=:exit_code, status=:status, percentage=:percentage, timestamp=:timestamp
             WHERE guid=:guid
-            ''', {"guid": guid, "status": status, "percentage": percentage, "exit_code": exit_code})
+            ''', {"guid": guid, "status": status, "percentage": percentage, "exit_code": exit_code, "timestamp": timestamp})
         self._db.commit()
 
     def getStatus(self, guid):
         cursor = self._db.cursor()
         cursor.execute('''
-            SELECT status, percentage, exit_code
+            SELECT status, percentage, exit_code, timestamp
             FROM simulations
             WHERE guid=? AND deleted=0
             ''', guid)
@@ -54,8 +54,8 @@ class SQLiteSimulationDatabase:
         except Exception:
             return None
 
-        status, percentage, exit_code = simulation_row
-        return percentage, status, exit_code
+        status, percentage, exit_code, timestamp = simulation_row
+        return percentage, status, exit_code, timestamp
 
     def create(self):
         cursor = self._db.cursor()
@@ -67,6 +67,7 @@ class SQLiteSimulationDatabase:
                 exit_code TEXT NULLABLE DEFAULT NULL,
                 status TEXT,
                 percentage REAL,
+                timestamp REAL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 deleted TINYINT DEFAULT 0
                 )
