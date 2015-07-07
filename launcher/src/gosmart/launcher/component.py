@@ -254,7 +254,7 @@ class GoSmartComponent:
 
         # If the return code is non-zero we crash out
         # FIXME: Ignoring segfaults and other signals (negative codes indicate terminated by a given Unix signal)
-        if not self.manual_return_code_handling and return_code != 0 and return_code != -11:
+        if not self.manual_return_code_handling and return_code != 0:
             # If there is no manual return code handling, we assume this is our indicator for the Go-Smart code
             try:
                 code = ErrorCode(return_code).name
