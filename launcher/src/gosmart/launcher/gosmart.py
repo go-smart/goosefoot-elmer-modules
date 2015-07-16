@@ -382,6 +382,23 @@ class GoSmart:
                     for c, o in zip(('x', 'y', 'z'), only_needle.get("offset").split(" ")):
                         self.logger.add_or_update_constant(c, self.logger.get_constant(c, group="needle") + float(o), group="needle", typ="float")
 
+            elif section.tag == 'needles':
+                for needle in section:
+                    if needle.tag != 'needle':
+                        continue
+                    if needle.get('name') is None:
+                        raise GoSmartModelError("Missing needle name")
+
+                    needle_name = needle.get('name')
+
+                    for subsection in needle:
+                        if subsection.tag == 'parameters':
+                            if len(needle) == 1:
+                                for parameter in needle[0]:
+                                    self.logger.add_or_update_needle_constant(needle_name, parameter.get('name'), parameter.get('value'), parameter.get('type'))
+                        else:
+                            raise GoSmartModelError("There should be at most one node (parameters) inside needle section")
+
             elif section.tag == 'preprocessor':
                 preprocessor = self.add_component('preprocessor', GoSmartPreprocessorInterface(self.logger))
                 preprocessor.parse_config(section)

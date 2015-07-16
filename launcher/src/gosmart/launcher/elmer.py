@@ -24,6 +24,7 @@ import shutil
 import re
 import uuid
 import json
+import jinja2
 
 import gosmart.config
 from gosmart.launcher.component import GoSmartComponent
@@ -151,6 +152,55 @@ class GoSmartElmer(GoSmartComponent):
                 ", ".join("tx(%d)" % i for i in range(len(algorithm["arguments"])))
             )
 
+    def _sif_expand_loops(self, sif, loop_lists):
+        for keyword, entries in loop_lists.items():
+            expanded_sif = ""
+            capturing = False
+            for line in sif.split("\n"):
+                if line.startswith("@foreach%s" % keyword):
+                    block = ""
+                    capturing = True
+                elif line.startswith("@endforeach%s" % keyword):
+                    block_template = string.Template(block)
+                    for entry in sorted(entries.keys()):
+                        entry_dict = entries[entry]
+                        entry_dict["ITERATOR_NAME"] = entry
+                        expanded_sif += block_template.safe_substitute(entry_dict) + "\n"
+                    capturing = False
+                else:
+                    if capturing:
+                        block += line + "\n"
+                    else:
+                        expanded_sif += line + "\n"
+            sif = expanded_sif
+        return sif
+
+    def _sif_expand_counters(self, sif):
+        counters = {}
+        expanded_sif = ""
+        for line in sif.split("\n"):
+            while True:
+                m = re.search(r'\$_([A-Za-z_0-9]+)(\+?)', line)
+
+                if not m:
+                    break
+
+                counter = m.group(0)
+                augmenting = (counter[-1] == '+')
+                if augmenting:
+                    counter = counter[:-1]
+
+                if counter not in counters:
+                    counters[counter] = 0
+
+                if augmenting:
+                    counters[counter] += 1
+
+                line = line[:m.start()] + str(counters[counter]) + line[m.end():]
+            expanded_sif += line + "\n"
+
+        return expanded_sif
+
     def _generate_sif(self):
         if self._sif_variant is not None:
             sif_suffix = self._sif_suffices[self._sif_variant]
@@ -162,6 +212,24 @@ class GoSmartElmer(GoSmartComponent):
         else:
             sif_definition = self._sif
 
+        region_ids = self.logger.get_region_ids()
+
+        # Update SIF to expand out needle foreachs
+        needle_constants = self.logger.get_needle_constants()
+        for needle, constants in needle_constants.items():
+            root = "REGIONS_NEEDLE_%s" % slugify(needle)
+            generic_root = "REGIONS_NEEDLE"
+            for prefix in ("BODIES_", "BOUNDARIES_", ""):
+                for suffix in ("_ACTIVE", "_INACTIVE", ""):
+                    entry = "%s%s%s" % (prefix, root, suffix)
+                    generic_entry = "%s%s%s" % (prefix, generic_root, suffix)
+                    if entry in region_ids:
+                        constants[generic_entry] = region_ids[entry]
+                        self.logger.print_debug("%s: %s" % (entry, region_ids[entry]))
+
+        #sif_definition = self._sif_expand_loops(sif_definition, {"needle": needle_constants})
+        #sif_definition = self._sif_expand_counters(sif_definition)
+
         def type_substitution(match):
             typ = self.logger.get_constant_type(match.group(2))
 
@@ -172,8 +240,8 @@ class GoSmartElmer(GoSmartComponent):
 
             return match.group(0)
 
-        sif_definition = re.sub(r'(=\s*)\$((CONSTANT|SETTING)_[A-Za-z_0-9]+)', type_substitution, sif_definition)
-        sif_template = string.Template(sif_definition)
+        #sif_definition = re.sub(r'(=\s*)\$((CONSTANT|SETTING|PARAMETER)_[A-Za-z_0-9]+)', type_substitution, sif_definition)
+        sif_template = jinja2.Template(sif_definition)
 
         if self._restarting:
             self._sif_mapping["RESTART_SECTION"] = """
@@ -188,25 +256,25 @@ class GoSmartElmer(GoSmartComponent):
                 Output File = 'Restart.dat'
             """
         self._prepare_algorithms()
-        self._check_sif_mapping_set(sif_template)
+        #self._check_sif_mapping_set(sif_template)
 
         constants = self.get_constants()
         for constant, value in constants.items():
             constants[constant] = _type_to_sif_string(self.logger.get_constant_type(constant), value)
 
         self._sif_mapping.update(constants)
-        self._sif_mapping.update(self.logger.get_region_ids())
+        self._sif_mapping.update(region_ids)
         self._sif_mapping.update(dict((r, a["call"]) for r, a in self._algorithms.items()))
         sources = "\n".join(a["sources"] for a in self._algorithms.values())
         self._sif_mapping["SOURCES"] = sources
 
-        for regions in re.finditer(r'\$((BOUNDARIES_|BODIES_|)REGIONS_[A-Z0-9_]*)', sif_template.template):
+        for regions in re.finditer(r'((BOUNDARIES_|BODIES_|)REGIONS_[A-Z0-9_]*)', sif_definition):
             regions = regions.group(1)
             if regions not in self._sif_mapping:
                 self._sif_mapping[regions] = "!Boundary missing: %s" % regions
                 self.logger.print_debug("%s empty" % regions)
 
-        sif_string = sif_template.substitute(self._sif_mapping)
+        sif_string = sif_template.render(p=self._sif_mapping, n=needle_constants)
         sif_stream = open(os.path.join(self.logger.make_cwd(self.cwd), self._sif_file), "w")
         sif_stream.write(sif_string)
         sif_stream.close()
@@ -280,6 +348,7 @@ class GoSmartElmer(GoSmartComponent):
         elmer_modules = self._elmer_modules_required
         if self._sif_variant is not None:
             elmer_modules += _elmer_modules_required[self._sif_variant]
+
         for mod in elmer_modules:
             shutil.copy(os.path.join(gosmart.config.fortran_template_directory, "%s.f90" % mod), self.logger.make_cwd(self.cwd))
             self._launch_subprocess(self.fortran_binary, [
@@ -442,8 +511,10 @@ class GoSmartElmer(GoSmartComponent):
                 self.power_over_time_factory.parse_config(element)
             elif element.tag == 'variant':
                 modules_required = element.get('modules')
+
                 if modules_required is not None:
                     self._elmer_modules_required += modules_required.split('; ')
+
                 name = element.get('name')
                 if name is None:
                     self._sif = element.text

@@ -51,6 +51,9 @@ class GoSmartLogger(GoSmartComponent):
 
         self.files = {}
 
+        self._constant_needle_mapping = {}
+        self._constant_needle_mapping_types = {}
+
         self._current_i = {
             "surfaces": 0,
             "zones": 0
@@ -166,6 +169,15 @@ class GoSmartLogger(GoSmartComponent):
     def ensure_constant(self, name, value, warn=False, group="CONSTANT", typ=None):
         self.add_or_update_constant(name, value, warn, group, override=False, typ=typ)
 
+    def add_or_update_needle_constant(self, needle, name, value, typ=None):
+        if needle not in self._constant_needle_mapping:
+            self._constant_needle_mapping[needle] = {}
+            self._constant_needle_mapping_types[needle] = {}
+
+        name = slugify(name)
+        self._constant_needle_mapping[needle][name] = value
+        self._constant_needle_mapping_types[needle][name] = {}
+
     def add_or_update_constant(self, name, value, warn=False, group="CONSTANT", override=True, typ=None):
         # TODO:PTW:THIS SHOULD BE REPLACED WITH SLUGIFY!!!
         if slugify(group) == "PARAMETER":
@@ -188,6 +200,10 @@ class GoSmartLogger(GoSmartComponent):
         elif mangled_name in self._constant_mapping:
             return self._constant_mapping[mangled_name]
         return None
+
+    def get_needle_constants(self):
+        constants = self._constant_needle_mapping.copy()
+        return constants
 
     def get_constants(self):
         constants = self._constant_mapping.copy()

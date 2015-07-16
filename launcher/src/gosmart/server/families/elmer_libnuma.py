@@ -299,25 +299,29 @@ class ElmerLibNumaFamily(metaclass=Family):
                     raise RuntimeException("Disallowed function appeared in algorithm %s" % result)
 
         l = 0
+        globalNeedlesNode = ET.SubElement(root, "needles")
         for ix, needle in self._needles.items():
+            globalNeedleNode = ET.SubElement(globalNeedlesNode, "needle")
+            l += 1
+            globalNeedleNode.set("name", str(l))
+
             if needle['class'] in ('solid-boundary', 'boundary'):
                 location = needle['file'].split(':', 1)
 
                 needle_mesh = None
                 if location[0] in ('surface', 'zone'):
                     needleNode = ET.SubElement(regions, location[0])
-                    needleNode.set("name", ix)
+                    needleNode.set("name", str(l))
                     needleNode.set("input", os.path.join("input/", location[1]))
                     needleNode.set("groups", "needles")
 
                     needle_mesh = ET.SubElement(mesher, 'needle')
-                    needle_mesh.set('region', ix)
+                    needle_mesh.set('region', str(l))
                     if needlezonefield and location[0] == 'zone':
                         needle_mesh.set("characteristic_length", needlezonefield)
                 else:
                     needleNode = ET.SubElement(needlelibrary, 'needle')
 
-                    l += 1
                     if name_needle_regions:
                         needleNode.set("name", str(l))
 
@@ -331,7 +335,7 @@ class ElmerLibNumaFamily(metaclass=Family):
                     needleNode.set("offset", " ".join(map(lambda c: str(c[1] - c[0]), zip(tip_location, centre_location))))
                     needleNode.set("axis", " ".join(map(lambda c: str(c[0] - c[1]), zip(entry_location, tip_location))))
 
-                    parameters = ET.SubElement(needleNode, "parameters")
+                    parameters = ET.SubElement(globalNeedleNode, "parameters")
                     for key, parameterPair in needle["parameters"].items():
                         parameter, typ = parameterPair
                         parameterNode = ET.SubElement(parameters, "constant")
@@ -342,7 +346,7 @@ class ElmerLibNumaFamily(metaclass=Family):
                 if needle_active_length is not None:
                     if needle_mesh is None:
                         needle_mesh = ET.SubElement(mesher, 'needle' if solid_needles else 'solid')
-                        needle_mesh.set('region', ix)
+                        needle_mesh.set('region', str(l))
                     activity = ET.SubElement(needle_mesh, 'activity')
                     tip_location = self.get_needle_parameter(ix, "NEEDLE_TIP_LOCATION")
                     for c, vt in zip(('x', 'y', 'z'), tip_location):
@@ -364,7 +368,6 @@ class ElmerLibNumaFamily(metaclass=Family):
                     extension_node = ET.SubElement(extensions, "extension")
                     extension_node.set("phase", str(phase))
                     extension_node.set("length", str(extension))
-
 
         lesion = ET.SubElement(root, 'lesion')
         lesion.set("field", self.get_parameter("SETTING_LESION_FIELD", False))
