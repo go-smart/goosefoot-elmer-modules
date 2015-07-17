@@ -508,19 +508,19 @@ MODULE HeatAssemblyBulk
         !       Perfusion (added as suggested by Matthias Zenker)
         !------------------------------------------------------------------------------
         IF (CellsDeath) THEN
-            CALL GetCellPerfusionRate(Element, BodyForce, PerfusionRate, n)
+            CALL GetCellPerfusionRate(Element, Material, PerfusionRate, n)
             Found = .TRUE.
         ELSE
-            ParPtr => GetReal( BodyForce, 'Perfusion Rate', Found )
+            ParPtr => GetReal( Material, 'Perfusion Rate', Found )
             PerfusionRate = ParPtr
         END IF
 
         IF ( Found ) THEN
-          ParPtr => GetReal( BodyForce, 'Perfusion Reference Temperature' )
+          ParPtr => GetReal( Material, 'Perfusion Reference Temperature' )
           PerfusionRefTemperature = ParPtr
-          ParPtr => GetReal( BodyForce, 'Perfusion Density' )
+          ParPtr => GetReal( Material, 'Perfusion Density' )
           PerfusionDensity = ParPtr
-          ParPtr => GetReal( BodyForce, 'Perfusion Heat Capacity' )
+          ParPtr => GetReal( Material, 'Perfusion Heat Capacity' )
           PerfusionHeatCapacity = ParPtr
           C0(1:n) = PerfusionHeatCapacity(1:n) * PerfusionRate(1:n) * PerfusionDensity(1:n)
           Load(1:n) = Load(1:n) + C0(1:n) * PerfusionRefTemperature(1:n)

@@ -179,20 +179,20 @@ MODULE HeatIncorporateCells
               !END DO
           END SUBROUTINE GetCellLoadAdjust
 
-          SUBROUTINE GetCellPerfusionRate(Element, BodyForce, PerfusionRate, n)
+          SUBROUTINE GetCellPerfusionRate(Element, Material, PerfusionRate, n)
               TYPE(Element_t) :: Element
               REAL(KIND=dp) :: PerfusionRate(:)
 
               INTEGER :: i, k, n
               REAL(KIND=dp), POINTER :: ParPtr(:)
               REAL(KIND=dp) :: DeathPerfusionRate
-              TYPE(ValueList_t), POINTER :: BodyForce
+              TYPE(ValueList_t), POINTER :: Material
               LOGICAL :: Found
 
-              ParPtr => GetReal( BodyForce, 'Perfusion Rate', Found )
+              ParPtr => GetReal( Material, 'Perfusion Rate', Found )
               PerfusionRate = ParPtr
 
-              DeathPerfusionRate = GetConstReal( BodyForce, &
+              DeathPerfusionRate = GetConstReal( Material, &
                   'Death Perfusion Rate', Found )
               IF ( .NOT.Found ) THEN
                   DeathPerfusionRate = 0.0
