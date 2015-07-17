@@ -274,7 +274,7 @@ class ElmerLibNumaFamily(metaclass=Family):
         elmer = ET.SubElement(root, 'elmer')
         sif = ET.SubElement(elmer, 'variant')
         sif.text = self._definition
-        sif.text += "\n$SOURCES\n"
+        sif.text += "\n{{ p.SOURCES }}\n"
 
         modules = self.get_parameter('ELMER_NUMA_MODULES')
         if modules:

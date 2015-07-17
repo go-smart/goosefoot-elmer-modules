@@ -25,6 +25,7 @@ import re
 import uuid
 import json
 import jinja2
+import jinja2.sandbox
 
 import gosmart.config
 from gosmart.launcher.component import GoSmartComponent
@@ -54,6 +55,79 @@ def _type_to_sif_string(typ, var):
     if (typ in ('array(float)', 'array(int)')):
         return " ".join(map(str, json.loads(var)))
     return str(var)
+
+
+class Parameter:
+    def __init__(self, attr, value, type_callback):
+        self._attr = attr
+        self._value = value
+        self._type_callback = type_callback
+
+    def __str__(self):
+        return str(self.render())
+
+    def get_name(self):
+        return self._attr
+
+    def render(self, typed=False):
+        renderer = _type_to_sif_type if typed else _type_to_sif_string
+
+        rendered = renderer(self._type_callback(self._attr), self._value)
+
+        return rendered
+
+    def get_value(self):
+        return self._value
+
+    def set_value(self, value):
+        self._value = value
+
+    # Convenience notation as laconic approach required
+    def __getattr__(self, attr):
+        if attr == 'name':
+            return self.get_name()
+        elif attr == 'value':
+            return self.get_value()
+
+        super().__getattr__(attr)
+
+
+# Note that this class is not ready to replace dict entirely (that
+# requires more method overriding than here)
+class ParameterDict(dict):
+    def __init__(self, type_callback, *args, **kwargs):
+        self._type_callback = type_callback
+
+        super().__init__(*args, **kwargs)
+
+    def __getattr__(self, attr):
+        return self.__getitem__(attr)
+
+    def __setitem__(self, attr, value):
+        super().__setitem__(attr, Parameter(attr, value, self._type_callback))
+
+    def update(self, *args, **kwargs):
+        update_dict = dict(*args, **kwargs)
+        super().update({k: Parameter(k, v, self._type_callback) for k, v in update_dict.items()})
+
+
+class CounterDict(ParameterDict):
+    def __getitem__(self, attr):
+        if attr[0] == '_':
+            increment = False
+            attr = attr[1:]
+        else:
+            increment = True
+
+        try:
+            p = super().__getitem__(attr)
+        except KeyError:
+            p = Parameter(attr, 0, self._type_callback)
+
+        if increment:
+            p.set_value(p.value + 1)
+
+        return p
 
 
 # Class to hold settings specific to the Go-Smart/Elmer solver
@@ -101,9 +175,8 @@ class GoSmartElmer(GoSmartComponent):
 
         self.elmer_binary = elmer_binary
         self.elmer_mpi_binary = elmer_mpi_binary
-        self._sif_mapping = {
-            "RUNNAME": self.logger.runname,
-        }
+        self._sif_mapping = ParameterDict(type_callback=self.logger.get_constant_type)
+        self._sif_mapping["RUNNAME"] = self.logger.runname
         self._probe_location_factory = probe_location_factory
         self._sif_variant = "default"
         self._sif = None
@@ -230,18 +303,20 @@ class GoSmartElmer(GoSmartComponent):
         #sif_definition = self._sif_expand_loops(sif_definition, {"needle": needle_constants})
         #sif_definition = self._sif_expand_counters(sif_definition)
 
-        def type_substitution(match):
-            typ = self.logger.get_constant_type(match.group(2))
+        #def type_substitution(match):
+        #    typ = self.logger.get_constant_type(match.group(2))
 
-            if typ is not None:
-                altered = match.group(1) + _type_to_sif_type(typ, self.logger.get_constant(match.group(2)))
-                self.logger.print_debug(altered)
-                return altered
+        #    if typ is not None:
+        #        altered = match.group(1) + _type_to_sif_type(typ, self.logger.get_constant(match.group(2)))
+        #        self.logger.print_debug(altered)
+        #        return altered
 
-            return match.group(0)
+        #    return match.group(0)
 
         #sif_definition = re.sub(r'(=\s*)\$((CONSTANT|SETTING|PARAMETER)_[A-Za-z_0-9]+)', type_substitution, sif_definition)
-        sif_template = jinja2.Template(sif_definition)
+        sif_environment = jinja2.sandbox.SandboxedEnvironment()
+        sif_environment.filters['typed'] = lambda p: p.render(True)
+        sif_template = sif_environment.from_string(sif_definition)
 
         if self._restarting:
             self._sif_mapping["RESTART_SECTION"] = """
@@ -259,8 +334,6 @@ class GoSmartElmer(GoSmartComponent):
         #self._check_sif_mapping_set(sif_template)
 
         constants = self.get_constants()
-        for constant, value in constants.items():
-            constants[constant] = _type_to_sif_string(self.logger.get_constant_type(constant), value)
 
         self._sif_mapping.update(constants)
         self._sif_mapping.update(region_ids)
@@ -274,7 +347,13 @@ class GoSmartElmer(GoSmartComponent):
                 self._sif_mapping[regions] = "!Boundary missing: %s" % regions
                 self.logger.print_debug("%s empty" % regions)
 
-        sif_string = sif_template.render(p=self._sif_mapping, n=needle_constants)
+        # p and c are ParameterDicts, that is, you can get an item by using object syntax: p.KEY
+        # c is also a CounterDict, that is, if you look for a key, it will return 1 the first time and
+        # an incrementing number for each look-up. To get the current value, without incrementing, prefix
+        # the key with an underscore: c.KEY gives an incremented value, c._KEY gives the current value
+        # without incrementing
+        counter_dict = CounterDict(type_callback=self.logger.get_constant)
+        sif_string = sif_template.render(p=self._sif_mapping, needles=needle_constants, c=counter_dict)
         sif_stream = open(os.path.join(self.logger.make_cwd(self.cwd), self._sif_file), "w")
         sif_stream.write(sif_string)
         sif_stream.close()
