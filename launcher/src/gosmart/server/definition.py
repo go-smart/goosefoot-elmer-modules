@@ -21,10 +21,11 @@ import sys
 import traceback
 
 # Replace with better integrated approach!
-import urllib.request
+import asyncio
 from gosmart.server.transferrer import transferrer_register
 from zope.interface.verify import verifyObject
 from gosmart.server.transferrer import ITransferrer
+import gosmart.server.family as families
 
 from lxml import etree as ET
 
@@ -36,6 +37,7 @@ class GoSmartSimulationDefinition:
     _finalized = False
     _files = None
     _exit_status = None
+    _model_builder = None
 
     def set_exit_status(self, success, message=None):
         self._exit_status = (success, message)
@@ -109,16 +111,21 @@ class GoSmartSimulationDefinition:
             self._transferrer.configure_from_xml(transferrer_node)
 
             print("Starting to Translate")
-            translated_xml = self._translator.translate(self._xml)
-            self._files.update(self._translator.get_files_required())
-            tree = ET.ElementTree(translated_xml)
+            family, numerical_model_node, parameters, algorithms = \
+                self._translator.translate(self._xml)
 
+            if family is None or family not in families.register:
+                raise RuntimeError("Unknown family of models : %s" % family)
+
+            files_required = self._translator.get_files_required()
+
+            self._model_builder = families.register[family](files_required)
+            self._model_builder.load_definition(numerical_model_node, parameters=parameters, algorithms=algorithms)
+
+            self._files.update(files_required)
             self._transferrer.connect()
             self._transferrer.pull_files(self._files, self.get_dir(), self.get_remote_dir())
             self._transferrer.disconnect()
-
-            with open(os.path.join(self._dir, "settings.xml"), "wb") as f:
-                tree.write(f, pretty_print=True)
         except Exception:
             traceback.print_exc(file=sys.stderr)
             return False
@@ -152,3 +159,8 @@ class GoSmartSimulationDefinition:
         self._transferrer.disconnect()
 
         return uploaded_files
+
+    @asyncio.coroutine
+    def simulate(self):
+        task = yield from self._model_builder.simulate(self.get_dir())
+        return task

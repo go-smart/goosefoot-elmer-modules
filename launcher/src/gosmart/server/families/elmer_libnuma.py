@@ -15,18 +15,59 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from gosmart.server.families import Family
+from gosmart.server.family import Family
 from gosmart.server.parameters import read_parameters, convert_parameter
+
 
 import os
 import math
 import json
 from lxml import etree as ET
-import string
+import asyncio
+import sys
+import traceback
+
+
+class GoSmartSimulationFrameworkArguments:
+    def __init__(self, elmer_binary=None, outfilename=None, addpid=False, silent=True,
+                 debug=False, nprocs=None, baw=True, only=None, leavetree=False, configfilenames=[]):
+        self.elmer_binary = elmer_binary
+        self.outfilename = outfilename
+        self.addpid = addpid
+        self.silent = silent
+        self.debug = debug
+        self.nprocs = nprocs
+        self.baw = baw
+        self.only = only
+        self.leavetree = leavetree
+        self.configfilenames = configfilenames
+
+    def to_list(self):
+        args = {
+            '--elmer': self.elmer_binary,
+            '--elmer-logfile': self.outfilename,
+            '--logfile-addpid': self.addpid,
+            '--silent': self.silent,
+            '--debug': self.debug,
+            '--nprocs': self.nprocs,
+            '--only': self.only,
+            '--black-and-white': self.baw,
+            '--leavetree': self.leavetree
+        }
+        command_line = []
+        for k, v in args.items():
+            if v is not None:
+                if isinstance(v, bool):
+                    if v:
+                        command_line += [k]
+                else:
+                    command_line += [k, str(v)]
+        return command_line + self.configfilenames
 
 
 class ElmerLibNumaFamily(metaclass=Family):
     family_name = "elmer-libnuma"
+
     _disallowed_functions = (
         "funcdel",
         "sprintf",
@@ -54,6 +95,7 @@ class ElmerLibNumaFamily(metaclass=Family):
         self._needles = {}
         self._needle_order = {}
         self._files_required = files_required
+        self._args = GoSmartSimulationFrameworkArguments(configfilenames=["settings.xml"])
 
     # Needle index can be either needle index (as given in XML input) or an
     # integer n indicating the nth needle in the order of the needles XML block
@@ -75,6 +117,30 @@ class ElmerLibNumaFamily(metaclass=Family):
         parameter, typ = parameters[key]
 
         return convert_parameter(parameter, typ, try_json)
+
+    @asyncio.coroutine
+    def simulate(self, working_directory):
+        try:
+            translated_xml = self.to_xml()
+        except RuntimeError as e:
+            traceback.print_exc(file=sys.stderr)
+            raise e
+
+        tree = ET.ElementTree(translated_xml)
+
+        with open(os.path.join(working_directory, "settings.xml"), "wb") as f:
+            tree.write(f, pretty_print=True)
+
+        args = ["go-smart-launcher"] + self._args.to_list()
+
+        task = yield from asyncio.create_subprocess_exec(
+            *[a for a in args if a not in ('stdin', 'stdout', 'stderr')],
+            cwd=working_directory
+        )
+
+        yield from task.wait()
+
+        return task.returncode == 0
 
     def load_definition(self, xml, parameters, algorithms):
         self._sif = xml.find('definition').text
@@ -112,6 +178,7 @@ class ElmerLibNumaFamily(metaclass=Family):
                 target_file = "%s%s" % (region.get("id"), os.path.splitext(region.get('input'))[1])
             except AttributeError as e:
                 print(region.get('name'), region.get('input'), region.get('groups'))
+                raise e
 
             self._regions[region.get('id')] = {
                 "format": region.get('format'),
@@ -170,8 +237,9 @@ class ElmerLibNumaFamily(metaclass=Family):
         geometry.append(centre_location_node)
 
         if self.get_parameter("SIMULATION_SCALING") is not None:
-            ET.SubElement(geometry, "simulationscaling").set("ratio",
-                str(self.get_parameter("SIMULATION_SCALING")))
+            ET.SubElement(geometry, "simulationscaling") \
+                .set("ratio",
+                     str(self.get_parameter("SIMULATION_SCALING")))
 
         regions = ET.SubElement(root, "regions")
         for name, region in self._regions.items():
@@ -221,7 +289,7 @@ class ElmerLibNumaFamily(metaclass=Family):
         if radius is not None:
             extent.set('radius', str(radius))
         else:
-            extent.set('radius', '50') # TODO: This should be done in the parameters!!!!
+            extent.set('radius', '50')  # TODO: This should be done in the parameters!!!!
 
         ET.SubElement(mesher, 'centre')
 
@@ -296,7 +364,7 @@ class ElmerLibNumaFamily(metaclass=Family):
                 content.text = ''
             for fn in self._disallowed_functions:
                 if fn in content.text or fn in result:
-                    raise RuntimeException("Disallowed function appeared in algorithm %s" % result)
+                    raise RuntimeError("Disallowed function appeared in algorithm %s" % result)
 
         l = 0
         globalNeedlesNode = ET.SubElement(root, "needles")

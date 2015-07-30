@@ -15,16 +15,17 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import os
-import pkgutil
-import sys
 
 
-def scan():
-    iter_modules = pkgutil.iter_modules([
-        os.path.dirname(os.path.realpath(__file__))
-    ])
+register = {}
 
-    for loader, name, ispkg in iter_modules:
-        if name not in sys.modules:
-            loader.find_module(name).load_module(name)
+
+class Family(type):
+    def __init__(cls, clsname, bases, dct):
+        register[cls.family_name] = cls
+        print("Registered family: %s" % cls.family_name)
+        return type.__init__(cls, clsname, bases, dct)
+
+from gosmart.server.families import scan
+
+scan()

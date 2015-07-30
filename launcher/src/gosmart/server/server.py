@@ -46,42 +46,6 @@ from .error import Error, makeError
 #from gosmart.launcher import gosmart
 
 
-class GoSmartArguments:
-    def __init__(self, elmer_binary=None, outfilename=None, addpid=False, silent=True,
-                 debug=False, nprocs=None, baw=True, only=None, leavetree=False, configfilenames=[]):
-        self.elmer_binary = elmer_binary
-        self.outfilename = outfilename
-        self.addpid = addpid
-        self.silent = silent
-        self.debug = debug
-        self.nprocs = nprocs
-        self.baw = baw
-        self.only = only
-        self.leavetree = leavetree
-        self.configfilenames = configfilenames
-
-    def to_list(self):
-        args = {
-            '--elmer': self.elmer_binary,
-            '--elmer-logfile': self.outfilename,
-            '--logfile-addpid': self.addpid,
-            '--silent': self.silent,
-            '--debug': self.debug,
-            '--nprocs': self.nprocs,
-            '--only': self.only,
-            '--black-and-white': self.baw,
-            '--leavetree': self.leavetree
-        }
-        command_line = []
-        for k, v in args.items():
-            if v is not None:
-                if isinstance(v, bool):
-                    if v:
-                        command_line += [k]
-                else:
-                    command_line += [k, str(v)]
-        return command_line + self.configfilenames
-
 
 class GoSmartSimulationComponent(ApplicationSession):
     current = None
@@ -94,7 +58,6 @@ class GoSmartSimulationComponent(ApplicationSession):
         ApplicationSession.__init__(self, x)
         self.traceback_app = True
 
-        self._args = GoSmartArguments(configfilenames=["settings.xml"])
         self.server_id = server_id
         self.current = {}
 
@@ -159,17 +122,17 @@ class GoSmartSimulationComponent(ApplicationSession):
         return True
 
     def _handle_simulation_done(self, fut, guid):
-        return_code = fut.result()
+        success = fut.result()
         print("EXITED")
 
         current = self.current[guid]
 
-        if return_code == 0:
+        if success:
             self.eventComplete(guid)
         else:
             #traceback.print_exc(file=sys.stderr)
             code = Error.E_UNKNOWN
-            error_message = "Unknown error occurred: %d" % return_code
+            error_message = "Unknown error occurred"
             error_message_path = os.path.join(current.get_dir(), 'error_message')
 
             if (os.path.exists(error_message_path)):
@@ -237,15 +200,11 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         print("Running simulation in %s" % current.get_dir(), file=sys.stderr)
 
-        args = ["go-smart-launcher"] + self._args.to_list()
-        task = yield from asyncio.create_subprocess_exec(
-            *[a for a in args if a not in ('stdin', 'stdout', 'stderr')],
-            cwd=current.get_dir()
-        )
-        self.updateStatus(guid, 0, "Launched subprocess")
-        yield from task.wait()
+        success = yield from current.simulate()
 
-        return task.returncode
+        self.updateStatus(guid, 0, "Launched subprocess")
+
+        return success
 
     def doFinalize(self, guid, client_directory_prefix):
         print("Converting the Xml")

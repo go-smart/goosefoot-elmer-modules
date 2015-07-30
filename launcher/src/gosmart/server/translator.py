@@ -18,7 +18,6 @@
 import sys
 import traceback
 
-from gosmart.server.families import register, elmer_libnuma
 from gosmart.server.parameters import read_parameters
 
 
@@ -60,15 +59,5 @@ class GoSmartSimulationTranslator:
             raise RuntimeError("Missing model definition")
 
         family = definition.get('family')
-        if family is None or family not in register:
-            raise RuntimeError("Unknown family of models")
 
-        model_builder = register[family](self._files_required)
-        model_builder.load_definition(numerical_model_node, parameters=parameters, algorithms=algorithms)
-
-        try:
-            xml = model_builder.to_xml()
-        except RuntimeError:
-            traceback.print_exc(file=sys.stderr)
-
-        return xml
+        return family, numerical_model_node, parameters, algorithms

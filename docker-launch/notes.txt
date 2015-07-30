@@ -1,0 +1,2 @@
+sudo pip3 install lockfile
+sudo pip3 install git+git://github.com/numa-engineering/python-daemon.git@master
