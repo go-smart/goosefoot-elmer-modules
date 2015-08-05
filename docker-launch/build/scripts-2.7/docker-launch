@@ -1,0 +1,451 @@
+#!/usr/bin/python
+
+
+from daemon.runner import DaemonRunner
+import signal
+import docker
+import os
+import select
+import threading
+import logging
+import pwd
+import tempfile
+import requests
+import socketserver
+import json
+
+magic_script = 'start.py'
+
+
+class DockerLayer:
+    _docker_socket = 'unix://var/run/docker.sock'
+    _container_id = None
+
+    def __init__(self, docker_image, logger, script_filename,
+                 max_containers=10,
+                 docker_socket=None, shutdown_timeout=5):
+        self._logger = logger
+
+        if docker_socket is not None:
+            self._docker_socket = docker_socket
+
+        self._docker_image = docker_image
+        self._max_containers = max_containers
+
+        self._logger.info("Trying to connect to Docker as %d:%d",
+                          os.getuid(), os.getgid())
+
+        self._docker_client = docker.Client(base_url=self._docker_socket,
+                                            version='auto')
+        self._shutdown_timeout = shutdown_timeout
+        self._script_filename = script_filename
+
+        self._logger.info("New Docker layer created")
+
+    def __del__(self):
+        self.destroy()
+
+    def get_container_id(self):
+        return self._container_id
+
+    def get_container_count(self):
+        if self._docker_client:
+            return len(self._docker_client.containers())
+
+        return None
+
+    def get_container_logs(self):
+        if self._docker_client and self._container_id:
+            return self._docker_client.logs(self._container_id)
+
+        return None
+
+    def try_launch(self):
+        c = self._docker_client
+        container_count = len(c.containers())
+        self._logger.info("Currently %d containers" % container_count)
+
+        if len(c.containers()) > self._max_containers:
+            return False, "Too many containers"
+        else:
+            container_id, temporary_directory, output_directory, input_directory = \
+                self._launch(
+                    c,
+                    self._docker_image,
+                    self._script_filename,
+                    self._logger
+                )
+
+            self._container_id = container_id
+            self._temporary_directory = temporary_directory
+            self._output_directory = output_directory
+            self._input_directory = input_directory
+
+            return True, {
+                'volume location': temporary_directory.name,
+                'output subdirectory': output_directory,
+                'input subdirectory': input_directory,
+                'magic script': magic_script
+            }
+
+    def wait(self, timeout, destroy=False):
+        if self._container_id:
+            try:
+                container_destroyed = self._wait(
+                    self._docker_client,
+                    self._container_id,
+                    timeout,
+                    self._logger,
+                    destroy=destroy
+                )
+            except Exception as e:
+                self._logger.error(
+                    "Did not complete while waiting (timeout %d): %s" %
+                    (timeout, str(e))
+                )
+                return False, "Could not wait: %s" % str(e)
+            else:
+                if container_destroyed:
+                    self._container_id = None
+
+            return True, "Exited"
+        else:
+            return False, "No container currently associated"
+
+    def destroy(self):
+        return self.wait(self._shutdown_timeout, destroy=True)
+
+    @staticmethod
+    def _launch(c, docker_image, script_filename, logger):
+        # Cleaned when object that holds it (instance of DL class) is destroyed
+        temporary_directory = tempfile.TemporaryDirectory()
+        os.chmod(temporary_directory.name, 0o755)
+
+        tmpdir = temporary_directory.name
+
+        logger.info("Created temporary directory: %s" % tmpdir)
+
+        output_suffix = 'output'
+        output_directory = os.path.join(tmpdir, output_suffix)
+        os.makedirs(output_directory)
+        os.chmod(output_directory, 0o777)
+
+        input_suffix = 'input'
+        input_directory = os.path.join(tmpdir, input_suffix)
+        os.makedirs(input_directory)
+        print("FIXME: proper group permissions for input/output directories")
+        os.chmod(input_directory, 0o777)
+
+        container = c.create_container(
+            docker_image,
+            command=['python3 /docker-launch-inner.py %s' % magic_script],
+            volumes=['/shared', '/docker-launch-inner.py'],
+            host_config=docker.utils.create_host_config(binds={
+                tmpdir: {
+                    'bind': '/shared',
+                    'mode': 'rw'
+                },
+                script_filename: {
+                    'bind': '/docker-launch-inner.py',
+                    'mode': 'r'
+                }
+            })
+        )
+        container_id = container['Id']
+
+        logger.info("Created container %s" % container_id)
+
+        c.start(container_id)
+
+        return container_id, temporary_directory, \
+            output_suffix, input_suffix
+
+    @staticmethod
+    def _wait(c, container_id, timeout, logger, destroy=False):
+        logger.info("Waiting for %s" % container_id)
+
+        try:
+            c.wait(container_id, timeout)
+        except requests.exceptions.Timeout:
+            logger.info("...timed out")
+        else:
+            logger.info("Completed %s" % container_id)
+
+        if destroy:
+            c.remove_container(container_id, force=True)
+            logger.info("Removed %s" % container_id)
+
+            return True
+
+        return False
+
+
+# From Py3 docs
+class ThreadedUnixRequestHandler(socketserver.StreamRequestHandler):
+    _docker_layer = None
+    _started = False
+
+    def __init__(self, docker_settings, logger, *args, **kwargs):
+        self._logger = logger
+        self._logger.debug("New handler for new connection")
+
+        self._configure(docker_settings)
+
+        super().__init__(*args, **kwargs)
+
+    def _configure(self, docker_settings):
+        kwargs = docker_settings
+        kwargs['logger'] = self._logger
+        self._docker_layer = DockerLayer(**kwargs)
+
+    def handle(self):
+        # We need to retain the connection
+        sock = self.connection
+
+        message = b''
+
+        while True:
+            input_ready, output_ready, error_ready = \
+                select.select([sock], [], [])
+
+            if not input_ready:
+                continue
+
+            data = sock.recv(1024)
+
+            if data:
+                breakpoint = data.index(b'\n')
+
+                if breakpoint < 0:
+                    message += data
+                else:
+                    message += data[:breakpoint]
+                    data = data[(breakpoint + 1):]
+
+                    if message:
+                        try:
+                            message = json.loads(message.decode('UTF-8'))
+                        except ValueError as e:
+                            self._logger.error(
+                                "Could not parse message as JSON: %s" % str(e)
+                            )
+                            success = False
+                            message = "Unparseable message"
+
+                        try:
+                            command = message["command"]
+                            arguments = message["arguments"]
+                        except KeyError as e:
+                            self._logger.error(
+                                "Missing component of message: %s" % str(e)
+                            )
+
+                        try:
+                            success, message = \
+                                self._process_message(command, arguments)
+                        except Exception as e:
+                            success, message = False, "Exception: %s" % str(e)
+
+                        response = json.dumps({
+                            'success': success,
+                            'message': message
+                        })
+
+                        print(response)
+                        self.request.sendall(bytes("%s\n" % response, 'UTF-8'))
+
+                    message = b''
+
+    def _process_message(self, message, arguments):
+        self._logger.debug(message)
+
+        if message == "START":
+            success, message = self._docker_layer.try_launch()
+            if success:
+                self._started = True
+        elif message == "LOGS":
+            container_id = self._docker_layer.get_container_id()
+            if container_id is None:
+                success, message = False, "No container associated"
+            else:
+                container_logs = self._docker_layer.get_container_logs()
+                if container_logs is None:
+                    success, message = False, "Could not retrieve logs"
+                else:
+                    success, message = True, container_logs.decode('UTF-8')
+        elif message == "WAIT":
+            if arguments is not None and 'timeout' in arguments:
+                timeout = arguments['timeout']
+            else:
+                timeout = None
+
+            if not self._started:
+                success, message = False, "Must successfully start first"
+            else:
+                success, message = self._docker_layer.wait(timeout=timeout)
+        elif message == "USAGE":
+            container_count = self._docker_layer.get_container_count()
+            if container_count is None:
+                success, message = False, "No Docker client connection"
+            else:
+                success, message = True, container_count
+        elif message == "CONTAINER":
+            container_id = self._docker_layer.get_container_id()
+            if container_id is None:
+                success, message = False, "No container associated"
+            else:
+                success, message = True, container_id
+        elif message == "DESTROY":
+            if not self._started:
+                success, message = False, "Must successfully start first"
+            else:
+                success, message = self._docker_layer.destroy()
+        else:
+            success = False
+            message = "Unknown command: %s" % message
+
+        return success, message
+
+
+class ThreadedUnixServer(socketserver.ThreadingMixIn,
+                         socketserver.UnixStreamServer):
+    daemon_threads = True
+
+    def server_activate(self):
+        super().server_activate()
+        os.chmod(self.server_address, 0o770)
+
+
+class DockerLaunchApp:
+    def __init__(self, docker_settings, socket_location,
+                 pidfile_path, logger, pidfile_timeout=5,
+                 stdout_path='/dev/tty', stderr_path='/dev/tty',
+                 stdin_path='/dev/null'):
+        self.docker_settings = docker_settings
+        self.socket_location = socket_location
+        self.pidfile_path = pidfile_path
+        self.pidfile_timeout = pidfile_timeout
+        self.stdout_path = stdout_path
+        self.stderr_path = stderr_path
+        self.stdin_path = stdin_path
+        self._logger = logger
+
+    def terminate(self, signo, stackframe):
+        self._logger.info("Terminating on signal %d" % signo)
+
+        self._server.shutdown()
+
+        self._logger.info("Server shutdown")
+
+        if os.access(self.socket_location, 0):
+            os.remove(self.socket_location)
+
+    def run(self):
+        self._logger.info("Starting up...")
+
+        def bootstrap_request_handler(*args, **kwargs):
+            request_handler = ThreadedUnixRequestHandler(
+                self.docker_settings,
+                self._logger,
+                *args,
+                **kwargs
+            )
+
+            return request_handler
+
+        print(self.socket_location)
+        self._server = ThreadedUnixServer(
+            self.socket_location,
+            bootstrap_request_handler
+        )
+
+        self._logger.info("Starting server")
+
+        signal.signal(signal.SIGTERM, self.terminate)
+
+        # NOTE: This must be in a separate thread or terminate will deadlock
+        server_thread = threading.Thread(target=self._server.serve_forever)
+        server_thread.start()
+
+
+def main():
+    docker_settings = {'docker_image': 'gosmart/fenics-stable-ppa'}
+
+    log_location = '/var/log/docker-launch'
+    run_location = '/var/run/docker-launch'
+    lib_location = '/var/lib/docker-launch'
+
+    socket_name = 'docker-launch.sock'
+    log_name = 'docker-launch.log'
+    pid_name = 'docker-launch.pid'
+    script_name = 'docker-launch-inner.py'
+
+    if not os.path.exists(lib_location):
+        os.makedirs(lib_location)
+        os.chmod(lib_location, 0o755)
+
+    script_filename = os.path.join(lib_location, script_name)
+    with open(script_filename, 'w') as f, open('indocker.py.txt', 'r') as g:
+        # Any processing of indocker here
+        f.write(g.read())
+
+    os.chmod(script_filename, 0o644)
+    docker_settings['script_filename'] = script_filename
+
+    # Drop privileges
+    docker_launch_pwd = pwd.getpwnam('dockerlaunch')
+    docker_launch_uid = docker_launch_pwd.pw_uid
+    docker_launch_gid = docker_launch_pwd.pw_gid
+
+    os.setgid(docker_launch_gid)
+
+    # http://www.gavinj.net/2012/06/building-python-daemon-process.html
+    for location in (run_location, log_location):
+        if not os.path.exists(location):
+            # NOTE: while there is a mode arg, it's overridden by umask
+            os.makedirs(location)
+            os.chmod(location, 0o750)
+            os.chown(
+                location,
+                docker_launch_uid,
+                docker_launch_gid
+            )
+
+    socket_filename = os.path.join(run_location, socket_name)
+    pid_filename = os.path.join(run_location, pid_name)
+
+    logger = logging.getLogger("DockerLaunchLog")
+    logger.setLevel(logging.INFO)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
+    log_filename = os.path.join(log_location, log_name)
+
+    if not os.path.exists(log_filename):
+        open(log_filename, 'a').close()
+
+    os.chown(log_filename, docker_launch_uid, docker_launch_gid)
+    os.chmod(log_filename, 0o755)
+
+    handler = logging.FileHandler(log_filename)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    docker_app = DockerLaunchApp(
+        docker_settings,
+        socket_filename,
+        pid_filename,
+        logger=logger
+    )
+
+    runner = DaemonRunner(docker_app)
+    runner.daemon_context.uid = docker_launch_uid
+    runner.daemon_context.gid = docker_launch_gid
+    runner.daemon_context.umask = 0o027
+    runner.daemon_context.files_preserve = [handler.stream]
+    runner.do_action()
+
+
+if __name__ == "__main__":
+    main()
