@@ -22,6 +22,7 @@ import re
 import errno
 import shutil
 import time
+import json
 import gosmart.config
 from distutils.version import StrictVersion
 from lxml import etree as ET
@@ -528,6 +529,10 @@ class GoSmart:
                     value = constant.get("value")
                     if value is None:
                         value = constant
+                    try:
+                        value = json.loads(value)
+                    except:
+                        pass
                     self.logger.add_or_update_constant(constant.get("name"), value, True, constant.tag, typ=constant.get("type"))
             elif not skip:
                 self.logger.print_fatal("Unknown top-level section %s in %s" % (section.tag, filename))

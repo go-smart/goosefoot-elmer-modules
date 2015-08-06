@@ -206,7 +206,7 @@ class GoSmartElmer(GoSmartComponent):
                 self.logger.print_debug("SIF Generation - Skipping %s as missing parameters (requires %s)" % (name, ", ".join(definition['requirements'])))
 
         for name, info in self.get_mapping_warn().items():
-            if not sif_template.template.find(name):
+            if not sif_template.find(name):
                 self.logger.print_error("SIF Generation - Missing %s" % info)
 
         if self.logger.debug:
@@ -316,6 +316,10 @@ class GoSmartElmer(GoSmartComponent):
         #sif_definition = re.sub(r'(=\s*)\$((CONSTANT|SETTING|PARAMETER)_[A-Za-z_0-9]+)', type_substitution, sif_definition)
         sif_environment = jinja2.sandbox.SandboxedEnvironment()
         sif_environment.filters['typed'] = lambda p: p.render(True)
+        sif_environment.globals['zip'] = zip
+        sif_environment.globals['list'] = list
+        sif_environment.globals['map'] = map
+        sif_environment.globals['str'] = str
         sif_template = sif_environment.from_string(sif_definition)
 
         if self._restarting:
@@ -331,7 +335,7 @@ class GoSmartElmer(GoSmartComponent):
                 Output File = 'Restart.dat'
             """
         self._prepare_algorithms()
-        #self._check_sif_mapping_set(sif_template)
+        self._check_sif_mapping_set(sif_definition)
 
         constants = self.get_constants()
 

@@ -23,6 +23,7 @@ import subprocess
 import math
 import threading
 import re
+import json
 
 from gosmart.launcher.globals import slugify, colorama_imported
 import gosmart.config
@@ -153,6 +154,10 @@ class GoSmartComponent:
                 value = constant.get("value")
                 if value is None:
                     value = constant
+                try:
+                    value = json.loads(value)
+                except:
+                    pass
                 self.add_or_update_constant(constant.get("name"), value, True, constant.tag, typ=constant.get("type"))
 
     def _load_constant_set(self, setname):
@@ -165,6 +170,10 @@ class GoSmartComponent:
                 value = constant.get("value")
                 if value is None:
                     value = constant
+                try:
+                    value = json.loads(value)
+                except:
+                    pass
                 self.add_or_update_constant(constant.get('name'), value, (constant.get('warn') == 'yes'), typ=constant.get("type"))
 
     def set_outfile_prefix(self, outfile):
