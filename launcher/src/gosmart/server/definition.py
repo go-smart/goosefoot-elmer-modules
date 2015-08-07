@@ -139,7 +139,10 @@ class GoSmartSimulationDefinition:
     def get_dir(self):
         return self._dir
 
+    @asyncio.coroutine
     def clean(self):
+        yield from self._model_builder.clean()
+
         shutil.rmtree(self._dir)
 
         return True
@@ -147,12 +150,14 @@ class GoSmartSimulationDefinition:
     def push_files(self, files):
         uploaded_files = {}
 
+        self._model_builder.retrieve_files(self.get_dir(), files)
+
         for local, remote in files.items():
             path = os.path.join(self.get_dir(), local)
             if os.path.exists(path):
                 uploaded_files[local] = remote
             else:
-                print("Could not find %s for SFTP PUT" % path)
+                print("Could not find %s for pushing" % path)
 
         self._transferrer.connect()
         self._transferrer.push_files(uploaded_files, self.get_dir(), self.get_remote_dir())

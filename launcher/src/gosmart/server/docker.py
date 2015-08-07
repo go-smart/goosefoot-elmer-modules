@@ -28,9 +28,34 @@ class OutputHandler(AIOEventHandler, PatternMatchingEventHandler):
 
 
 class Submitter:
+    reader = None
+    writer = None
+
     def __init__(self):
+        self._input_files = []
         self._output_files = []
         self._output_directory = None
+
+    def __del__(self):
+        self.finalize()
+
+    def copy_output(self, requested, target):
+        if not self._output_directory:
+            return None
+
+        requested_location = os.path.join(self._output_directory, requested)
+        target_location = os.path.join(target, requested)
+
+        try:
+            shutil.copyfile(requested_location, target_location)
+        except Exception as e:
+            print(e)
+            return None
+
+        return True
+
+    def add_input(self, input_file):
+        self._input_files.append(input_file)
 
     def output(self, requested):
         if not self._output_directory:
@@ -68,6 +93,9 @@ class Submitter:
             print("Could not open connection: %s" % str(e))
             raise e
 
+        self.reader, self.writer = reader, writer
+
+        print("Simulating")
         try:
             self.send_command(writer, 'START', None)
             success, message = yield from self.receive_response(reader)
@@ -114,6 +142,9 @@ class Submitter:
                         to_location,
                     )
 
+            for input_file in self._input_files:
+                shutil.copyfile(input_file, os.path.join(self._input_directory, os.path.basename(input_file)))
+
             with open(magic_script, 'w') as f, open(os.path.join(working_directory, 'start.py'), 'r') as g:
                 f.write(g.read())
 
@@ -145,21 +176,36 @@ class Submitter:
                     print(output_log)
                 else:
                     print("[no output from %s]" % output_file)
-
-            self.send_command(writer, 'DESTROY', None)
-            success, message = yield from self.receive_response(reader)
-            print('<--', success, message)
-
-            if not success:
-                raise RuntimeError('Could not destroy: %s', message)
         except Exception as e:
             print(str(e))
-            raise e
+            # Redundant?!
             success = False
-        finally:
-            writer.close()
+            self.finalize()
+            raise e
 
         return success
+
+    @asyncio.coroutine
+    def destroy(self):
+        if not self.reader or not self.writer:
+            raise RuntimeError('No reader/writer members to access launcher daemon')
+
+        self.send_command(self.writer, 'DESTROY', None)
+        success, message = yield from self.receive_response(self.reader)
+        print('<--', success, message)
+
+        if not success:
+            raise RuntimeError('Could not destroy: %s', message)
+
+    def finalize(self):
+        if not self.reader or not self.writer:
+            return
+
+        writer = self.writer
+
+        self.reader, self.writer = None, None
+
+        writer.close()
 
     @asyncio.coroutine
     def receive_response(self, reader):

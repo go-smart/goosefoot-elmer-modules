@@ -142,6 +142,13 @@ class ElmerLibNumaFamily(metaclass=Family):
 
         return task.returncode == 0
 
+    def retrieve_files(self, destination, files):
+        pass
+
+    @asyncio.coroutine
+    def clean(self):
+        return True
+
     def load_definition(self, xml, parameters, algorithms):
         self._sif = xml.find('definition').text
         self._needles = {}
