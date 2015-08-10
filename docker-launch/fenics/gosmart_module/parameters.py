@@ -21,13 +21,24 @@ import yaml
 with open('/shared/input/parameters.yml', 'r') as f:
     parameter_dict = yaml.safe_load(f)
 
+with open('/shared/input/regions.yml', 'r') as f:
+    region_dict = yaml.safe_load(f)
+
 with open('/shared/input/needle_parameters.yml', 'r') as f:
     needle_parameter_dicts = dict({v['index']: v['parameters'] for v in yaml.safe_load_all(f)})
 
 
+class AttributeDict(dict):
+    def __getattr__(self, attr):
+        return self.__getitem__(attr)
+
+
 # Note that this class is not ready to replace dict entirely (that
 # requires more method overriding than here)
-class ParameterDict(dict):
+class ParameterDict(AttributeDict):
+    def __init__(self, *args, **kwargs):
+        self.update(*args, **kwargs)
+
     def __getattr__(self, attr):
         return self.__getitem__(attr)
 
@@ -38,6 +49,67 @@ class ParameterDict(dict):
     def update(self, *args, **kwargs):
         update_dict = dict(*args, **kwargs)
         super(ParameterDict, self).update({k: convert_parameter(v[1], v[0]) for k, v in update_dict.items()})
+
+
+class Region:
+    __regions_by_group = {}
+    __regions_by_meshed_as = {}
+
+    @classmethod
+    def meshed_as(cls, meshed_as):
+        if meshed_as in cls.__regions_by_meshed_as:
+            return cls.__regions_by_meshed_as[cls]
+        return None
+
+    @classmethod
+    def zone(cls, idx):
+        return cls.__regions_by_meshed_as["zone"][idx]
+
+    @classmethod
+    def surface(cls, idx):
+        return cls.__regions_by_meshed_as["surface"][idx]
+
+    @classmethod
+    def group(cls, group):
+        if group in cls.__regions_by_group:
+            return cls.__regions_by_group[group]
+        return None
+
+    @classmethod
+    def add_region_to_group(cls, group, region):
+        if group not in cls.__regions_by_group:
+            cls.__regions_by_group[group] = []
+        cls.__regions_by_group[group].append(region)
+
+    @classmethod
+    def add_region_to_meshed_as(cls, meshed_as, region):
+        if meshed_as not in cls.__regions_by_meshed_as:
+            cls.__regions_by_meshed_as[meshed_as] = {}
+        cls.__regions_by_meshed_as[meshed_as][region.idx] = region
+
+    def am(self, group):
+        return group in self.groups
+
+    def __init__(self, region_dict):
+        self.idx = region_dict['id']
+        self.groups = region_dict['groups']
+        self.filename = region_dict['filename']
+
+        for group in self.groups:
+            self.add_region_to_group(group, self)
+
+        if 'meshed_as' in region_dict:
+            self.meshed_as = region_dict['meshed_as']
+            self.add_region_to_meshed_as(self.meshed_as, self)
+        else:
+            self.meshed_as = None
+
+
+R = AttributeDict({k: Region(v) for k, v in region_dict.items()})
+R.group = Region.group
+R.meshed_as = Region.meshed_as
+R.zone = Region.zone
+R.surface = Region.surface
 
 
 def convert_parameter(parameter, typ=None, try_json=True):
@@ -64,6 +136,7 @@ def convert_parameter(parameter, typ=None, try_json=True):
         try:
             return cast(parameter)
         except ValueError:
+            print("UNCASTABLE", parameter, cast)
             pass
 
     if try_json:
@@ -77,4 +150,4 @@ def convert_parameter(parameter, typ=None, try_json=True):
 
 P = ParameterDict()
 P.update(parameter_dict)
-NP = {k: ParameterDict().update(v) for k, v in needle_parameter_dicts.items()}
+NP = {k: ParameterDict(v) for k, v in needle_parameter_dicts.items()}
