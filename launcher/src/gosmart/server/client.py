@@ -35,12 +35,12 @@ def wrapped_coroutine(f):
 
 class GoSmartSimulationClientComponent(ApplicationSession):
 
-    def __init__(self, x, gssa_file, subdirectory, output_file):
+    def __init__(self, x, gssa_file, subdirectory, output_files):
         ApplicationSession.__init__(self, x)
         self._gssa = ET.parse(gssa_file)
         self._guid = uuid.uuid1()
         self._subdirectory = subdirectory
-        self._output_file = output_file
+        self._output_files = output_files
 
     @asyncio.coroutine
     def onJoin(self, details):
@@ -60,7 +60,7 @@ class GoSmartSimulationClientComponent(ApplicationSession):
     def onComplete(self, guid, success, time):
         print("Complete - requesting files")
         files = yield from self.call('com.gosmartsimulation.request_files', guid, {
-            self._output_file: os.path.join('/tmp', self._output_file)
+            f: os.path.join('/tmp', f) for f in self._output_files
         })
         print(files)
         yield from self.finalize(guid)
