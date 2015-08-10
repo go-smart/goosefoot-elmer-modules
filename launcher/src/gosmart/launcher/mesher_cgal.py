@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
+import yaml
 
 from gosmart.launcher.mesher import GoSmartMesher
 
@@ -64,6 +65,8 @@ class GoSmartMesherCGAL(GoSmartMesher):
         self.zone_priorities = {}
         self.zone_characteristic_lengths = {}
         self.zone_activity_spheres = {}
+
+        self._meshed_regions = {}
 
     def alter_extent(self, filename):
         self.file_locations["extent"] = filename
@@ -153,6 +156,8 @@ class GoSmartMesherCGAL(GoSmartMesher):
 
     def _prep_zone_arg(self, tag):
         out = ":".join(str(self.logger.zones[tag][k]) for k in ("filename", "id"))
+        self._meshed_regions[tag] = {"meshed_as": "zone"}
+        self._meshed_regions[tag].update(self.logger.zones[tag])
 
         if tag in self.zone_characteristic_lengths:
             out += ":" + self.zone_characteristic_lengths[tag]
@@ -170,6 +175,11 @@ class GoSmartMesherCGAL(GoSmartMesher):
 
         return out
 
+    def _prep_surface_arg(self, tag):
+        self._meshed_regions[tag] = {"meshed_as": "surface"}
+        self._meshed_regions[tag].update(self.logger.surfaces[tag])
+        return ":".join(str(self.logger.surfaces[tag][k]) for k in ("filename", "id"))
+
     def launch(self, needle_files, extent_file, preprocessor=None, appendix=""):
         file_locations = {}
 
@@ -180,8 +190,6 @@ class GoSmartMesherCGAL(GoSmartMesher):
             for f in preprocessor.components:
                 if f in self.logger.surfaces:
                     self.logger.surfaces[f]["filename"] = preprocessor.launch(self.logger.surfaces[f]["filename"])
-
-        f = lambda r: ":".join(str(self.logger.surfaces[r][k]) for k in ("filename", "id"))
 
         for composite in ("combined", "boundary", "structure"):
             if composite not in self.logger.surfaces:
@@ -220,7 +228,7 @@ class GoSmartMesherCGAL(GoSmartMesher):
             if isinstance(v, str):
                 v = (v,)
             try:
-                file_locations[k] = [(self._prep_zone_arg(l) if l in self.logger.zones else f(l)) for l in v]
+                file_locations[k] = [(self._prep_zone_arg(l) if l in self.logger.zones else self._prep_surface_arg(l)) for l in v]
             except KeyError as e:
                 self.logger.print_fatal("Key missing for '%s' in file locations" % e.args[0])
 
@@ -273,8 +281,17 @@ class GoSmartMesherCGAL(GoSmartMesher):
 
         if "extent" in self.logger.surfaces:
             args += ["--extent_index", self.logger.surfaces["extent"]["id"]]
+            self._meshed_regions["extent"] = {"meshed_as": "surface"}
+            self._meshed_regions["extent"].update(self.logger.surfaces["extent"])
 
         if "tissue" in self.logger.zones:
             args += ["--tissueid", self.logger.zones["tissue"]["id"]]
+            self._meshed_regions["tissue"] = {"meshed_as": "zone"}
+            self._meshed_regions["tissue"].update(self.logger.zones["tissue"])
 
-        return super().launch(needle_files, extent_file, args, appendix)
+        success = super().launch(needle_files, extent_file, args, appendix)
+
+        with open(os.path.join(self.logger.make_cwd(self.suffix), "mesh_labelling.yml"), 'w') as f:
+            yaml.dump(self._meshed_regions, f, default_flow_style=False)
+
+        return success
