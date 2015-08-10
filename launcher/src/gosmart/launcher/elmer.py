@@ -23,6 +23,7 @@ import string
 import shutil
 import re
 import uuid
+import numpy as N
 import json
 import jinja2
 import jinja2.sandbox
@@ -37,6 +38,7 @@ from gosmart.launcher.globals import \
     slugify
 from gosmart.launcher.elmer_probelocation import GoSmartElmerProbeLocationFactory, probe_location_factories
 from gosmart.launcher.elmer_powerovertime import power_over_time_factories
+from gosmart.launcher.errors import GoSmartClientError
 
 
 def _type_to_sif_type(typ, var):
@@ -186,6 +188,42 @@ class GoSmartElmer(GoSmartComponent):
 
         self.configfiles = []
 
+    def _needle_distance(self, needle1, needle2, dist_from_tip=None, reference_needle=None):
+        needle1 = str(needle1)
+        needle2 = str(needle2)
+
+        if "simulationscaling" in self.logger.geometry:
+            scaling = self.logger.geometry["simulationscaling"]
+        else:
+            scaling = 1.0
+
+        n1t = N.array(json.loads(self.logger.get_needle_constant(needle1, "NEEDLE_TIP_LOCATION"))) * scaling
+        n2t = N.array(json.loads(self.logger.get_needle_constant(needle2, "NEEDLE_TIP_LOCATION"))) * scaling
+        n1e = N.array(json.loads(self.logger.get_needle_constant(needle1, "NEEDLE_ENTRY_LOCATION"))) * scaling
+        n2e = N.array(json.loads(self.logger.get_needle_constant(needle2, "NEEDLE_ENTRY_LOCATION"))) * scaling
+
+        p = N.cross(n1t - n1e, n2t - n2e)
+        if p.dot(p) < 1e-10:
+            return 0
+
+        # If not given a distance from needle1 ti
+        if dist_from_tip is None:
+            return abs(N.dot(n2e - n1e, p)) / N.sqrt(p.dot(p))
+
+        if reference_needle is None:
+            reference_needle = needle1
+
+        n1 = n1t - n1e
+        c = n1t - (dist_from_tip * scaling) * n1 / N.sqrt(n1.dot(n1))
+        l = (n2t - n2e).dot(n1)
+        if abs(l) < 1e-10:
+            raise GoSmartClientError("Needle %s and needle %s are perpendicular!" % (needle1, needle2))
+
+        k = (c - n2e).dot(n1) / l
+        v = c - n2e - k * (n2t - n2e)
+
+        return N.sqrt(v.dot(v))
+
     def _maybefloat(self, c):
         if isinstance(c, str):
             try:
@@ -323,6 +361,7 @@ class GoSmartElmer(GoSmartComponent):
         sif_environment.globals['list'] = list
         sif_environment.globals['map'] = map
         sif_environment.globals['str'] = str
+        sif_environment.globals['needle_distance'] = self._needle_distance
         sif_template = sif_environment.from_string(sif_definition)
 
         if self._restarting:

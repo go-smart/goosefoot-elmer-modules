@@ -207,6 +207,13 @@ class GoSmartLogger(GoSmartComponent):
         constants = self._constant_needle_mapping.copy()
         return constants
 
+    def get_needle_constant(self, needle, name):
+        if needle in self._constant_needle_mapping \
+           and name in self._constant_needle_mapping[needle]:
+            return self._constant_needle_mapping[needle][name]
+
+        return None
+
     def get_constants(self):
         constants = self._constant_mapping.copy()
         return constants
