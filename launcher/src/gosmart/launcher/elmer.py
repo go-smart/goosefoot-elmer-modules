@@ -316,6 +316,7 @@ class GoSmartElmer(GoSmartComponent):
         #sif_definition = re.sub(r'(=\s*)\$((CONSTANT|SETTING|PARAMETER)_[A-Za-z_0-9]+)', type_substitution, sif_definition)
         sif_environment = jinja2.sandbox.SandboxedEnvironment()
         sif_environment.filters['typed'] = lambda p: p.render(True)
+        sif_environment.filters['totyped'] = lambda v, t: _type_to_sif_type(t, json.dumps(v))
         sif_environment.globals['zip'] = zip
         sif_environment.globals['list'] = list
         sif_environment.globals['map'] = map
