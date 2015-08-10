@@ -59,7 +59,7 @@ SUBROUTINE NumaPowerFieldTrigger( Model,Solver,Timestep,TransientSimulation )
     TYPE(Model_t) :: Model
     TYPE(Solver_t), TARGET:: Solver
     REAL (KIND=DP) :: Timestep
-    LOGICAL :: TransientSimulation
+    LOGICAL :: TransientSimulation, Exiting = .FALSE.
 
     TYPE(Variable_t), POINTER :: TempSol, ElectricDistributionVar
     TYPE(Variable_t), POINTER :: TimeVar, RecalculatePowerVar, PowerVar, PhaseVar
@@ -94,27 +94,36 @@ SUBROUTINE NumaPowerFieldTrigger( Model,Solver,Timestep,TransientSimulation )
 
     TimeVar => VariableGet(Model % Variables, 'Time')
 
-    DO CurrentPhase = 1, SIZE(PhasesPtr, 2) - 1
-        IF (PhasesPtr(1, CurrentPhase + 1) >= TimeVar % Values(1) - 1e-5) THEN
+    DO CurrentPhase = 1, SIZE(PhasesPtr, 2)
+        IF (PhasesPtr(1, CurrentPhase) >= TimeVar % Values(1) - 1e-5) THEN
           EXIT
         END IF
     END DO
 
-    PresentPower = PhasesPtr(2, CurrentPhase)
-
-    PRINT *, "Protocol power is ", PresentPower, " on phase ", CurrentPhase, " at time ", TimeVar % Values(1)
-
-    IF (PresentPower /= PreviousPower) THEN
-        RecalculatePower = .TRUE.
-        PRINT *, "Protocol power changed"
+    IF (CurrentPhase > SIZE(PhasesPtr, 2)) THEN
+        PRINT *, "Current time larger than final power end, taken as an indication to stop simulation"
+        Exiting = .TRUE.
     ELSE
-        RecalculatePower = .FALSE.
+        PresentPower = PhasesPtr(2, CurrentPhase)
+
+        PRINT *, "Protocol power is ", PresentPower, " on phase ", CurrentPhase, " at time ", TimeVar % Values(1)
+
+        IF (PresentPower /= PreviousPower) THEN
+            RecalculatePower = .TRUE.
+            PRINT *, "Protocol power changed"
+        ELSE
+            RecalculatePower = .FALSE.
+        END IF
+
+        PreviousPower = PresentPower
+
+        IF ( PresentPower < 0 ) THEN
+            PRINT *, "Negative Power detected, taken as an indication to stop simulation"
+            Exiting = .TRUE.
+        END IF
     END IF
 
-    PreviousPower = PresentPower
-
-    IF ( PresentPower < 0 ) THEN
-        PRINT *, "Negative Power detected, taken as an indication to stop simulation"
+    IF (Exiting) THEN
         CALL ListAddConstReal(Model % Simulation, 'Exit Condition', 1.0_dp)
     ELSE
         PhaseVar => VariableGet(Model % Variables, 'Phase')
