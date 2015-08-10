@@ -111,7 +111,7 @@ class ParameterDict(dict):
         super().update({k: Parameter(k, v, self._type_callback) for k, v in update_dict.items()})
 
 
-class CounterDict(ParameterDict):
+class CounterDict(dict):
     def __getitem__(self, attr):
         if attr[0] == '_':
             increment = False
@@ -122,10 +122,11 @@ class CounterDict(ParameterDict):
         try:
             p = super().__getitem__(attr)
         except KeyError:
-            p = Parameter(attr, 0, self._type_callback)
+            self[attr] = 1
+            p = super().__getitem__(attr)
 
         if increment:
-            p.set_value(p.value + 1)
+            self[attr] = p + 1
 
         return p
 
@@ -289,6 +290,7 @@ class GoSmartElmer(GoSmartComponent):
 
         # Update SIF to expand out needle foreachs
         needle_constants = self.logger.get_needle_constants()
+        self.logger.print_debug(needle_constants)
         for needle, constants in needle_constants.items():
             root = "REGIONS_NEEDLE_%s" % slugify(needle)
             generic_root = "REGIONS_NEEDLE"
