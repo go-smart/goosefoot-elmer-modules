@@ -427,13 +427,29 @@ class FenicsFamily(metaclass=Family):
             return False
 
         msh_input = os.path.join(working_directory, "mesher", "elmer_libnuma.msh")
+        mesh_labelling_yaml = os.path.join(working_directory, "mesher", "mesh_labelling.yml")
         shutil.copyfile(msh_input, os.path.join(working_directory, "input", "input.msh"))
         self._files_required["input.msh"] = msh_input
+
+        with open(mesh_labelling_yaml, "r") as f:
+            mesh_labelling = yaml.load(f)
+
+        regions = mesh_labelling.copy()
+        regions.update(self._regions)
+        for k, v in regions.items():
+            if k in mesh_labelling:
+                v.update(mesh_labelling[k])
+
+        regions_yaml = os.path.join(working_directory, "input", "regions.yml")
+        with open(regions_yaml, "w") as f:
+            yaml.dump(regions, f, default_flow_style=False)
+
+        self._submitter.add_input(regions_yaml)
 
         parameters_yaml = os.path.join(working_directory, "input", "parameters.yml")
         parameters = self._parameters
         for k, v in parameters.items():
-            parameters[k] = [v[1], json.dumps(v[0])]
+            parameters[k] = [v[1], v[0]]
         with open(parameters_yaml, "w") as f:
             yaml.dump(parameters, f, default_flow_style=False)
         self._submitter.add_input(parameters_yaml)
@@ -442,7 +458,7 @@ class FenicsFamily(metaclass=Family):
         for j, w in self._needles.items():
             needle_parameters = w['parameters']
             for k, v in needle_parameters.items():
-                needle_parameters[k] = [v[1], json.dumps(v[0])]
+                needle_parameters[k] = [v[1], v[0]]
             self._needles[j]['index'] = j
             self._needles[j]['parameters'] = needle_parameters
 

@@ -421,7 +421,7 @@ class ElmerLibNumaFamily(metaclass=Family):
                 if needle_active_length is not None:
                     if needle_mesh is None:
                         needle_mesh = ET.SubElement(mesher, 'needle' if solid_needles else 'solid')
-                        needle_mesh.set('region', str(l))
+                        needle_mesh.set('region', 'needle-' + str(l))
                     activity = ET.SubElement(needle_mesh, 'activity')
                     tip_location = self.get_needle_parameter(ix, "NEEDLE_TIP_LOCATION")
                     for c, vt in zip(('x', 'y', 'z'), tip_location):
