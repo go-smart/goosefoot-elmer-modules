@@ -201,6 +201,7 @@ class GoSmartElmer(GoSmartComponent):
         n2t = N.array(json.loads(self.logger.get_needle_constant(needle2, "NEEDLE_TIP_LOCATION"))) * scaling
         n1e = N.array(json.loads(self.logger.get_needle_constant(needle1, "NEEDLE_ENTRY_LOCATION"))) * scaling
         n2e = N.array(json.loads(self.logger.get_needle_constant(needle2, "NEEDLE_ENTRY_LOCATION"))) * scaling
+        print(n1t, n2t, n1e, n2e)
 
         p = N.cross(n1t - n1e, n2t - n2e)
         if p.dot(p) < 1e-10:
@@ -357,6 +358,7 @@ class GoSmartElmer(GoSmartComponent):
         sif_environment = jinja2.sandbox.SandboxedEnvironment()
         sif_environment.filters['typed'] = lambda p: p.render(True)
         sif_environment.filters['totyped'] = lambda v, t: _type_to_sif_type(t, json.dumps(v))
+        sif_environment.filters['discretize'] = lambda v, r: (float if r < 1 else int)(round(v / r) * r)
         sif_environment.globals['zip'] = zip
         sif_environment.globals['list'] = list
         sif_environment.globals['map'] = map
