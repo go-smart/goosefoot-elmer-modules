@@ -161,7 +161,7 @@ class ElmerLibNumaFamily(metaclass=Family):
             for needle in needles:
                 needle_file = needle.get("file")
                 location = needle_file.split(':', 1)
-                if location[0] in ('surface', 'zone'):
+                if location[0] in ('surface', 'zone', 'both'):
                     target_file = "%s%s" % (needle.get("index"), os.path.splitext(location[1])[1])
                     needle_file = "%s:%s" % (location[0], target_file)
                     self._files_required[os.path.join('input', target_file)] = location[1]  # Any changes to local/remote dirs here
@@ -194,8 +194,11 @@ class ElmerLibNumaFamily(metaclass=Family):
                 "groups": json.loads(region.get('groups'))
             }
             if self.get_parameter("SETTING_ORGAN_AS_SUBDOMAIN") and region.get('name') == 'organ':
-                self._regions[region.get('id')]["format"] = 'zone'
-            if self._regions[region.get('id')]["format"] in ('surface', 'zone') and region.get('input'):
+                if self.get_parameter('SETTING_ORGAN_AS_SURFACE'):
+                    self._regions[region.get('id')]["format"] = 'both'
+                else:
+                    self._regions[region.get('id')]["format"] = 'zone'
+            if self._regions[region.get('id')]["format"] in ('surface', 'zone', 'both') and region.get('input'):
                 self._files_required[os.path.join('input', target_file)] = region.get('input')  # Any changes to local/remote dirs here
             self._regions_by_meaning[region.get('name')].append(self._regions[region.get('id')])
 
@@ -303,10 +306,7 @@ class ElmerLibNumaFamily(metaclass=Family):
         for idx, region in self._regions.items():
             if region['meaning'] == 'organ':
                 if self.get_parameter('SETTING_ORGAN_AS_SUBDOMAIN'):
-                    if self.get_parameter('SETTING_ORGAN_AS_SUBDOMAIN'):
-                        ET.SubElement(mesher, 'both').set('region', idx)
-                    else:
-                        ET.SubElement(mesher, 'zone').set('region', idx)
+                    ET.SubElement(mesher, 'zone').set('region', idx)
                 else:
                     ET.SubElement(mesher, 'organ').set('region', idx)
             elif region['format'] == 'zone':
@@ -384,7 +384,7 @@ class ElmerLibNumaFamily(metaclass=Family):
                 location = needle['file'].split(':', 1)
 
                 needle_mesh = None
-                if location[0] in ('surface', 'zone'):
+                if location[0] in ('surface', 'zone', 'both'):
                     needleNode = ET.SubElement(regions, location[0])
                     needleNode.set("name", str(l))
                     needleNode.set("input", os.path.join("input/", location[1]))
@@ -392,7 +392,7 @@ class ElmerLibNumaFamily(metaclass=Family):
 
                     needle_mesh = ET.SubElement(mesher, 'needle')
                     needle_mesh.set('region', str(l))
-                    if needlezonefield and location[0] == 'zone':
+                    if needlezonefield and location[0] != 'surface':
                         needle_mesh.set("characteristic_length", needlezonefield)
                 else:
                     needleNode = ET.SubElement(needlelibrary, 'needle')
