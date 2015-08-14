@@ -21,7 +21,7 @@ class DockerLayer:
     _docker_socket = 'unix://var/run/docker.sock'
     _container_id = None
 
-    def __init__(self, docker_image, logger, script_filename,
+    def __init__(self, allowed_images, logger, script_filename,
                  max_containers=10,
                  docker_socket=None, shutdown_timeout=5):
         self._logger = logger
@@ -29,7 +29,7 @@ class DockerLayer:
         if docker_socket is not None:
             self._docker_socket = docker_socket
 
-        self._docker_image = docker_image
+        self._allowed_images = allowed_images
         self._max_containers = max_containers
 
         self._logger.info("Trying to connect to Docker as %d:%d",
@@ -60,7 +60,10 @@ class DockerLayer:
 
         return None
 
-    def try_launch(self):
+    def try_launch(self, image):
+        if image not in self._allowed_images:
+            return False, "This image is not a whitelisted image for docker-launch"
+
         c = self._docker_client
         container_count = len(c.containers())
         self._logger.info("Currently %d containers" % container_count)
@@ -71,7 +74,7 @@ class DockerLayer:
             container_id, temporary_directory, output_directory, input_directory = \
                 self._launch(
                     c,
-                    self._docker_image,
+                    image,
                     self._script_filename,
                     self._logger
                 )
@@ -138,7 +141,7 @@ class DockerLayer:
 
         container = c.create_container(
             docker_image,
-            command=['python3 /docker-launch-inner.py %s' % magic_script],
+            command=['python3', '/docker-launch-inner.py', magic_script],
             volumes=['/shared', '/docker-launch-inner.py'],
             host_config=docker.utils.create_host_config(binds={
                 tmpdir: {
@@ -260,7 +263,11 @@ class ThreadedUnixRequestHandler(socketserver.StreamRequestHandler):
         self._logger.debug(message)
 
         if message == "START":
-            success, message = self._docker_layer.try_launch()
+            if arguments is not None and 'image' in arguments:
+                success, message = self._docker_layer.try_launch(arguments['image'])
+            else:
+                success, message = False, "Image must be supplied in arguments"
+
             if success:
                 self._started = True
         elif message == "LOGS":
@@ -369,7 +376,7 @@ class DockerLaunchApp:
 
 
 def main():
-    docker_settings = {'docker_image': 'gosmart/fenics-stable-ppa'}
+    docker_settings = {'allowed_images': ['gosmart/fenics-stable-ppa', 'gosmart/galilfoam']}
 
     log_location = '/var/log/docker-launch'
     run_location = '/var/run/docker-launch'

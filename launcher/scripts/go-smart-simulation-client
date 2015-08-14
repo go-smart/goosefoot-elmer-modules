@@ -25,7 +25,14 @@ from gosmart.server.client import GoSmartSimulationClientComponent
 
 
 def launch(x):
-    cpt = GoSmartSimulationClientComponent(x, gssa_file=input_file, subdirectory=subdirectory, output_files=output_files)
+    cpt = GoSmartSimulationClientComponent(
+        x,
+        gssa_file=input_file,
+        subdirectory=subdirectory,
+        output_files=output_files,
+        definition_file=definition_file,
+        skip_clean=skip_clean
+    )
     return cpt
 
 
@@ -35,7 +42,9 @@ if __name__ == "__main__":
     parser.add_argument("--subdir", help="subdirectory of /tmp containing input files", default=".")
     parser.add_argument("--host", help="host to connect to", default="localhost")
     parser.add_argument("--websocket-port", help="port hosting websocket", default="9000", type=int)
+    parser.add_argument("--skip-clean", help="do not clean up after run", action='store_true', default=False)
     parser.add_argument("--output", help="file to request as output", nargs='+', default="output.vtp")
+    parser.add_argument("--definition", help="file containing text of the definition node (which should exist but be empty in the GSSA file", default=None)
     args = parser.parse_args()
     input_file = args.gssa_file
 
@@ -43,5 +52,7 @@ if __name__ == "__main__":
     websocket_port = args.websocket_port
     subdirectory = args.subdir
     output_files = args.output
+    definition_file = args.definition
+    skip_clean = args.skip_clean
     runner = ApplicationRunner(url="ws://%s:%d/ws" % (host, websocket_port), realm="realm1")
     runner.run(launch)

@@ -389,6 +389,7 @@ class MesherGSSF:
 
 class FenicsFamily(metaclass=Family):
     family_name = "fenics"
+    _docker_image = 'gosmart/fenics-stable-ppa'
 
     _py = None
 
@@ -465,7 +466,6 @@ class FenicsFamily(metaclass=Family):
         with open(needle_parameters_yaml, "w") as f:
             yaml.dump_all(self._needles.values(), f, default_flow_style=False)
         self._submitter.add_input(needle_parameters_yaml)
-        shutil.copyfile(needle_parameters_yaml, '/tmp/p.yml') #RMV
 
         with open(os.path.join(working_directory, "start.py"), "w") as f:
             f.write(self._py)
@@ -474,6 +474,7 @@ class FenicsFamily(metaclass=Family):
         success = yield from self._submitter.run_script(
             loop,
             working_directory,
+            self._docker_image,
             self._files_required.keys()
         )
 

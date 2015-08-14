@@ -35,12 +35,18 @@ def wrapped_coroutine(f):
 
 class GoSmartSimulationClientComponent(ApplicationSession):
 
-    def __init__(self, x, gssa_file, subdirectory, output_files):
+    def __init__(self, x, gssa_file, subdirectory, output_files, definition_file=None, skip_clean=False):
         ApplicationSession.__init__(self, x)
         self._gssa = ET.parse(gssa_file)
+        if definition_file is not None:
+            definition_node = self._gssa.find('.//definition')
+            with open(definition_file, 'r') as f:
+                definition_node.text = f.read()
         self._guid = uuid.uuid1()
         self._subdirectory = subdirectory
         self._output_files = output_files
+        self._skip_clean = skip_clean
+        print(self._skip_clean)
 
     @asyncio.coroutine
     def onJoin(self, details):
@@ -72,5 +78,8 @@ class GoSmartSimulationClientComponent(ApplicationSession):
         yield from self.finalize(guid)
 
     def finalize(self, guid):
-        yield from self.call('com.gosmartsimulation.clean', guid)
-        self.disconnect()
+        if not self._skip_clean:
+            yield from self.call('com.gosmartsimulation.clean', guid)
+            self.disconnect()
+        else:
+            print("Skipping clean-up")

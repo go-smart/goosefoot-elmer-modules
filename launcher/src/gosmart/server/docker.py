@@ -82,7 +82,7 @@ class Submitter:
         }), 'UTF-8'))
 
     @asyncio.coroutine
-    def run_script(self, loop, working_directory, files_required=[]):
+    def run_script(self, loop, working_directory, image, files_required=[]):
         success = True
 
         try:
@@ -97,7 +97,7 @@ class Submitter:
 
         print("Simulating")
         try:
-            self.send_command(writer, 'START', None)
+            self.send_command(writer, 'START', {'image': image})
             success, message = yield from self.receive_response(reader)
             print('<--', success, message)
 
@@ -235,7 +235,7 @@ class Submitter:
 def main():
     submitter = Submitter()
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(submitter.run_script(loop, '.'))
+    loop.run_until_complete(submitter.run_script(loop, '.', 'gosmart/fenics-stable-ppa'))
     loop.close()
 
 
