@@ -5,6 +5,7 @@ from daemon.runner import DaemonRunner
 import signal
 import docker
 import os
+import psutil
 import select
 import threading
 import logging
@@ -27,7 +28,6 @@ class DockerLayer:
                  max_containers=10,
                  docker_socket=None, shutdown_timeout=5):
         self._logger = logger
-
         if docker_socket is not None:
             self._docker_socket = docker_socket
 
@@ -123,7 +123,12 @@ class DockerLayer:
     @staticmethod
     def _launch(c, docker_image, script_filename, logger):
         # Cleaned when object that holds it (instance of DL class) is destroyed
-        temporary_directory = tempfile.TemporaryDirectory()
+        try :
+            temporary_directory = tempfile.TemporaryDirectory()
+        except Exception as e:
+            traceback.print_exc()
+            raise
+        print(temporary_directory)
         os.chmod(temporary_directory.name, 0o755)
 
         tmpdir = temporary_directory.name
@@ -141,26 +146,48 @@ class DockerLayer:
         print("FIXME: proper group permissions for input/output directories")
         os.chmod(input_directory, 0o777)
 
-        container = c.create_container(
-            docker_image,
-            command=['python3', '/docker-launch-inner.py', magic_script],
-            volumes=['/shared', '/docker-launch-inner.py'],
-            host_config=docker.utils.create_host_config(binds={
-                tmpdir: {
-                    'bind': '/shared',
-                    'mode': 'rw'
-                },
-                script_filename: {
-                    'bind': '/docker-launch-inner.py',
-                    'mode': 'r'
-                }
+        # Hack to work around Docker API < 1.15
+        if docker.utils.compare_version('1.15', c._version) < 0:
+            container = c.create_container(
+                docker_image,
+                command=['python3', '/docker-launch-inner.py', magic_script],
+                volumes=['/shared', '/docker-launch-inner.py']
+            )
+            container_id = container['Id']
+
+            logger.info("Created container %s" % container_id)
+
+            c.start(container_id, binds={
+            	tmpdir: {
+            	    'bind': '/shared',
+            	    'mode': 'rw'
+            	},
+            	script_filename: {
+            	    'bind': '/docker-launch-inner.py',
+            	    'mode': 'r'
+            	}
             })
-        )
-        container_id = container['Id']
+        else:
+            container = c.create_container(
+                docker_image,
+                command=['python3', '/docker-launch-inner.py', magic_script],
+                volumes=['/shared', '/docker-launch-inner.py'],
+                host_config=docker.utils.create_host_config(binds={
+            	tmpdir: {
+            	    'bind': '/shared',
+            	    'mode': 'rw'
+            	},
+            	script_filename: {
+            	    'bind': '/docker-launch-inner.py',
+            	    'mode': 'r'
+            	}
+                })
+            )
+            container_id = container['Id']
 
-        logger.info("Created container %s" % container_id)
+            logger.info("Created container %s" % container_id)
 
-        c.start(container_id)
+            c.start(container_id)
 
         return container_id, temporary_directory, \
             output_suffix, input_suffix
@@ -353,6 +380,8 @@ class DockerLaunchApp:
 
     def run(self):
         self._logger.info("Starting up...")
+        import random
+        os.urandom(8)
 
         def bootstrap_request_handler(*args, **kwargs):
             request_handler = ThreadedUnixRequestHandler(
@@ -378,6 +407,11 @@ class DockerLaunchApp:
         server_thread = threading.Thread(target=self._server.serve_forever)
         server_thread.start()
 
+
+# Horrendous hack to work around bug in Python <=3.4.0
+def _find_urandom_fd():
+    fds = dict([(os.path.realpath(os.path.join('/proc', 'self', 'fd', p)), p) for p in os.listdir('/proc/self/fd')])
+    return int(fds['/dev/urandom'])
 
 def main():
     docker_settings = {'allowed_images': ['gosmart/fenics-stable-ppa', 'gosmart/galilfoam']}
@@ -454,7 +488,8 @@ def main():
     runner.daemon_context.uid = docker_launch_uid
     runner.daemon_context.gid = docker_launch_gid
     runner.daemon_context.umask = 0o027
-    runner.daemon_context.files_preserve = [handler.stream]
+    print(_find_urandom_fd())
+    runner.daemon_context.files_preserve = [handler.stream, _find_urandom_fd()]
     runner.do_action()
 
 
