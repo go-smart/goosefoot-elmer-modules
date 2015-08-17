@@ -5,7 +5,6 @@ from daemon.runner import DaemonRunner
 import signal
 import docker
 import os
-import psutil
 import select
 import threading
 import logging
@@ -123,12 +122,11 @@ class DockerLayer:
     @staticmethod
     def _launch(c, docker_image, script_filename, logger):
         # Cleaned when object that holds it (instance of DL class) is destroyed
-        try :
+        try:
             temporary_directory = tempfile.TemporaryDirectory()
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
             raise
-        print(temporary_directory)
         os.chmod(temporary_directory.name, 0o755)
 
         tmpdir = temporary_directory.name
@@ -158,14 +156,14 @@ class DockerLayer:
             logger.info("Created container %s" % container_id)
 
             c.start(container_id, binds={
-            	tmpdir: {
-            	    'bind': '/shared',
-            	    'mode': 'rw'
-            	},
-            	script_filename: {
-            	    'bind': '/docker-launch-inner.py',
-            	    'mode': 'r'
-            	}
+                tmpdir: {
+                    'bind': '/shared',
+                    'mode': 'rw'
+                },
+                script_filename: {
+                    'bind': '/docker-launch-inner.py',
+                    'mode': 'r'
+                }
             })
         else:
             container = c.create_container(
@@ -173,14 +171,14 @@ class DockerLayer:
                 command=['python3', '/docker-launch-inner.py', magic_script],
                 volumes=['/shared', '/docker-launch-inner.py'],
                 host_config=docker.utils.create_host_config(binds={
-            	tmpdir: {
-            	    'bind': '/shared',
-            	    'mode': 'rw'
-            	},
-            	script_filename: {
-            	    'bind': '/docker-launch-inner.py',
-            	    'mode': 'r'
-            	}
+                    tmpdir: {
+                        'bind': '/shared',
+                        'mode': 'rw'
+                    },
+                    script_filename: {
+                        'bind': '/docker-launch-inner.py',
+                        'mode': 'r'
+                    }
                 })
             )
             container_id = container['Id']
@@ -277,8 +275,8 @@ class ThreadedUnixRequestHandler(socketserver.StreamRequestHandler):
                                 self._process_message(command, arguments)
                         except Exception as e:
                             exc_type, exc_value, exc_traceback = sys.exc_info()
-                            success, message = False, "Exception: %s\n%s" % (str(e),
-                                "\n".join(traceback.format_tb(exc_traceback)))
+                            success, message = False, "Exception: %s\n%s" % \
+                                (str(e), "\n".join(traceback.format_tb(exc_traceback)))
 
                         response = json.dumps({
                             'success': success,
@@ -380,8 +378,6 @@ class DockerLaunchApp:
 
     def run(self):
         self._logger.info("Starting up...")
-        import random
-        os.urandom(8)
 
         def bootstrap_request_handler(*args, **kwargs):
             request_handler = ThreadedUnixRequestHandler(
@@ -412,6 +408,7 @@ class DockerLaunchApp:
 def _find_urandom_fd():
     fds = dict([(os.path.realpath(os.path.join('/proc', 'self', 'fd', p)), p) for p in os.listdir('/proc/self/fd')])
     return int(fds['/dev/urandom'])
+
 
 def main():
     docker_settings = {'allowed_images': ['gosmart/fenics-stable-ppa', 'gosmart/galilfoam']}
@@ -488,7 +485,6 @@ def main():
     runner.daemon_context.uid = docker_launch_uid
     runner.daemon_context.gid = docker_launch_gid
     runner.daemon_context.umask = 0o027
-    print(_find_urandom_fd())
     runner.daemon_context.files_preserve = [handler.stream, _find_urandom_fd()]
     runner.do_action()
 
