@@ -13,6 +13,8 @@ import tempfile
 import requests
 import socketserver
 import json
+import traceback
+import sys
 
 magic_script = 'start.py'
 
@@ -247,7 +249,9 @@ class ThreadedUnixRequestHandler(socketserver.StreamRequestHandler):
                             success, message = \
                                 self._process_message(command, arguments)
                         except Exception as e:
-                            success, message = False, "Exception: %s" % str(e)
+                            exc_type, exc_value, exc_traceback = sys.exc_info()
+                            success, message = False, "Exception: %s\n%s" % (str(e),
+                                "\n".join(traceback.format_tb(exc_traceback)))
 
                         response = json.dumps({
                             'success': success,
