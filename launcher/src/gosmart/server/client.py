@@ -46,7 +46,6 @@ class GoSmartSimulationClientComponent(ApplicationSession):
         self._subdirectory = subdirectory
         self._output_files = output_files
         self._skip_clean = skip_clean
-        print(self._skip_clean)
 
     @asyncio.coroutine
     def onJoin(self, details):
@@ -55,9 +54,13 @@ class GoSmartSimulationClientComponent(ApplicationSession):
         guid = str(self._guid)
         gssa = ET.tostring(self._gssa, encoding="unicode")
         yield from self.call('com.gosmartsimulation.init', guid)
+        print("Initiated...")
         yield from self.call('com.gosmartsimulation.update_settings_xml', guid, gssa)
+        print("Sent XML...")
         yield from self.call('com.gosmartsimulation.finalize', guid, self._subdirectory)
+        print("Finalized settings...")
         yield from self.call('com.gosmartsimulation.start', guid)
+        print("Started...")
         self.subscribe(self.onComplete, 'com.gosmartsimulation.complete')
         self.subscribe(self.onFail, 'com.gosmartsimulation.fail')
 
