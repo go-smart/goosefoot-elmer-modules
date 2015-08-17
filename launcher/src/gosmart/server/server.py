@@ -95,8 +95,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         self._db.markAllOld()
 
     def doInit(self, guid):
-        print("Test")
-        pass
+        return True
 
     def doClean(self, guid):
         if guid not in self.current:
