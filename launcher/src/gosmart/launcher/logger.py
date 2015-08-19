@@ -169,11 +169,13 @@ class GoSmartLogger(GoSmartComponent):
     def ensure_constant(self, name, value, warn=False, group="CONSTANT", typ=None):
         self.add_or_update_constant(name, value, warn, group, override=False, typ=typ)
 
-    def add_or_update_needle_constant(self, needle, name, value, typ=None):
+    def ensure_needle(self, needle):
         if needle not in self._constant_needle_mapping:
             self._constant_needle_mapping[needle] = {}
             self._constant_needle_mapping_types[needle] = {}
 
+    def add_or_update_needle_constant(self, needle, name, value, typ=None):
+        self.ensure_needle(needle)
         name = slugify(name)
         self._constant_needle_mapping[needle][name] = value
         self._constant_needle_mapping_types[needle][name] = {}
@@ -204,6 +206,13 @@ class GoSmartLogger(GoSmartComponent):
     def get_needle_constants(self):
         constants = self._constant_needle_mapping.copy()
         return constants
+
+    def get_needle_constant(self, needle, name):
+        if needle in self._constant_needle_mapping \
+           and name in self._constant_needle_mapping[needle]:
+            return self._constant_needle_mapping[needle][name]
+
+        return None
 
     def get_constants(self):
         constants = self._constant_mapping.copy()

@@ -72,6 +72,7 @@ class DockerInnerHandler(AIOEventHandler, PatternMatchingEventHandler):
 
 
 def exit(loop, observer, future=None):
+    return
     observer.stop()
     loop.stop()
     logging.info("Stopped event loop")

@@ -105,7 +105,7 @@ Plane Surface(3) = {21};
 // Catheter
 Plane Surface(4) = {31};
 
-Physical Surface($BODIES_REGIONS_ORGANS) = {1};
+Physical Surface($REGION_ORGAN_0) = {1};
 Physical Surface($REGION_SLOT) = {2};
 Physical Surface($REGION_DIELECTRIC_CABLE) = {3};
 Physical Surface($REGION_CATHETER) = {4};

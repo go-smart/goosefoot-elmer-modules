@@ -95,8 +95,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         self._db.markAllOld()
 
     def doInit(self, guid):
-        print("Test")
-        pass
+        return True
 
     def doClean(self, guid):
         if guid not in self.current:
@@ -104,7 +103,9 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         current = self.current[guid]
 
-        return current.clean()
+        result = yield from current.clean()
+
+        return result
 
     def doStart(self, guid):
         if guid not in self.current:
@@ -130,7 +131,6 @@ class GoSmartSimulationComponent(ApplicationSession):
         if success:
             self.eventComplete(guid)
         else:
-            #traceback.print_exc(file=sys.stderr)
             code = Error.E_UNKNOWN
             error_message = "Unknown error occurred"
             error_message_path = os.path.join(current.get_dir(), 'error_message')
@@ -160,6 +160,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         return True
 
     def doRequestFiles(self, guid, files):
+        print(files, self.current, guid)
         if guid not in self.current or not isinstance(files, dict):
             return {}
 

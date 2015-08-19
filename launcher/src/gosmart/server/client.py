@@ -18,22 +18,71 @@
 from autobahn.asyncio.wamp import ApplicationSession
 import uuid
 from lxml import etree as ET
+import asyncio
+import os
+
+
+# This should be adjusted when this issue resolution hits PIP: https://github.com/tavendo/AutobahnPython/issues/332
+# http://stackoverflow.com/questions/28293198/calling-a-remote-procedure-from-a-subscriber-and-resolving-the-asyncio-promise
+from functools import wraps
+def wrapped_coroutine(f):
+    def wrapper(*args, **kwargs):
+        coro = f(*args, **kwargs)
+        asyncio.async(coro)
+    return wrapper
+#endSO
 
 
 class GoSmartSimulationClientComponent(ApplicationSession):
 
-    def __init__(self, x, gssa_file, subdirectory):
+    def __init__(self, x, gssa_file, subdirectory, output_files, definition_file=None, skip_clean=False):
         ApplicationSession.__init__(self, x)
         self._gssa = ET.parse(gssa_file)
+        if definition_file is not None:
+            definition_node = self._gssa.find('.//definition')
+            with open(definition_file, 'r') as f:
+                definition_node.text = f.read()
         self._guid = uuid.uuid1()
         self._subdirectory = subdirectory
+        self._output_files = output_files
+        self._skip_clean = skip_clean
 
+    @asyncio.coroutine
     def onJoin(self, details):
         print("session ready")
 
         guid = str(self._guid)
         gssa = ET.tostring(self._gssa, encoding="unicode")
-        self.call(u'com.gosmartsimulation.init', guid)
-        self.call(u'com.gosmartsimulation.update_settings_xml', guid, gssa)
-        self.call(u'com.gosmartsimulation.finalize', guid, self._subdirectory)
-        self.call(u'com.gosmartsimulation.start', guid)
+        yield from self.call('com.gosmartsimulation.init', guid)
+        print("Initiated...")
+        yield from self.call('com.gosmartsimulation.update_settings_xml', guid, gssa)
+        print("Sent XML...")
+        yield from self.call('com.gosmartsimulation.finalize', guid, self._subdirectory)
+        print("Finalized settings...")
+        yield from self.call('com.gosmartsimulation.start', guid)
+        print("Started...")
+        self.subscribe(self.onComplete, 'com.gosmartsimulation.complete')
+        self.subscribe(self.onFail, 'com.gosmartsimulation.fail')
+
+    @wrapped_coroutine
+    @asyncio.coroutine
+    def onComplete(self, guid, success, time):
+        print("Complete - requesting files")
+        files = yield from self.call('com.gosmartsimulation.request_files', guid, {
+            f: os.path.join('/tmp', f) for f in self._output_files
+        })
+        print(files)
+        yield from self.finalize(guid)
+
+    @wrapped_coroutine
+    @asyncio.coroutine
+    def onFail(self, guid, message, time):
+        print("Failed - %s" % message)
+        yield from self.finalize(guid)
+
+    def finalize(self, guid):
+        if not self._skip_clean:
+            yield from self.call('com.gosmartsimulation.clean', guid)
+            self.disconnect()
+        else:
+            print("Skipping clean-up")

@@ -42,6 +42,6 @@ Line Loop(1) = { 1, 2, 3, 4, 5, 6, 7, 8 };
 /* Subdomains */
 
 // Liver Tissue
-Plane Surface($BODIES_REGIONS_ORGANS) = {1};
+Plane Surface($REGION_ORGAN_0) = {1};
 
-Physical Surface($BODIES_REGIONS_ORGANS) = {$BODIES_REGIONS_ORGANS};
+Physical Surface($REGION_ORGAN_0) = {$REGION_ORGAN_0};

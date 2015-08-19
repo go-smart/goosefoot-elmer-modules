@@ -23,6 +23,7 @@ import string
 import shutil
 import re
 import uuid
+import numpy as N
 import json
 import jinja2
 import jinja2.sandbox
@@ -37,6 +38,7 @@ from gosmart.launcher.globals import \
     slugify
 from gosmart.launcher.elmer_probelocation import GoSmartElmerProbeLocationFactory, probe_location_factories
 from gosmart.launcher.elmer_powerovertime import power_over_time_factories
+from gosmart.launcher.errors import GoSmartClientError
 
 
 def _type_to_sif_type(typ, var):
@@ -111,7 +113,7 @@ class ParameterDict(dict):
         super().update({k: Parameter(k, v, self._type_callback) for k, v in update_dict.items()})
 
 
-class CounterDict(ParameterDict):
+class CounterDict(dict):
     def __getitem__(self, attr):
         if attr[0] == '_':
             increment = False
@@ -122,10 +124,11 @@ class CounterDict(ParameterDict):
         try:
             p = super().__getitem__(attr)
         except KeyError:
-            p = Parameter(attr, 0, self._type_callback)
+            self[attr] = 1
+            p = super().__getitem__(attr)
 
         if increment:
-            p.set_value(p.value + 1)
+            self[attr] = p + 1
 
         return p
 
@@ -185,6 +188,43 @@ class GoSmartElmer(GoSmartComponent):
 
         self.configfiles = []
 
+    def _needle_distance(self, needle1, needle2, dist_from_tip=None, reference_needle=None):
+        needle1 = str(needle1)
+        needle2 = str(needle2)
+
+        if "simulationscaling" in self.logger.geometry:
+            scaling = self.logger.geometry["simulationscaling"]
+        else:
+            scaling = 1.0
+
+        n1t = N.array(json.loads(self.logger.get_needle_constant(needle1, "NEEDLE_TIP_LOCATION"))) * scaling
+        n2t = N.array(json.loads(self.logger.get_needle_constant(needle2, "NEEDLE_TIP_LOCATION"))) * scaling
+        n1e = N.array(json.loads(self.logger.get_needle_constant(needle1, "NEEDLE_ENTRY_LOCATION"))) * scaling
+        n2e = N.array(json.loads(self.logger.get_needle_constant(needle2, "NEEDLE_ENTRY_LOCATION"))) * scaling
+        print(n1t, n2t, n1e, n2e)
+
+        p = N.cross(n1t - n1e, n2t - n2e)
+        if p.dot(p) < 1e-10:
+            return 0
+
+        # If not given a distance from needle1 ti
+        if dist_from_tip is None:
+            return abs(N.dot(n2e - n1e, p)) / N.sqrt(p.dot(p))
+
+        if reference_needle is None:
+            reference_needle = needle1
+
+        n1 = n1t - n1e
+        c = n1t - (dist_from_tip * scaling) * n1 / N.sqrt(n1.dot(n1))
+        l = (n2t - n2e).dot(n1)
+        if abs(l) < 1e-10:
+            raise GoSmartClientError("Needle %s and needle %s are perpendicular!" % (needle1, needle2))
+
+        k = (c - n2e).dot(n1) / l
+        v = c - n2e - k * (n2t - n2e)
+
+        return N.sqrt(v.dot(v))
+
     def _maybefloat(self, c):
         if isinstance(c, str):
             try:
@@ -206,7 +246,7 @@ class GoSmartElmer(GoSmartComponent):
                 self.logger.print_debug("SIF Generation - Skipping %s as missing parameters (requires %s)" % (name, ", ".join(definition['requirements'])))
 
         for name, info in self.get_mapping_warn().items():
-            if not sif_template.template.find(name):
+            if not sif_template.find(name):
                 self.logger.print_error("SIF Generation - Missing %s" % info)
 
         if self.logger.debug:
@@ -289,6 +329,7 @@ class GoSmartElmer(GoSmartComponent):
 
         # Update SIF to expand out needle foreachs
         needle_constants = self.logger.get_needle_constants()
+        self.logger.print_debug(needle_constants)
         for needle, constants in needle_constants.items():
             root = "REGIONS_NEEDLE_%s" % slugify(needle)
             generic_root = "REGIONS_NEEDLE"
@@ -316,6 +357,13 @@ class GoSmartElmer(GoSmartComponent):
         #sif_definition = re.sub(r'(=\s*)\$((CONSTANT|SETTING|PARAMETER)_[A-Za-z_0-9]+)', type_substitution, sif_definition)
         sif_environment = jinja2.sandbox.SandboxedEnvironment()
         sif_environment.filters['typed'] = lambda p: p.render(True)
+        sif_environment.filters['totyped'] = lambda v, t: _type_to_sif_type(t, json.dumps(v))
+        sif_environment.filters['discretize'] = lambda v, r: (float if r < 1 else int)(round(v / r) * r)
+        sif_environment.globals['zip'] = zip
+        sif_environment.globals['list'] = list
+        sif_environment.globals['map'] = map
+        sif_environment.globals['str'] = str
+        sif_environment.globals['needle_distance'] = self._needle_distance
         sif_template = sif_environment.from_string(sif_definition)
 
         if self._restarting:
@@ -331,7 +379,7 @@ class GoSmartElmer(GoSmartComponent):
                 Output File = 'Restart.dat'
             """
         self._prepare_algorithms()
-        #self._check_sif_mapping_set(sif_template)
+        self._check_sif_mapping_set(sif_definition)
 
         constants = self.get_constants()
 

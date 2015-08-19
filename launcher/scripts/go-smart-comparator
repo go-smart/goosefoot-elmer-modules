@@ -1,6 +1,8 @@
 #!/bin/python3
 
 from gosmart.comparator import Comparator
+import argparse
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -8,9 +10,11 @@ def main():
     args = parser.parse_args()
 
     with open(args.files[0], 'r') as left, open(args.files[1], 'r') as right:
-        messages = Comparator(left, right)
-        for messages as message:
-            print(message)
+        comparator = Comparator(left.read(), right.read())
+
+    messages = comparator.diff()
+    for message in messages:
+        print(message)
 
 
 if __name__ == '__main__':

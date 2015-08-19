@@ -1,10 +1,11 @@
 from __future__ import print_function
 
 from zope.interface import implementer
-import paramiko
+import shutil
 import urllib.request as urllib2
 import os
 import requests
+from .error import Error, makeError
 
 from gosmart.server.transferrer import ITransferrer
 
@@ -35,8 +36,13 @@ class HTTPTransferrer:
     def push_files(self, files, root, remote_root):
         for local, remote in files.items():
             absolute_path = os.path.join(root, local)
-            print("Uploading from: " + absolute_path + " to:" + remote)
-            self.uploadFile(absolute_path, remote)
+            if self._output == "tmp":
+                remote_absolute_path = os.path.join(remote_root, remote)
+                print("Putting", absolute_path, remote_absolute_path)
+                shutil.copy(absolute_path, os.path.join('/tmp', remote_absolute_path))
+            else:
+                print("Uploading from: " + absolute_path + " to:" + remote)
+                self.uploadFile(absolute_path, remote)
 
     def downloadFile(self, sourceUrlStr, destinationStr):
         '''Downloads a file from the source URL to the destination (typically a folder)
@@ -53,7 +59,7 @@ class HTTPTransferrer:
             try:
                 serverFile = urllib2.urlopen(sourceUrlStr)
             except:
-                raise ServerError("download failed", -2)
+                raise makeError(Error.E_SERVER, "download failed")
             localFile = open(destinationStr, "wb")
             localFile.write(serverFile.read())
             serverFile.close()
@@ -81,3 +87,7 @@ class HTTPTransferrer:
 
     def configure_from_xml(self, xml):
         self._url = xml.find("url").text
+        self._output = xml.find("output")
+        if self._output is not None:
+            print("Outputting to tmp")
+            self._output = self._output.text

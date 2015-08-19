@@ -23,11 +23,17 @@ import os
 import json
 import asyncio
 from gosmart.server.docker import Submitter
+import traceback
+import sys
+import math
+from lxml import etree as ET
 import shutil
+import yaml
 
 
 class GalilFoamFamily(metaclass=Family):
     family_name = "galilFoam"
+    _docker_image = 'gosmart/galilfoam'
 
     _py = None
 
@@ -60,15 +66,41 @@ class GalilFoamFamily(metaclass=Family):
 
     @asyncio.coroutine
     def simulate(self, working_directory):
-        #CHANGE THIS TO COPY somegalilfoamscript.py TO os.path.join(working_directory, "start.py")
-        shutil.copyfile('somegalilfoamscript.py', os.path.join(working_directory, "start.py"))
-        #ENDCHANGE
+        regions_yaml = os.path.join(working_directory, "input", "regions.yml")
+        with open(regions_yaml, "w") as f:
+            yaml.dump(self._regions, f, default_flow_style=False)
+
+        self._submitter.add_input(regions_yaml)
+
+        parameters_yaml = os.path.join(working_directory, "input", "parameters.yml")
+        parameters = self._parameters
+        for k, v in parameters.items():
+            parameters[k] = [v[1], v[0]]
+        with open(parameters_yaml, "w") as f:
+            yaml.dump(parameters, f, default_flow_style=False)
+        self._submitter.add_input(parameters_yaml)
+
+        needle_parameters_yaml = os.path.join(working_directory, "input", "needle_parameters.yml")
+        for j, w in self._needles.items():
+            needle_parameters = w['parameters']
+            for k, v in needle_parameters.items():
+                needle_parameters[k] = [v[1], v[0]]
+            self._needles[j]['index'] = j
+            self._needles[j]['parameters'] = needle_parameters
+
+        with open(needle_parameters_yaml, "w") as f:
+            yaml.dump_all(self._needles.values(), f, default_flow_style=False)
+        self._submitter.add_input(needle_parameters_yaml)
+
+        with open(os.path.join(working_directory, "start.py"), "w") as f:
+            f.write(self._py)
 
         loop = asyncio.get_event_loop()
         success = yield from self._submitter.run_script(
             loop,
             working_directory,
-            self._files_required.keys()
+            self._docker_image,
+            self._files_required.keys(),
         )
 
         return success
@@ -84,8 +116,6 @@ class GalilFoamFamily(metaclass=Family):
         self._submitter.finalize()
 
     def load_definition(self, xml, parameters, algorithms):
-        self._mesher_gssf.load_definition(xml, parameters, algorithms)
-
         self._py = xml.find('definition').text
         self._needles = {}
         self._regions = {}
@@ -137,4 +167,3 @@ class GalilFoamFamily(metaclass=Family):
 
         self._algorithms = algorithms
         self._definition = xml.find('definition').text
-
