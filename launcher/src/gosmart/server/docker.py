@@ -82,7 +82,7 @@ class Submitter:
         }), 'UTF-8'))
 
     @asyncio.coroutine
-    def run_script(self, loop, working_directory, image, files_required=[]):
+    def run_script(self, loop, working_directory, image, files_required=[], magic_script=None):
         success = True
 
         try:
@@ -105,11 +105,12 @@ class Submitter:
                 raise RuntimeError('Could not start: %s', message)
 
             try:
-                magic_script = os.path.join(
-                    message['volume location'],
-                    message['input subdirectory'],
-                    message['magic script']
-                )
+                if magic_script is not None:
+                    magic_script = os.path.join(
+                        message['volume location'],
+                        message['input subdirectory'],
+                        magic_script
+                    )
                 self._output_directory = os.path.join(
                     message['volume location'],
                     message['output subdirectory']
@@ -145,10 +146,11 @@ class Submitter:
             for input_file in self._input_files:
                 shutil.copyfile(input_file, os.path.join(self._input_directory, os.path.basename(input_file)))
 
-            with open(magic_script, 'w') as f, open(os.path.join(working_directory, 'start.py'), 'r') as g:
-                f.write(g.read())
+            if magic_script is not None:
+                with open(magic_script, 'w') as f, open(os.path.join(working_directory, 'start.py'), 'r') as g:
+                    f.write(g.read())
 
-            print("Wrote magic script to %s" % magic_script)
+                print("Wrote magic script to %s" % magic_script)
 
             self.send_command(writer, 'WAIT', None)
             success, message = yield from self.receive_response(reader)

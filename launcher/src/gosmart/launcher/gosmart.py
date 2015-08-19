@@ -379,7 +379,7 @@ class GoSmart:
                         only_needle = None
                         break
 
-                if only_needle and only_needle.get("offset"):
+                if only_needle is not None and only_needle.get("offset"):
                     for c, o in zip(('x', 'y', 'z'), only_needle.get("offset").split(" ")):
                         self.logger.add_or_update_constant(c, self.logger.get_constant(c, group="needle") + float(o), group="needle", typ="float")
 

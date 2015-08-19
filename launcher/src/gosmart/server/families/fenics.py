@@ -180,7 +180,16 @@ class MesherGSSF:
             self._regions_by_meaning[region.get('name')].append(self._regions[region.get('id')])
 
         self._algorithms = algorithms
-        self._definition = xml.find('definition').text
+        self._definition = xml.find('definition')
+        definition_location = self._definition.get('location')
+        if definition_location:
+            if definition_location.endswith('.tar.gz'):
+                self._files_required[os.path.join('input', 'start.tar.gz')] = self._definition.get('location')  # Any changes to local/remote dirs here
+            else:
+                raise RuntimeError("Uploaded definition must be of form *.tar.gz")
+            self._definition = None
+        else:
+            self._definition = self._definition.text
 
     def to_xml(self):
         root = ET.Element('gosmart')
@@ -467,15 +476,27 @@ class FenicsFamily(metaclass=Family):
             yaml.dump_all(self._needles.values(), f, default_flow_style=False)
         self._submitter.add_input(needle_parameters_yaml)
 
-        with open(os.path.join(working_directory, "start.py"), "w") as f:
-            f.write(self._py)
+        if self._definition is not None:
+            with open(os.path.join(working_directory, "start.py"), "w") as f:
+                f.write(self._definition)
+            magic_script = "start.py"
+        else:
+            definition_tar = os.path.join("input", "start.tar.gz")
+            # Need to make sure this is last uploaded
+            self._submitter.add_input(os.path.join(working_directory, definition_tar))
+            if definition_tar in self._files_required:
+                del self._files_required[definition_tar]
+                print("Removing definition of tar from files required")
+            magic_script = None
+            print("Using package instead of magic script")
 
         loop = asyncio.get_event_loop()
         success = yield from self._submitter.run_script(
             loop,
             working_directory,
             self._docker_image,
-            self._files_required.keys()
+            self._files_required.keys(),
+            magic_script
         )
 
         return success
@@ -493,7 +514,6 @@ class FenicsFamily(metaclass=Family):
     def load_definition(self, xml, parameters, algorithms):
         self._mesher_gssf.load_definition(xml, parameters, algorithms)
 
-        self._py = xml.find('definition').text
         self._needles = {}
         self._regions = {}
         self._regions_by_meaning = {}

@@ -20,6 +20,8 @@ import uuid
 from lxml import etree as ET
 import asyncio
 import os
+import tarfile
+import tempfile
 
 
 # This should be adjusted when this issue resolution hits PIP: https://github.com/tavendo/AutobahnPython/issues/332
@@ -35,13 +37,21 @@ def wrapped_coroutine(f):
 
 class GoSmartSimulationClientComponent(ApplicationSession):
 
-    def __init__(self, x, gssa_file, subdirectory, output_files, definition_file=None, skip_clean=False):
+    def __init__(self, x, gssa_file, subdirectory, output_files, definition_files=None, skip_clean=False):
         ApplicationSession.__init__(self, x)
         self._gssa = ET.parse(gssa_file)
-        if definition_file is not None:
+        self._definition_files = definition_files
+
+        if self._definition_files is not None:
+            self._definition_tmp = tempfile.NamedTemporaryFile(suffix='.tar.gz')
+            definition_tar = tarfile.open(fileobj=self._definition_tmp, mode='w:gz')
+            for definition_file in self._definition_files:
+                tar_info = definition_tar.gettarinfo(definition_file, os.path.basename(definition_file))
+                definition_tar.addfile(tar_info)
+            definition_tar.close()
             definition_node = self._gssa.find('.//definition')
-            with open(definition_file, 'r') as f:
-                definition_node.text = f.read()
+            definition_node.set('location', self._definition_tmp.name)
+
         self._guid = uuid.uuid1()
         self._subdirectory = subdirectory
         self._output_files = output_files

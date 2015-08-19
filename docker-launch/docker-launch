@@ -16,8 +16,6 @@ import json
 import traceback
 import sys
 
-magic_script = 'start.py'
-
 
 class DockerLayer:
     _docker_socket = 'unix://var/run/docker.sock'
@@ -88,8 +86,7 @@ class DockerLayer:
             return True, {
                 'volume location': temporary_directory.name,
                 'output subdirectory': output_directory,
-                'input subdirectory': input_directory,
-                'magic script': magic_script
+                'input subdirectory': input_directory
             }
 
     def wait(self, timeout, destroy=False):
@@ -145,15 +142,16 @@ class DockerLayer:
         os.chmod(input_directory, 0o777)
 
         # Hack to work around Docker API < 1.15
+        command = ['cat', '/etc/passwd']
         if docker.utils.compare_version('1.15', c._version) < 0:
             container = c.create_container(
                 docker_image,
-                command=['python3', '/docker-launch-inner.py', magic_script],
+                command=command,
                 volumes=['/shared', '/docker-launch-inner.py']
             )
             container_id = container['Id']
 
-            logger.info("Created container %s" % container_id)
+            logger.info("Created container %s (old API)" % container_id)
 
             c.start(container_id, binds={
                 tmpdir: {
@@ -168,7 +166,7 @@ class DockerLayer:
         else:
             container = c.create_container(
                 docker_image,
-                command=['python3', '/docker-launch-inner.py', magic_script],
+                command=command,
                 volumes=['/shared', '/docker-launch-inner.py'],
                 host_config=docker.utils.create_host_config(binds={
                     tmpdir: {
@@ -183,7 +181,7 @@ class DockerLayer:
             )
             container_id = container['Id']
 
-            logger.info("Created container %s" % container_id)
+            logger.info("Created container %s with command %s" % (container_id, " ".join(command)))
 
             c.start(container_id)
 
@@ -411,7 +409,7 @@ def _find_urandom_fd():
 
 
 def main():
-    docker_settings = {'allowed_images': ['gosmart/fenics-stable-ppa', 'gosmart/galilfoam']}
+    docker_settings = {'allowed_images': ['gosmart/fenics-stable-ppa', 'gosmart/gfoam']}
 
     log_location = '/var/log/docker-launch'
     run_location = '/var/run/docker-launch'
@@ -427,7 +425,7 @@ def main():
         os.chmod(lib_location, 0o755)
 
     script_filename = os.path.join(lib_location, script_name)
-    with open(script_filename, 'w') as f, open('indocker.py.txt', 'r') as g:
+    with open(script_filename, 'w') as f, open('indocker.py', 'r') as g:
         # Any processing of indocker here
         f.write(g.read())
 

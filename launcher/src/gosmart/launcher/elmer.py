@@ -65,6 +65,12 @@ class Parameter:
         self._value = value
         self._type_callback = type_callback
 
+    def __float__(self):
+        return float(self._value)
+
+    def __int__(self):
+        return int(self._value)
+
     def __str__(self):
         return str(self.render())
 
@@ -215,7 +221,7 @@ class GoSmartElmer(GoSmartComponent):
             reference_needle = needle1
 
         n1 = n1t - n1e
-        c = n1t - (dist_from_tip * scaling) * n1 / N.sqrt(n1.dot(n1))
+        c = n1t - (float(dist_from_tip) * scaling) * n1 / N.sqrt(n1.dot(n1))
         l = (n2t - n2e).dot(n1)
         if abs(l) < 1e-10:
             raise GoSmartClientError("Needle %s and needle %s are perpendicular!" % (needle1, needle2))
