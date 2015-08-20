@@ -17,14 +17,86 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import os
+import json
+from gosmart.server.parameters import read_parameters
+
 register = {}
 
 
-class Family(type):
+class FamilyType(type):
     def __init__(cls, clsname, bases, dct):
-        register[cls.family_name] = cls
-        print("Registered family: %s" % cls.family_name)
+        if cls.family_name is not None:
+            register[cls.family_name] = cls
+            print("Registered family: %s" % cls.family_name)
         return type.__init__(cls, clsname, bases, dct)
+
+
+class Family(metaclass=FamilyType):
+    family_name = None
+
+    def load_core_definition(self, xml, parameters, algorithms):
+        self._needles = {}
+        self._regions = {}
+        self._regions_by_meaning = {}
+
+        needles = xml.find('needles')
+        if needles is not None:
+            k = 0
+            for needle in needles:
+                needle_file = needle.get("file")
+                location = needle_file.split(':', 1)
+                if location[0] in ('surface', 'zone', 'both'):
+                    target_file = "%s%s" % (needle.get("index"), os.path.splitext(location[1])[1])
+                    needle_file = "%s:%s" % (location[0], target_file)
+                    self._files_required[os.path.join('input', target_file)] = location[1]  # Any changes to local/remote dirs here
+
+                self._needles[needle.get("index")] = {
+                    "parameters": read_parameters(needle.find("parameters")),
+                    "file": needle_file,
+                    "class": needle.get("class")
+                }
+                self._needle_order[k] = needle.get("index")
+                k += 1
+
+        self._parameters = parameters
+
+        regions = xml.find('regions')
+        for region in regions:
+            if region.get('name') not in self._regions_by_meaning:
+                self._regions_by_meaning[region.get('name')] = []
+
+            try:
+                target_file = "%s%s" % (region.get("id"), os.path.splitext(region.get('input'))[1])
+            except AttributeError as e:
+                print(region.get('name'), region.get('input'), region.get('groups'))
+                raise e
+
+            self._regions[region.get('id')] = {
+                "format": region.get('format'),
+                "meaning": region.get('name'),
+                "input": target_file,
+                "groups": json.loads(region.get('groups'))
+            }
+            if self.get_parameter("SETTING_ORGAN_AS_SUBDOMAIN") and region.get('name') == 'organ':
+                if self.get_parameter('SETTING_ORGAN_AS_SURFACE'):
+                    self._regions[region.get('id')]["format"] = 'both'
+                else:
+                    self._regions[region.get('id')]["format"] = 'zone'
+            if self._regions[region.get('id')]["format"] in ('surface', 'zone', 'both') and region.get('input'):
+                self._files_required[os.path.join('input', target_file)] = region.get('input')  # Any changes to local/remote dirs here
+            self._regions_by_meaning[region.get('name')].append(self._regions[region.get('id')])
+
+        self._algorithms = algorithms
+        definition_location = self._definition.get('location')
+        if definition_location:
+            if definition_location.endswith('.tar.gz'):
+                self._files_required[os.path.join('input', 'start.tar.gz')] = self._definition.get('location')  # Any changes to local/remote dirs here
+            else:
+                raise RuntimeError("Uploaded definition must be of form *.tar.gz")
+            self._definition = None
+        else:
+            self._definition = self._definition.text
 
 from gosmart.server.families import scan
 

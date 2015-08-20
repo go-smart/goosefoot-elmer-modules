@@ -16,24 +16,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gosmart.server.family import Family
-from gosmart.server.parameters import read_parameters, convert_parameter
+from gosmart.server.parameters import convert_parameter
 
 
 import os
-import json
 import asyncio
 from gosmart.server.docker import Submitter
-import traceback
-import sys
-import math
-from lxml import etree as ET
-import shutil
 import yaml
 
 
-class GalilFoamFamily(metaclass=Family):
-    family_name = "galilFoam"
-    _docker_image = 'gosmart/galilfoam'
+class GFoamFamily(Family):
+    family_name = "gFoam"
+    _docker_image = 'gosmart/gfoam'
 
     _py = None
 
@@ -116,54 +110,4 @@ class GalilFoamFamily(metaclass=Family):
         self._submitter.finalize()
 
     def load_definition(self, xml, parameters, algorithms):
-        self._py = xml.find('definition').text
-        self._needles = {}
-        self._regions = {}
-        self._regions_by_meaning = {}
-
-        needles = xml.find('needles')
-        if needles is not None:
-            k = 0
-            for needle in needles:
-                needle_file = needle.get("file")
-                location = needle_file.split(':', 1)
-                if location[0] in ('surface', 'zone'):
-                    target_file = "%s%s" % (needle.get("index"), os.path.splitext(location[1])[1])
-                    needle_file = "%s:%s" % (location[0], target_file)
-                    self._files_required[os.path.join('input', target_file)] = location[1]  # Any changes to local/remote dirs here
-
-                self._needles[needle.get("index")] = {
-                    "parameters": read_parameters(needle.find("parameters")),
-                    "file": needle_file,
-                    "class": needle.get("class")
-                }
-                self._needle_order[k] = needle.get("index")
-                k += 1
-
-        self._parameters = parameters
-
-        regions = xml.find('regions')
-        for region in regions:
-            if region.get('name') not in self._regions_by_meaning:
-                self._regions_by_meaning[region.get('name')] = []
-
-            try:
-                target_file = "%s%s" % (region.get("id"), os.path.splitext(region.get('input'))[1])
-            except AttributeError as e:
-                print(region.get('name'), region.get('input'), region.get('groups'))
-                raise e
-
-            self._regions[region.get('id')] = {
-                "format": region.get('format'),
-                "meaning": region.get('name'),
-                "input": target_file,
-                "groups": json.loads(region.get('groups'))
-            }
-            if self.get_parameter("SETTING_ORGAN_AS_SUBDOMAIN") and region.get('name') == 'organ':
-                self._regions[region.get('id')]["format"] = 'zone'
-            if self._regions[region.get('id')]["format"] in ('surface', 'zone') and region.get('input'):
-                self._files_required[os.path.join('input', target_file)] = region.get('input')  # Any changes to local/remote dirs here
-            self._regions_by_meaning[region.get('name')].append(self._regions[region.get('id')])
-
-        self._algorithms = algorithms
-        self._definition = xml.find('definition').text
+        self.load_core_definition(xml, parameters, algorithms)

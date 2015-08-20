@@ -46,9 +46,11 @@ class GoSmartSimulationClientComponent(ApplicationSession):
             self._definition_tmp = tempfile.NamedTemporaryFile(suffix='.tar.gz')
             definition_tar = tarfile.open(fileobj=self._definition_tmp, mode='w:gz')
             for definition_file in self._definition_files:
-                tar_info = definition_tar.gettarinfo(definition_file, os.path.basename(definition_file))
-                definition_tar.addfile(tar_info)
+                definition_tar.add(definition_file, os.path.basename(definition_file))
+                print("Added [%s]" % os.path.basename(definition_file))
             definition_tar.close()
+            self._definition_tmp.flush()
+            print("Made temporary tar at %s" % self._definition_tmp.name)
             definition_node = self._gssa.find('.//definition')
             definition_node.set('location', self._definition_tmp.name)
 
