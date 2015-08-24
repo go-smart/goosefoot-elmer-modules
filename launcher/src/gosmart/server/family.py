@@ -19,7 +19,8 @@
 
 import os
 import json
-from gosmart.server.parameters import read_parameters
+import asyncio
+from gosmart.server.parameters import read_parameters, convert_parameter
 
 register = {}
 
@@ -88,6 +89,7 @@ class Family(metaclass=FamilyType):
             self._regions_by_meaning[region.get('name')].append(self._regions[region.get('id')])
 
         self._algorithms = algorithms
+        self._definition = xml.find('definition')
         definition_location = self._definition.get('location')
         if definition_location:
             if definition_location.endswith('.tar.gz'):
@@ -97,6 +99,31 @@ class Family(metaclass=FamilyType):
             self._definition = None
         else:
             self._definition = self._definition.text
+
+    # Needle index can be either needle index (as given in XML input) or an
+    # integer n indicating the nth needle in the order of the needles XML block
+    def get_needle_parameter(self, needle_index, key, try_json=True):
+        if needle_index not in self._needles and needle_index in self._needle_order:
+            needle_index = self._needle_order[needle_index]
+
+        value = self.get_parameter(key, try_json, self._needles[needle_index]["parameters"])
+
+        return value
+
+    def get_parameter(self, key, try_json=True, parameters=None):
+        if parameters is None:
+            parameters = self._parameters
+
+        if key not in parameters:
+            return None
+
+        parameter, typ = parameters[key]
+
+        return convert_parameter(parameter, typ, try_json)
+
+    @asyncio.coroutine
+    def validation(self):
+        return None
 
 from gosmart.server.families import scan
 

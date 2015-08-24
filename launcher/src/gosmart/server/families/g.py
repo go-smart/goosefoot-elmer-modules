@@ -29,8 +29,6 @@ class GFoamFamily(Family):
     family_name = "gFoam"
     _docker_image = 'gosmart/gfoam'
 
-    _py = None
-
     def __init__(self, files_required):
         self._needles = {}
         self._needle_order = {}
@@ -87,7 +85,7 @@ class GFoamFamily(Family):
         self._submitter.add_input(needle_parameters_yaml)
 
         with open(os.path.join(working_directory, "start.py"), "w") as f:
-            f.write(self._py)
+            f.write(self._definition)
 
         loop = asyncio.get_event_loop()
         success = yield from self._submitter.run_script(

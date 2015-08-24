@@ -142,7 +142,8 @@ class DockerLayer:
         os.chmod(input_directory, 0o777)
 
         # Hack to work around Docker API < 1.15
-        command = ['cat', '/etc/passwd']
+        command = ['python3 /docker-launch-inner.py']
+        print("If something doesn't work, check whether command needs to be a list for certain versions of docker")
         if docker.utils.compare_version('1.15', c._version) < 0:
             container = c.create_container(
                 docker_image,

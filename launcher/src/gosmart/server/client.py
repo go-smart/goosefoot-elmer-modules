@@ -78,8 +78,11 @@ class GoSmartSimulationClientComponent(ApplicationSession):
 
     @wrapped_coroutine
     @asyncio.coroutine
-    def onComplete(self, guid, success, time):
-        print("Complete - requesting files")
+    def onComplete(self, guid, success, time, validation):
+        print("Complete")
+        if validation:
+            print("Validation:", validation)
+        print("Requesting files")
         files = yield from self.call('com.gosmartsimulation.request_files', guid, {
             f: os.path.join('/tmp', f) for f in self._output_files
         })

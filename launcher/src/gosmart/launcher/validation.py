@@ -15,13 +15,10 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import re
 import os
 import shutil
 
 from gosmart.launcher.component import GoSmartComponent
-from gosmart.launcher.globals import EPS
-from gosmart.launcher.errors import GoSmartClientError, GoSmartServerError
 
 
 # Note that this module requires availability of the (closed source) Aalto validation tool
@@ -47,21 +44,22 @@ class GoSmartValidation(GoSmartComponent):
         super().launch()
 
         if input_cwd is None:
-            input_cwd = "elmer"
+            input_cwd = "lesion"
 
         input_cwd = os.path.join(self.logger.get_cwd(), input_cwd)
         input_name = self.logger.runname + ".vtp"
         output_name = self.logger.runname + "-deviation.vtp"
         analysis_name = self.logger.runname + "-analysis.xml"
-        refdata_name = self.logger.surfaces[self.refdata]
+        refdata_name = self.logger.zones_excluded[self.refdata]['filename']
 
         try:
             shutil.copy(os.path.join(input_cwd, input_name), self.logger.make_cwd(self.suffix))
+            shutil.copy(refdata_name, os.path.join(self.logger.make_cwd(self.suffix), 'refdata.vtp'))
         except Exception as e:
-            self.logger.print_fatal("Could not copy input mesh across for lesion exciser: %s" % str(e))
+            self.logger.print_fatal("Could not copy input mesh across for validation tool: %s" % str(e))
 
         args = [
-            refdata_name,
+            'refdata.vtp',
             input_name,
             analysis_name,
             output_name,
@@ -71,4 +69,4 @@ class GoSmartValidation(GoSmartComponent):
         self.cwd = self.suffix
 
         self._launch_subprocess(self.binary_name, args)
-        return os.path.join(self.cwd, output_name)
+        return os.path.join(self.cwd, output_name), os.path.join(self.cwd, analysis_name)

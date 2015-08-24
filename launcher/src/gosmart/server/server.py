@@ -21,7 +21,6 @@ from __future__ import print_function
 import asyncio
 from functools import partial
 from autobahn.asyncio.wamp import ApplicationSession
-from zope.interface.verify import verifyObject
 
 import os
 import socket
@@ -43,8 +42,6 @@ from gosmart.server.definition import GoSmartSimulationDefinition
 from gosmart.comparator import Comparator
 from gosmart.server.translator import GoSmartSimulationTranslator
 from .error import Error, makeError
-#from gosmart.launcher import gosmart
-
 
 
 class GoSmartSimulationComponent(ApplicationSession):
@@ -118,18 +115,22 @@ class GoSmartSimulationComponent(ApplicationSession):
         except AttributeError:
             task = asyncio.async(coro, loop=loop)
 
-        task.add_done_callback(partial(self._handle_simulation_done, guid=guid))
+        task.add_done_callback(lambda f: asyncio.async(self._handle_simulation_done(f, guid=guid)))
 
         return True
 
+    @asyncio.coroutine
     def _handle_simulation_done(self, fut, guid):
         success = fut.result()
         print("EXITED")
 
         current = self.current[guid]
 
+        print("IS THIS EVENT WORKING???")
         if success:
-            self.eventComplete(guid)
+            print("IS THIS EVENT WORKING???")
+            yield from self.eventComplete(guid)
+            print("Completed simulation in %s" % current.get_dir())
         else:
             code = Error.E_UNKNOWN
             error_message = "Unknown error occurred"
@@ -142,8 +143,8 @@ class GoSmartSimulationComponent(ApplicationSession):
                     error_message.encode('ascii', 'xmlcharrefreplace')
                     error_message.encode('utf-8')
 
-            print("Completed simulation in %s" % current.get_dir())
-            self.eventFail(guid, makeError(code, error_message))
+            print("Failed simulation in %s" % current.get_dir())
+            yield from self.eventFail(guid, makeError(code, error_message))
 
         print("Finished simulation")
 
@@ -195,7 +196,7 @@ class GoSmartSimulationComponent(ApplicationSession):
     @asyncio.coroutine
     def doSimulate(self, guid):
         if guid not in self.current:
-            self.eventFail(guid, makeError(Error.E_CLIENT, "Not fully prepared before launching - no current simulation set"))
+            yield from self.eventFail(guid, makeError(Error.E_CLIENT, "Not fully prepared before launching - no current simulation set"))
 
         current = self.current[guid]
 
@@ -238,24 +239,33 @@ class GoSmartSimulationComponent(ApplicationSession):
         self.doRequestFiles(self, guid, request_files)
         self.doFinalize(self, guid, '')
 
+    @asyncio.coroutine
     def eventComplete(self, guid):
+        print("complete", guid)
         if guid not in self.current:
             print("Tried to send simulation-specific completion event with no current simulation definition", file=sys.stderr)
 
         timestamp = time.time()
 
+        print(timestamp)
         try:
             loop = asyncio.get_event_loop()
             loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "SUCCESS", "Success", "100", timestamp))
+            validation = yield from self.current[guid].validation()
+            print(validation)
+            if validation:
+                loop.call_soon_threadsafe(lambda: self._db.updateValidation(guid, validation))
         except Exception as e:
             print(e)
+            validation = None
             traceback.print_exc(file=sys.stderr)
 
         self.current[guid].set_exit_status(True)
         print('Success', guid)
 
-        self.publish(u'com.gosmartsimulation.complete', guid, makeError('SUCCESS', 'Success'), time.time())
+        self.publish(u'com.gosmartsimulation.complete', guid, makeError('SUCCESS', 'Success'), time.time(), validation)
 
+    @asyncio.coroutine
     def eventFail(self, guid, message):
         if guid not in self.current:
             print("Tried to send simulation-specific failure event with no current simulation definition", file=sys.stderr)
@@ -286,7 +296,7 @@ class GoSmartSimulationComponent(ApplicationSession):
                 status = makeError(exit_code, simulation['status'])
                 percentage = simulation['percentage']
 
-                self.publish(u'com.gosmartsimulation.announce', self.server_id, simulation['guid'], (percentage, status), simulation['directory'], time.time())
+                self.publish(u'com.gosmartsimulation.announce', self.server_id, simulation['guid'], (percentage, status), simulation['directory'], time.time(), simulation['validation'])
                 print("Announced: %s" % simulation['guid'])
 
         except Exception:
@@ -313,7 +323,7 @@ class GoSmartSimulationComponent(ApplicationSession):
             print(e)
             traceback.print_exc(file=sys.stderr)
 
-        self.publish('com.gosmartsimulation.status', id, percentage, makeError('IN_PROGRESS', message), timestamp)
+        self.publish('com.gosmartsimulation.status', id, percentage, makeError('IN_PROGRESS', message), timestamp, None)
 
     def onRequestIdentify(self):
         try:

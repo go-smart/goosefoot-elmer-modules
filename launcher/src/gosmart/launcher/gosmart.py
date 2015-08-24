@@ -28,6 +28,7 @@ from distutils.version import StrictVersion
 from lxml import etree as ET
 
 from gosmart.launcher.lesion import GoSmartLesion
+from gosmart.launcher.validation import GoSmartValidation
 from gosmart.launcher.elmer import GoSmartElmer
 from gosmart.launcher.elmergrid import GoSmartElmerGrid
 from gosmart.launcher.logger_observant import GoSmartLoggerObservant
@@ -212,6 +213,15 @@ class GoSmart:
             self.update_status(overall_percentage, "Lesion complete")
             final_output["lesion_surface.vtp"] = lesion_surface
 
+        if "validation" in self.components:
+            self.update_status(overall_percentage, "Validation starting")
+            overall_percentage = overall_percentage + percentage_per_component
+            validation_surface, validation_analysis = self.validation.launch(is_parallel=(self.child_procs is not None and self.child_procs > 1))
+            self.update_status(overall_percentage, "Validation complete")
+            final_output["validation_surface.vtp"] = validation_surface
+            final_output["validation_analysis.xml"] = validation_analysis
+            shutil.copyfile(validation_analysis, os.path.join(self.logger.get_cwd(), "validation.xml"))
+
         if len(final_output) > 0:
             os.makedirs(self.logger.make_cwd("output"), exist_ok=True)
 
@@ -289,7 +299,7 @@ class GoSmart:
         self.logger.print_debug(exclusion)
         for zone in exclusion:
             self.logger.zones_map.pop(self.logger.zones[zone]['id'])
-            self.logger.zones.pop(zone)
+            self.logger.zones_excluded[zone] = self.logger.zones.pop(zone)
 
         # Write out the MSH files to the filesystem
         if msh_content:
@@ -513,6 +523,9 @@ class GoSmart:
             elif section.tag == 'lesion' and not skip:
                 lesion = self.add_component('lesion', GoSmartLesion(self.logger))
                 lesion.parse_config(section)
+            elif section.tag == 'validation' and not skip:
+                validation = self.add_component('validation', GoSmartValidation(self.logger))
+                validation.parse_config(section)
             elif section.tag == 'elmergrid' and not skip:
                 elmergrid = self.add_component('elmergrid', GoSmartElmerGrid(self.logger))
                 elmergrid.parse_config(section)

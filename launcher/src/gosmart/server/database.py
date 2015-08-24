@@ -33,6 +33,30 @@ class SQLiteSimulationDatabase:
         if should_create:
             self.create()
 
+    def updateValidation(self, guid, validation_xml):
+        cursor = self._db.cursor()
+        cursor.execute('''
+            UPDATE simulations
+            SET validation=:validation
+            WHERE guid=:guid
+        ''', {'guid': guid, 'validation': validation_xml})
+        self._db.commit()
+
+    def getValidation(self, guid):
+        cursor = self._db.cursor()
+        cursor.execute('''
+            SELECT validation
+            FROM simulations
+            WHERE guid=? AND deleted=0
+        ''', guid)
+        try:
+            simulation_row = cursor.fetchone()
+        except Exception:
+            return None
+
+        validation = simulation_row[0]
+        return validation
+
     def setStatus(self, guid, exit_code, status, percentage, timestamp):
         cursor = self._db.cursor()
         cursor.execute('''
@@ -42,10 +66,10 @@ class SQLiteSimulationDatabase:
             ''', {"guid": guid, "status": status, "percentage": percentage, "exit_code": exit_code, "timestamp": timestamp})
         self._db.commit()
 
-    def getStatus(self, guid):
+    def getStatusAndValidation(self, guid):
         cursor = self._db.cursor()
         cursor.execute('''
-            SELECT status, percentage, exit_code, timestamp
+            SELECT status, percentage, exit_code, timestamp, validation
             FROM simulations
             WHERE guid=? AND deleted=0
             ''', guid)
@@ -54,8 +78,8 @@ class SQLiteSimulationDatabase:
         except Exception:
             return None
 
-        status, percentage, exit_code, timestamp = simulation_row
-        return percentage, status, exit_code, timestamp
+        status, percentage, exit_code, timestamp, validation = simulation_row
+        return percentage, status, exit_code, timestamp, validation
 
     def create(self):
         cursor = self._db.cursor()
@@ -68,6 +92,7 @@ class SQLiteSimulationDatabase:
                 status TEXT,
                 percentage REAL,
                 timestamp REAL,
+                validation TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 deleted TINYINT DEFAULT 0
                 )

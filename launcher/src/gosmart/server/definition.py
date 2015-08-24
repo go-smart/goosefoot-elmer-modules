@@ -169,3 +169,9 @@ class GoSmartSimulationDefinition:
     def simulate(self):
         task = yield from self._model_builder.simulate(self.get_dir())
         return task
+
+    @asyncio.coroutine
+    def validation(self):
+        task = yield from self._model_builder.validation()
+        print(task)
+        return task

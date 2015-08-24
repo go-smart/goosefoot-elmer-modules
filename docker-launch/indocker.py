@@ -43,7 +43,7 @@ class DockerInnerHandler(AIOEventHandler, PatternMatchingEventHandler):
             logging.error("%s should be a file, not dir" % event.src_path)
             return
 
-        yield from self.handle_exists(self, event.src_path, event.is_directory)
+        yield from self.handle_exists(event.src_path, event.is_directory)
 
     @asyncio.coroutine
     def handle_exists(self, location, is_directory):
@@ -57,12 +57,15 @@ class DockerInnerHandler(AIOEventHandler, PatternMatchingEventHandler):
         err_file = os.path.join(log_directory, 'job.err')
 
         target_directory = os.path.join(output_directory, 'run')
-        os.makedirs(target_directory)
+        try:
+            os.makedirs(target_directory)
+        except FileExistsError:
+            pass
 
         with tarfile.open(location) as tar:
-            for name in tar.names:
-                if os.path.abspath(os.path.join(target_directory, name)).startswith(target_directory):
-                    logging.error("This archive contains unsafe filenames")
+            for name in tar.getnames():
+                if not os.path.abspath(os.path.join(target_directory, name)).startswith(target_directory):
+                    logging.error("This archive contains unsafe filenames: %s %s" % (os.path.abspath(os.path.join(target_directory, name)), target_directory))
                     return
 
             tar.extractall(path=target_directory)
@@ -75,7 +78,8 @@ class DockerInnerHandler(AIOEventHandler, PatternMatchingEventHandler):
             self.process = asyncio.create_subprocess_exec(
                 *["/usr/bin/python", location],
                 stdout=open(log_file, 'w'),
-                stderr=open(err_file, 'w')
+                stderr=open(err_file, 'w'),
+                cwd=target_directory
             )
             process = yield from self.process
             asyncio.async(process.wait()).add_done_callback(self._exit)

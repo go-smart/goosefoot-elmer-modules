@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import re
-import traceback
 import os
 import errno
 
@@ -45,6 +44,7 @@ class GoSmartLogger(GoSmartComponent):
         # Note that these _may_ get renumbered partway through!
         self.zones = {}
         self.zones_map = {}
+        self.zones_excluded = {}
 
         self.surfaces = {}
         self.surfaces_map = {}
@@ -82,6 +82,9 @@ class GoSmartLogger(GoSmartComponent):
     def flush_logfile(self):
         if self.logfile is not None:
             self.logfile.flush()
+
+    def find_regions_by_group(self, group):
+        return [r for r in self.regions.values() if group in r["groups"]]
 
     def get_region_ids(self):
         regions = {}
