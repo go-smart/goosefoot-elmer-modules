@@ -17,9 +17,10 @@ DEPENDENCIES
 * Crossbar.io
 * GMSH
 * VTK 5.8
-* sudo pip3 install munkres pyyaml crossbar
-* sudo pip install hachiko watchdog paramiko
-* sudo apt-get install libjsoncpp-dev docker.io python-docker
+* libjsoncpp-dev
+* (Python 3) munkres pyyaml crossbar docker
+* (Python 2) hachiko paramiko
+
 INSTALLATION
 ------------
 
