@@ -5,6 +5,8 @@ import math
 import json
 from lxml import etree as ET
 import sys
+import shutil
+import yaml
 
 from gosmart.server.parameters import convert_parameter
 
@@ -42,6 +44,21 @@ class MesherGSSFMixin:
         )
 
         yield from task.wait()
+
+        msh_input = os.path.join(working_directory, "mesher", "elmer_libnuma.msh")
+        mesh_labelling_yaml = os.path.join(working_directory, "mesher", "mesh_labelling.yml")
+        shutil.copyfile(msh_input, os.path.join(working_directory, "input", "input.msh"))
+        self._files_required["input.msh"] = msh_input
+
+        with open(mesh_labelling_yaml, "r") as f:
+            mesh_labelling = yaml.load(f)
+
+        regions = mesh_labelling.copy()
+        regions.update(self._regions)
+        for k, v in regions.items():
+            if k in mesh_labelling:
+                v.update(mesh_labelling[k])
+        self._regions = regions
 
         return task.returncode == 0
 

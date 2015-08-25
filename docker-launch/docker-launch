@@ -138,47 +138,42 @@ class DockerLayer:
         input_suffix = 'input'
         input_directory = os.path.join(tmpdir, input_suffix)
         os.makedirs(input_directory)
+
         print("FIXME: proper group permissions for input/output directories")
+
         os.chmod(input_directory, 0o777)
 
         # Hack to work around Docker API < 1.15
-        command = ['python3 /docker-launch-inner.py']
-        print("If something doesn't work, check whether command needs to be a list for certain versions of docker")
+        command = ['python3', '/docker-launch-inner.py']
+        volumes = ['/shared', '/docker-launch-inner.py']
+        binds = {
+            tmpdir: {
+                'bind': '/shared',
+                'mode': 'rw'
+            },
+            script_filename: {
+                'bind': '/docker-launch-inner.py',
+                'mode': 'r'
+            }
+        }
+
         if docker.utils.compare_version('1.15', c._version) < 0:
             container = c.create_container(
                 docker_image,
-                command=command,
-                volumes=['/shared', '/docker-launch-inner.py']
+                command=[' '.join(command)],
+                volumes=volumes
             )
             container_id = container['Id']
 
             logger.info("Created container %s (old API)" % container_id)
 
-            c.start(container_id, binds={
-                tmpdir: {
-                    'bind': '/shared',
-                    'mode': 'rw'
-                },
-                script_filename: {
-                    'bind': '/docker-launch-inner.py',
-                    'mode': 'r'
-                }
-            })
+            c.start(container_id, binds=binds)
         else:
             container = c.create_container(
                 docker_image,
                 command=command,
-                volumes=['/shared', '/docker-launch-inner.py'],
-                host_config=docker.utils.create_host_config(binds={
-                    tmpdir: {
-                        'bind': '/shared',
-                        'mode': 'rw'
-                    },
-                    script_filename: {
-                        'bind': '/docker-launch-inner.py',
-                        'mode': 'r'
-                    }
-                })
+                volumes=volumes,
+                host_config=docker.utils.create_host_config(binds=binds)
             )
             container_id = container['Id']
 

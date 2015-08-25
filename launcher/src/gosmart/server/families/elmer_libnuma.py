@@ -53,7 +53,6 @@ class ElmerLibNumaFamily(Family, MesherGSSFMixin):
         "format"
     )
 
-    _sif = None
     _xml = None
     _validation_file = None
 
@@ -136,7 +135,6 @@ class ElmerLibNumaFamily(Family, MesherGSSFMixin):
         return True
 
     def load_definition(self, xml, parameters, algorithms):
-        self._sif = xml.find('definition').text
         self.load_core_definition(xml, parameters, algorithms)
 
     def to_xml(self):
