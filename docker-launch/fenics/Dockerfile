@@ -8,3 +8,4 @@ RUN apt-get update && \
 RUN pip3 install hachiko
 
 COPY gosmart_module /usr/local/lib/python2.7/dist-packages/gosmart
+COPY init.sh /
