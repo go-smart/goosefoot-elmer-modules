@@ -1,4 +1,5 @@
 from distutils.core import setup
+import glob
 import os
 import errno
 
@@ -18,6 +19,9 @@ git_revision = '{1}'
         "${CMAKE_Fortran_MODULE_DESTINATION}",
         "${GIT_REVISION}"
     ))
+
+sars_prefix = '${CMAKE_CURRENT_SOURCE_DIR}' + '/src/gosmart/'
+sars = [d[len(sars_prefix):] for d in glob.glob(sars_prefix + 'data/power_profiles/sar-*.dat')]
 
 setup(name='gosmart',
       version='${PACKAGE_VERSION}',
@@ -39,10 +43,6 @@ setup(name='gosmart',
           'data/constants/constants-variant-rfa_point_sources_new_elmer.xml',
           'data/constants/constants-variant-rfa_joule_heating.xml',
 
-          'data/power_profiles/sar-0045.dat',
-          'data/power_profiles/sar-0065.dat',
-          'data/power_profiles/sar-0085.dat',
-
           'data/templates/inner-basic-mwa.xml',
           'data/templates/inner-basic-mwa-coarse.xml',
 
@@ -60,7 +60,7 @@ setup(name='gosmart',
           'data/elmer_modules/mwa_RelPerm.f90',
           'data/elmer_modules/mwa_ElecCond.f90',
           'data/elmer_modules/mwa_PowerOverTime.f90',
-      ]},
+      ] + sars},
 
       description='Wrapper for Go-Smart simulation environment',
       author='NUMA Engineering Services Ltd.',
