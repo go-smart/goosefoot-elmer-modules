@@ -144,7 +144,7 @@ class DockerLayer:
         os.chmod(input_directory, 0o777)
 
         # Hack to work around Docker API < 1.15
-        command = ['/docker-launch-inner.py']
+        command = ['/init.sh']
         volumes = ['/shared', '/docker-launch-inner.py']
         binds = {
             tmpdir: {

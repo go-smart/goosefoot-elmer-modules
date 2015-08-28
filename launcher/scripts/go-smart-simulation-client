@@ -31,6 +31,7 @@ def launch(x):
         subdirectory=subdirectory,
         output_files=output_files,
         definition_files=definition_files,
+        input_files=input_files,
         skip_clean=skip_clean
     )
     return cpt
@@ -44,7 +45,8 @@ if __name__ == "__main__":
     parser.add_argument("--websocket-port", help="port hosting websocket", default="9000", type=int)
     parser.add_argument("--skip-clean", help="do not clean up after run", action='store_true', default=False)
     parser.add_argument("--output", help="file to request as output", nargs='+', default="output.vtp")
-    parser.add_argument("--definition", help="file containing text of the definition node (which should exist but be empty in the GSSA file", default=None, nargs='+')
+    parser.add_argument("--definition", help="file(s) containing module / text of the definition node (which should exist but be empty in the GSSA file)", default=None, nargs='+')
+    parser.add_argument("--input", help="input files for surfaces, etc.", default=None, nargs='+')
     args = parser.parse_args()
     input_file = args.gssa_file
 
@@ -53,6 +55,7 @@ if __name__ == "__main__":
     subdirectory = args.subdir
     output_files = args.output
     definition_files = args.definition
+    input_files = args.input
     skip_clean = args.skip_clean
     runner = ApplicationRunner(url="ws://%s:%d/ws" % (host, websocket_port), realm="realm1")
     runner.run(launch)

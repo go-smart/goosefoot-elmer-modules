@@ -19,7 +19,6 @@
 from __future__ import print_function
 
 import asyncio
-from functools import partial
 from autobahn.asyncio.wamp import ApplicationSession
 
 import os
@@ -126,11 +125,8 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         current = self.current[guid]
 
-        print("IS THIS EVENT WORKING???")
         if success:
-            print("IS THIS EVENT WORKING???")
             yield from self.eventComplete(guid)
-            print("Completed simulation in %s" % current.get_dir())
         else:
             code = Error.E_UNKNOWN
             error_message = "Unknown error occurred"
@@ -202,9 +198,9 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         print("Running simulation in %s" % current.get_dir(), file=sys.stderr)
 
-        success = yield from current.simulate()
-
         self.updateStatus(guid, 0, "Launched subprocess")
+
+        success = yield from current.simulate()
 
         return success
 
@@ -263,7 +259,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         self.current[guid].set_exit_status(True)
         print('Success', guid)
 
-        self.publish(u'com.gosmartsimulation.complete', guid, makeError('SUCCESS', 'Success'), time.time(), validation)
+        self.publish(u'com.gosmartsimulation.complete', guid, makeError('SUCCESS', 'Success'), self.current[guid].get_dir(), time.time(), validation)
 
     @asyncio.coroutine
     def eventFail(self, guid, message):
@@ -282,7 +278,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         self.current[guid].set_exit_status(False, message)
         print('Failure', guid, message)
 
-        self.publish(u'com.gosmartsimulation.fail', guid, message, time.time())
+        self.publish(u'com.gosmartsimulation.fail', guid, message, self.current[guid].get_dir(), time.time(), None)
 
     def onRequestAnnounce(self):
         try:
@@ -291,13 +287,16 @@ class GoSmartSimulationComponent(ApplicationSession):
                 exit_code = simulation['exit_code']
 
                 if exit_code is None:
-                    exit_code = 'E_UNKNOWN'
+                    if simulation['guid'] in self.current:
+                        exit_code = 'IN_PROGRESS'
+                    else:
+                        exit_code = 'E_UNKNOWN'
 
                 status = makeError(exit_code, simulation['status'])
                 percentage = simulation['percentage']
 
                 self.publish(u'com.gosmartsimulation.announce', self.server_id, simulation['guid'], (percentage, status), simulation['directory'], time.time(), simulation['validation'])
-                print("Announced: %s" % simulation['guid'])
+                print("Announced: %s %s %r" % (simulation['guid'], simulation['directory'], simulation['validation'] is not None))
 
         except Exception:
             for simulation in self.current:
@@ -323,7 +322,7 @@ class GoSmartSimulationComponent(ApplicationSession):
             print(e)
             traceback.print_exc(file=sys.stderr)
 
-        self.publish('com.gosmartsimulation.status', id, percentage, makeError('IN_PROGRESS', message), timestamp, None)
+        self.publish('com.gosmartsimulation.status', id, (percentage, makeError('IN_PROGRESS', message)), timestamp, None)
 
     def onRequestIdentify(self):
         try:

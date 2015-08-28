@@ -37,10 +37,11 @@ def wrapped_coroutine(f):
 
 class GoSmartSimulationClientComponent(ApplicationSession):
 
-    def __init__(self, x, gssa_file, subdirectory, output_files, definition_files=None, skip_clean=False):
+    def __init__(self, x, gssa_file, subdirectory, output_files, input_files=None, definition_files=None, skip_clean=False):
         ApplicationSession.__init__(self, x)
         self._gssa = ET.parse(gssa_file)
         self._definition_files = definition_files
+        self._input_files = input_files
 
         if self._definition_files is not None:
             self._definition_tmp = tempfile.NamedTemporaryFile(suffix='.tar.gz')
@@ -53,6 +54,18 @@ class GoSmartSimulationClientComponent(ApplicationSession):
             print("Made temporary tar at %s" % self._definition_tmp.name)
             definition_node = self._gssa.find('.//definition')
             definition_node.set('location', self._definition_tmp.name)
+
+        if self._input_files is not None:
+            self._input_tmp = tempfile.NamedTemporaryFile(suffix='.tar.gz')
+            input_tar = tarfile.open(fileobj=self._input_tmp, mode='w:gz')
+            for input_file in self._input_files:
+                input_tar.add(input_file, os.path.basename(input_file))
+                print("Added [%s]" % os.path.basename(input_file))
+            input_tar.close()
+            self._input_tmp.flush()
+            print("Made temporary tar at %s" % self._input_tmp.name)
+            input_node = ET.SubElement(self._gssa.find('.//transferrer'), 'input')
+            input_node.set('location', self._input_tmp.name)
 
         self._guid = uuid.uuid1()
         self._subdirectory = subdirectory
@@ -98,6 +111,12 @@ class GoSmartSimulationClientComponent(ApplicationSession):
     def finalize(self, guid):
         if not self._skip_clean:
             yield from self.call('com.gosmartsimulation.clean', guid)
-            self.disconnect()
+            self.shutdown()
         else:
             print("Skipping clean-up")
+
+    def shutdown(self):
+        self.leave()
+
+    def onLeave(self):
+        self.disconnect()
