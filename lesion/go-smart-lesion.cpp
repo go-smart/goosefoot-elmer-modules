@@ -55,6 +55,7 @@
 #include <vtkTable.h>
 #include <vtkDescriptiveStatistics.h>
 #include <vtkDataObject.h>
+#include <vtkGeometryFilter.h>
 
 /* REQUIRES PARAVIEW HEADERS
 #include "vtkIsoVolume.h"
@@ -68,7 +69,7 @@ int main(int argc, char *argv[])
 {
   float threshold_lower, threshold_upper, scaling_value;
   bool connected_component = false, subdivide = false, parallel = false, using_upper = false, using_lower = false,
-       threshold_not_isovolume = true;
+       threshold_not_isovolume = true, geometry_filter = false;
   int smoothing_iterations = 0;
   std::string input_vtu("in.vtu"), output_vtk("out.vtk"), field("dead"), analysis_xml("analysis.xml");
 
@@ -90,7 +91,8 @@ int main(int argc, char *argv[])
     ("smoothing-iterations,i", po::value<int>(&smoothing_iterations)->default_value(0), "number of iterations in smoother (0 to skip)")
     ("input,i", po::value<std::string>(&input_vtu), "input volume mesh file")
     ("analysis,a", po::value<std::string>(&analysis_xml), "analysis output file")
-    ("output,o", po::value<std::string>(&output_vtk), "output file");
+    ("output,o", po::value<std::string>(&output_vtk), "output file")
+    ("geometry-filter,g", po::value(&geometry_filter)->zero_tokens(), "use geometry filter instead of vtkDataSetSurfaceFilter to extract surface");
 
   po::variables_map vm;
   po::store(po::parse_command_line(argc, argv, options_description), vm);
@@ -415,30 +417,39 @@ int main(int argc, char *argv[])
 	  thresholded_grid = threshold_subdivided_grid;
 
   }
-  vtkSmartPointer<vtkDataSetSurfaceFilter> surface_filter =
-      vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
-  surface_filter->SetInput(thresholded_grid);
 
   vtkSmartPointer<vtkPolyData> polydata;
 
-  if (smoothing_iterations > 0) {
-      std::cout << "Smoothing for " << smoothing_iterations << std::endl;
-      vtkSmartPointer<vtkWindowedSincPolyDataFilter> smoother =
-          vtkSmartPointer<vtkWindowedSincPolyDataFilter>::New();
-      smoother->SetInput(surface_filter->GetOutput());
-      smoother->SetNumberOfIterations(10);
-      smoother->FeatureEdgeSmoothingOff();
-      smoother->SetFeatureAngle(120.0);
-      smoother->SetPassBand(0.001);
-      smoother->NonManifoldSmoothingOn();
-      smoother->NormalizeCoordinatesOn();
-      smoother->Update();
+  if (geometry_filter) {
+      vtkSmartPointer<vtkGeometryFilter> geometry_filter =
+          vtkSmartPointer<vtkGeometryFilter>::New();
+      geometry_filter->SetInput(thresholded_grid);
+      polydata = geometry_filter->GetOutput();
+  }
+  else {
+      vtkSmartPointer<vtkDataSetSurfaceFilter> surface_filter =
+          vtkSmartPointer<vtkDataSetSurfaceFilter>::New();
+      surface_filter->SetInput(thresholded_grid);
 
-      polydata =
-          smoother->GetOutput();
-  } else {
-      std::cout << "Skipping smoother" << std::endl;
-      polydata = surface_filter->GetOutput();
+      if (smoothing_iterations > 0) {
+          std::cout << "Smoothing for " << smoothing_iterations << std::endl;
+          vtkSmartPointer<vtkWindowedSincPolyDataFilter> smoother =
+              vtkSmartPointer<vtkWindowedSincPolyDataFilter>::New();
+          smoother->SetInput(surface_filter->GetOutput());
+          smoother->SetNumberOfIterations(10);
+          smoother->FeatureEdgeSmoothingOff();
+          smoother->SetFeatureAngle(120.0);
+          smoother->SetPassBand(0.001);
+          smoother->NonManifoldSmoothingOn();
+          smoother->NormalizeCoordinatesOn();
+          smoother->Update();
+
+          polydata =
+              smoother->GetOutput();
+      } else {
+          std::cout << "Skipping smoother" << std::endl;
+          polydata = surface_filter->GetOutput();
+      }
   }
 
   if (connected_component) {
