@@ -30,6 +30,7 @@ class OutputHandler(AIOEventHandler, PatternMatchingEventHandler):
 class Submitter:
     reader = None
     writer = None
+    _socket_location = None
 
     def __init__(self):
         self._input_files = []
@@ -38,6 +39,9 @@ class Submitter:
 
     def __del__(self):
         self.finalize()
+
+    def set_update_socket(self, socket_location):
+        self._socket_location = socket_location
 
     def copy_output(self, requested, target):
         if not self._output_directory:
@@ -97,7 +101,7 @@ class Submitter:
 
         print("Simulating")
         try:
-            self.send_command(writer, 'START', {'image': image})
+            self.send_command(writer, 'START', {'image': image, 'update socket': self._socket_location})
             success, message = yield from self.receive_response(reader)
             print('<--', success, message)
 

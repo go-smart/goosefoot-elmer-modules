@@ -45,6 +45,34 @@ class GoSmartSimulationDefinition:
     def get_exit_status(self):
         return self._exit_status
 
+    @asyncio.coroutine
+    def _handle_percentage_connection(self, stream_reader, stream_writer):
+        while True:
+            line = yield from stream_reader.readline()
+
+            if not line:
+                break
+
+            line = line.decode('utf-8').strip().split('|', maxsplit=1)
+            percentage, message = (None, line[0]) if len(line) == 1 else line
+
+            try:
+                percentage = float(percentage)
+            except ValueError:
+                percentage = None
+
+            self._update_status_callback(percentage, message)
+
+    @asyncio.coroutine
+    def init_percentage_socket_server(self):
+        working_directory = self.get_dir()
+        self._percentage_socket_location = self._model_builder.get_percentage_socket_location(working_directory)
+        print('Status socket for %s : %s' % (self._guid, self._percentage_socket_location))
+        self._percentage_socket_server = yield from asyncio.start_unix_server(
+            self._handle_percentage_connection,
+            self._percentage_socket_location
+        )
+
     def __init__(self, guid, xml_string, tmpdir, translator, finalized=False, update_status_callback=None):
         self._guid = guid
         self._dir = tmpdir
@@ -173,5 +201,4 @@ class GoSmartSimulationDefinition:
     @asyncio.coroutine
     def validation(self):
         task = yield from self._model_builder.validation()
-        print(task)
         return task

@@ -179,7 +179,14 @@ class GoSmartSimulationComponent(ApplicationSession):
         try:
             tmpdir = tempfile.mkdtemp(prefix='gssf-')
             translator = GoSmartSimulationTranslator()
-            self.current[guid] = GoSmartSimulationDefinition(guid, xml, tmpdir, translator, lambda p, m: self.updateStatus(guid, p, m))
+            self.current[guid] = GoSmartSimulationDefinition(
+                guid,
+                xml,
+                tmpdir,
+                translator,
+                finalized=False,
+                update_status_callback=lambda p, m: self.updateStatus(guid, p, m)
+            )
             self.publish(u'com.gosmartsimulation.announce', self.server_id, guid, [0, 'XML uploaded'], tmpdir, time.time())
         except Exception as e:
             traceback.print_exc(file=sys.stderr)
@@ -199,6 +206,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         print("Running simulation in %s" % current.get_dir(), file=sys.stderr)
 
         self.updateStatus(guid, 0, "Launched subprocess")
+        yield from current.init_percentage_socket_server()
 
         success = yield from current.simulate()
 
@@ -314,6 +322,9 @@ class GoSmartSimulationComponent(ApplicationSession):
 
     def updateStatus(self, id, percentage, message):
         timestamp = time.time()
+
+        progress = "%.2lf" % percentage if percentage else '##'
+        print("%s [%r] ---- %s%%: %s" % (id, timestamp, progress, message))
 
         try:
             loop = asyncio.get_event_loop()

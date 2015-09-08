@@ -39,9 +39,14 @@ class DockerFamily(Family):
     def prepare_simulation(self, working_directory):
         return True
 
+    def get_percentage_socket_location(self, working_directory):
+        return os.path.join(working_directory, 'update.sock')
+
     @asyncio.coroutine
     def simulate(self, working_directory):
         proceed = yield from self.prepare_simulation(working_directory)
+
+        self._submitter.set_update_socket(self.get_percentage_socket_location(working_directory))
 
         regions_yaml = os.path.join(working_directory, "input", "regions.yml")
         regions = self._regions

@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument('--black-and-white', action='store_true', dest='baw', help='Force colorama off')
     parser.add_argument('--leavetree', action='store_true', dest='leavetree', help='Do not touch the mesh filetree in Elmer')
     parser.add_argument('--cwd', dest='global_working_directory', help='Override working directory as root of simulation', default=None)
+    parser.add_argument('--status-socket', dest='update_status', help='Location of socket to which to write status', default=None)
     parser.add_argument(dest='configfilenames', nargs=argparse.REMAINDER, help='Locations of configuration file (latter override former)')
 
     return parser.parse_args()

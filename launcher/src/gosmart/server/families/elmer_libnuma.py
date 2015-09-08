@@ -62,6 +62,9 @@ class ElmerLibNumaFamily(Family, MesherGSSFMixin):
         self._files_required = files_required
         self._args = GoSmartSimulationFrameworkArguments(configfilenames=["settings.xml"])
 
+    def get_percentage_socket_location(self, working_directory):
+        return os.path.join(working_directory, 'update.sock')
+
     # Needle index can be either needle index (as given in XML input) or an
     # integer n indicating the nth needle in the order of the needles XML block
     def get_needle_parameter(self, needle_index, key, try_json=True):
@@ -96,6 +99,7 @@ class ElmerLibNumaFamily(Family, MesherGSSFMixin):
         with open(os.path.join(working_directory, "settings.xml"), "wb") as f:
             tree.write(f, pretty_print=True)
 
+        self._args.status_socket = self.get_percentage_socket_location(working_directory)
         args = ["go-smart-launcher"] + self._args.to_list()
 
         task = yield from asyncio.create_subprocess_exec(

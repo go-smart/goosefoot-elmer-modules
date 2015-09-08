@@ -98,7 +98,7 @@ def _generate_rotation_matrix_numpy(x, y, z, backward=False, rx=0, ry=1, rz=0):
 
 _sif_calculations = {
     "PERFUSION_COEFFICIENT": {"requirements":
-                              ("CONSTANT_PERFUSION_RATE",
+                              ("CONSTANT_PERFUSION_RATE_TISSUE",
                                "CONSTANT_THERMAL_CONDUCTIVITY_TISSUE"),
                               "formula": lambda wb, kt:
                               ((1. / (60. * 1000.)) * wb / kt)

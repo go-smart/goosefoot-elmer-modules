@@ -91,7 +91,7 @@ class GoSmartSimulationClientComponent(ApplicationSession):
 
     @wrapped_coroutine
     @asyncio.coroutine
-    def onComplete(self, guid, success, time, validation):
+    def onComplete(self, guid, success, directory, time, validation):
         print("Complete")
         if validation:
             print("Validation:", validation)
@@ -104,7 +104,14 @@ class GoSmartSimulationClientComponent(ApplicationSession):
 
     @wrapped_coroutine
     @asyncio.coroutine
-    def onFail(self, guid, message, time):
+    def onStatus(self, guid, message, directory, time, validation):
+        percentage, state = message
+        progress = "%.2lf" % percentage if percentage else '##'
+        print("%s [%r] ---- %s%%: %s" % (id, time, progress, state['message']))
+
+    @wrapped_coroutine
+    @asyncio.coroutine
+    def onFail(self, guid, message, directory, time, validation):
         print("Failed - %s" % message)
         yield from self.finalize(guid)
 
@@ -118,5 +125,7 @@ class GoSmartSimulationClientComponent(ApplicationSession):
     def shutdown(self):
         self.leave()
 
-    def onLeave(self):
+    @wrapped_coroutine
+    @asyncio.coroutine
+    def onLeave(self, details):
         self.disconnect()

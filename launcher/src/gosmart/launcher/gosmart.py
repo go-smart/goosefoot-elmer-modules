@@ -24,6 +24,7 @@ import shutil
 import time
 import json
 import gosmart.config
+import socket
 from distutils.version import StrictVersion
 from lxml import etree as ET
 
@@ -65,12 +66,13 @@ class GoSmart:
     child_procs = None
     only = None
     elmer_binary = None
+    _update_status_socket = None
 
     _update_status_callback = None
 
     header_width = None
 
-    def __init__(self, runname='default', args=[], global_working_directory=None, observant=None, update_status_callback=None):
+    def __init__(self, runname='default', args=[], global_working_directory=None, observant=None, update_status=None):
         if global_working_directory is None:
             global_working_directory = os.getcwd()
 
@@ -79,7 +81,9 @@ class GoSmart:
         self.parse_args(args)
         self.parse_config_files()
 
-        self._update_status_callback = update_status_callback
+        if update_status is not None:
+            self._update_status_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self._update_status_socket.connect(update_status)
 
         for component in self.components.values():
             if isinstance(component, list):
@@ -89,8 +93,9 @@ class GoSmart:
                 component.set_outfile_prefix(self.outfilename)
 
     def update_status(self, percentage, message):
-        if self._update_status_callback is not None:
-            self._update_status_callback(percentage, message)
+        if self._update_status_socket is not None:
+            bytestring = '%lf|%s\n' % (percentage, '\\n'.join(message.splitlines()))
+            self._update_status_socket.sendall(bytestring.encode('utf-8'))
 
     def add_component(self, name, component):
         if self.only is not None and self.only != name:

@@ -1,6 +1,7 @@
 class GoSmartSimulationFrameworkArguments:
     def __init__(self, elmer_binary=None, outfilename=None, addpid=False, silent=True,
-                 debug=False, nprocs=None, baw=True, only=None, leavetree=False, configfilenames=[]):
+                 debug=False, nprocs=None, baw=True, only=None, leavetree=False, configfilenames=[],
+                 status_socket='update.sock'):
         self.elmer_binary = elmer_binary
         self.outfilename = outfilename
         self.addpid = addpid
@@ -22,7 +23,8 @@ class GoSmartSimulationFrameworkArguments:
             '--nprocs': self.nprocs,
             '--only': self.only,
             '--black-and-white': self.baw,
-            '--leavetree': self.leavetree
+            '--leavetree': self.leavetree,
+            '--status-socket': self.status_socket
         }
         command_line = []
         for k, v in args.items():
