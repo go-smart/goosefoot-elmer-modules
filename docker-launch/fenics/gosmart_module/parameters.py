@@ -17,6 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import yaml
+import socket
+import os
 
 with open('/shared/input/parameters.yml', 'r') as f:
     parameter_dict = yaml.safe_load(f)
@@ -26,6 +28,28 @@ with open('/shared/input/regions.yml', 'r') as f:
 
 with open('/shared/input/needle_parameters.yml', 'r') as f:
     needle_parameter_dicts = dict({v['index']: v['parameters'] for v in yaml.safe_load_all(f)})
+
+
+class StatusUpdater:
+    def __init__(self, update_socket_location):
+        self._update_socket_location = update_socket_location
+
+    def connect(self):
+        self._update_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        if not os.path.exists(self._update_socket_location):
+            return False
+        self.connect(self._update_socket_location)
+
+    def status(self, percentage, message):
+        try:
+            percentage = float(percentage)
+        except ValueError:
+            self.sendall(b'%s\n' % message)
+        else:
+            self.sendall(b'%lf|%s\n' % (percentage, message))
+
+update = StatusUpdater('/update.sock')
+update_available = update.connect()
 
 
 class AttributeDict(dict):

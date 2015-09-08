@@ -59,7 +59,7 @@ class DockerLayer:
 
         return None
 
-    def try_launch(self, image):
+    def try_launch(self, image, update_socket=None):
         if image not in self._allowed_images:
             return False, "This image is not a whitelisted image for docker-launch"
 
@@ -70,12 +70,13 @@ class DockerLayer:
         if len(c.containers()) > self._max_containers:
             return False, "Too many containers"
         else:
-            container_id, temporary_directory, output_directory, input_directory = \
+            container_id, temporary_directory, output_directory, input_directory, socket_available = \
                 self._launch(
                     c,
                     image,
                     self._script_filename,
-                    self._logger
+                    self._logger,
+                    update_socket
                 )
 
             self._container_id = container_id
@@ -86,7 +87,8 @@ class DockerLayer:
             return True, {
                 'volume location': temporary_directory.name,
                 'output subdirectory': output_directory,
-                'input subdirectory': input_directory
+                'input subdirectory': input_directory,
+                'update socket available': socket_available
             }
 
     def wait(self, timeout, destroy=False):
@@ -117,7 +119,7 @@ class DockerLayer:
         return self.wait(self._shutdown_timeout, destroy=True)
 
     @staticmethod
-    def _launch(c, docker_image, script_filename, logger):
+    def _launch(c, docker_image, script_filename, logger, update_socket=None):
         # Cleaned when object that holds it (instance of DL class) is destroyed
         try:
             temporary_directory = tempfile.TemporaryDirectory()
@@ -157,6 +159,16 @@ class DockerLayer:
             }
         }
 
+        #TODO: should there be additional security checks before mounting this sock?
+        #FIXME: at least that it is a socket, not a symlink and the unprivileged requester has write access
+        if update_socket:
+            volumes.append(update_socket)
+            binds[update_socket] = {
+                'bind': '/update.sock',
+                'mode': 'rw'
+            }
+            update_socket_available = True
+
         if docker.utils.compare_version('1.15', c._version) < 0:
             container = c.create_container(
                 docker_image,
@@ -182,7 +194,7 @@ class DockerLayer:
             c.start(container_id)
 
         return container_id, temporary_directory, \
-            output_suffix, input_suffix
+            output_suffix, input_suffix, update_socket_available
 
     @staticmethod
     def _wait(c, container_id, timeout, logger, destroy=False):
@@ -286,8 +298,11 @@ class ThreadedUnixRequestHandler(socketserver.StreamRequestHandler):
         self._logger.debug(message)
 
         if message == "START":
-            if arguments is not None and 'image' in arguments:
-                success, message = self._docker_layer.try_launch(arguments['image'])
+            if arguments is not None and 'image' in arguments and 'update socket':
+                success, message = self._docker_layer.try_launch(
+                    arguments['image'],
+                    arguments['update socket'] if 'update socket' in arguments else None
+                )
             else:
                 success, message = False, "Image must be supplied in arguments"
 
