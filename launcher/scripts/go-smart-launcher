@@ -39,7 +39,7 @@ def main():
         pass
 
     try:
-        wrapper = gosmart.GoSmart(args=args, global_working_directory=args.global_working_directory)
+        wrapper = gosmart.GoSmart(args=args, global_working_directory=args.global_working_directory, update_status=args.update_status)
     except Exception as e:
         if isinstance(e, errors.GoSmartError):
             code = e.code
