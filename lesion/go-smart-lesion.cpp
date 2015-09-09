@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 {
   float threshold_lower, threshold_upper, scaling_value;
   bool connected_component = false, subdivide = false, parallel = false, using_upper = false, using_lower = false,
-       threshold_not_isovolume = true, geometry_filter = false;
+       threshold_not_isovolume = true, geometry_filter = false, retain_subdomain_boundaries = false;
   int smoothing_iterations = 0;
   std::string input_vtu("in.vtu"), output_vtk("out.vtk"), field("dead"), analysis_xml("analysis.xml");
 
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
   options_description.add_options()
     ("help,h,?", "produce help message")
     ("threshold-lower,t", po::value<float>(&threshold_lower), "threshold for chosen variable (remove cells with values below this limit)")
-    ("threshold-upper,t", po::value<float>(&threshold_upper), "threshold for chosen variable (remove cells with values above this limit)")    
+    ("threshold-upper,T", po::value<float>(&threshold_upper), "threshold for chosen variable (remove cells with values above this limit)")    
     ("scale,S", po::value<float>(&scaling_value)->default_value(1), "pre-scaling of results; default 1")
     ("field,f", po::value<std::string>(&field), "field to threshold on")
     ("parallel,p", po::value(&parallel)->zero_tokens(), "assume input data is PVTU not VTU")
@@ -92,6 +92,7 @@ int main(int argc, char *argv[])
     ("input,i", po::value<std::string>(&input_vtu), "input volume mesh file")
     ("analysis,a", po::value<std::string>(&analysis_xml), "analysis output file")
     ("output,o", po::value<std::string>(&output_vtk), "output file")
+    ("retain-subdomain-boundaries,r", po::value(&retain_subdomain_boundaries)->zero_tokens(), "retain all internal inter-zone boundary facets")
     ("geometry-filter,g", po::value(&geometry_filter)->zero_tokens(), "use geometry filter instead of vtkDataSetSurfaceFilter to extract surface");
 
   po::variables_map vm;
@@ -283,37 +284,39 @@ int main(int argc, char *argv[])
   double pt2[3] = {0, 0, 0};
   double pt3[3] = {0, 0, 0};
 
-  /* BEGIN SELECTION STEP */
-  vtkSmartPointer<vtkSelectionNode> selectionNode =
-     vtkSmartPointer<vtkSelectionNode>::New();
-  selectionNode->SetFieldType(vtkSelectionNode::CELL);
-  selectionNode->SetContentType(vtkSelectionNode::INDICES);
+  if (!retain_subdomain_boundaries) {
+      /* BEGIN SELECTION STEP */
+      vtkSmartPointer<vtkSelectionNode> selectionNode =
+         vtkSmartPointer<vtkSelectionNode>::New();
+      selectionNode->SetFieldType(vtkSelectionNode::CELL);
+      selectionNode->SetContentType(vtkSelectionNode::INDICES);
 
-  vtkSmartPointer<vtkIdTypeArray> selectionArray =
-     vtkSmartPointer<vtkIdTypeArray>::New();
-  selectionArray->SetNumberOfComponents(1);
+      vtkSmartPointer<vtkIdTypeArray> selectionArray =
+         vtkSmartPointer<vtkIdTypeArray>::New();
+      selectionArray->SetNumberOfComponents(1);
 
-  cell_ct = thresholded_grid->GetNumberOfCells(), curr_cell = 0;
-  for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
-     tetra = vtkTetra::SafeDownCast(thresholded_grid->GetCell(i));
-     if (!tetra) {
-        continue;
-     }
-     selectionArray->InsertNextValue(i);
+      cell_ct = thresholded_grid->GetNumberOfCells(), curr_cell = 0;
+      for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
+         tetra = vtkTetra::SafeDownCast(thresholded_grid->GetCell(i));
+         if (!tetra) {
+            continue;
+         }
+         selectionArray->InsertNextValue(i);
+      }
+      selectionNode->SetSelectionList(selectionArray);
+
+      vtkSmartPointer<vtkSelection> selection =
+              vtkSmartPointer<vtkSelection>::New();
+      selection->AddNode(selectionNode);
+
+      vtkSmartPointer<vtkExtractSelectedIds> extractSelectedIds =
+              vtkSmartPointer<vtkExtractSelectedIds>::New();
+      extractSelectedIds->SetInput(0, thresholded_grid);
+      extractSelectedIds->SetInput(1, selection);
+      extractSelectedIds->Update();
+      thresholded_grid = vtkUnstructuredGrid::SafeDownCast(extractSelectedIds->GetOutput());
+      /* END SELECTION STEP */
   }
-  selectionNode->SetSelectionList(selectionArray);
-
-  vtkSmartPointer<vtkSelection> selection =
-          vtkSmartPointer<vtkSelection>::New();
-  selection->AddNode(selectionNode);
-
-  vtkSmartPointer<vtkExtractSelectedIds> extractSelectedIds =
-          vtkSmartPointer<vtkExtractSelectedIds>::New();
-  extractSelectedIds->SetInput(0, thresholded_grid);
-  extractSelectedIds->SetInput(1, selection);
-  extractSelectedIds->Update();
-  thresholded_grid = vtkUnstructuredGrid::SafeDownCast(extractSelectedIds->GetOutput());
-  /* END SELECTION STEP */
 
   vtkSmartPointer<vtkXMLUnstructuredGridWriter> ugw =
           vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
