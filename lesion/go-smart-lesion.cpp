@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
   transform->Scale(scaling_value, scaling_value, scaling_value);
 
   vtkSmartPointer<vtkTransformFilter> transformfilter =
-	  vtkSmartPointer<vtkTransformFilter>::New();
+     vtkSmartPointer<vtkTransformFilter>::New();
   transformfilter->SetInput(grid);
   transformfilter->SetTransform(transform);
   transformfilter->Update();
@@ -285,21 +285,21 @@ int main(int argc, char *argv[])
 
   /* BEGIN SELECTION STEP */
   vtkSmartPointer<vtkSelectionNode> selectionNode =
-	  vtkSmartPointer<vtkSelectionNode>::New();
+     vtkSmartPointer<vtkSelectionNode>::New();
   selectionNode->SetFieldType(vtkSelectionNode::CELL);
   selectionNode->SetContentType(vtkSelectionNode::INDICES);
 
   vtkSmartPointer<vtkIdTypeArray> selectionArray =
-	  vtkSmartPointer<vtkIdTypeArray>::New();
+     vtkSmartPointer<vtkIdTypeArray>::New();
   selectionArray->SetNumberOfComponents(1);
 
   cell_ct = thresholded_grid->GetNumberOfCells(), curr_cell = 0;
   for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
-	  tetra = vtkTetra::SafeDownCast(thresholded_grid->GetCell(i));
-	  if (!tetra) {
-		  continue;
-	  }
-	  selectionArray->InsertNextValue(i);
+     tetra = vtkTetra::SafeDownCast(thresholded_grid->GetCell(i));
+     if (!tetra) {
+        continue;
+     }
+     selectionArray->InsertNextValue(i);
   }
   selectionNode->SetSelectionList(selectionArray);
 
@@ -322,109 +322,109 @@ int main(int argc, char *argv[])
   ugw->Write();
 
   for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
-	  tetra = vtkTetra::SafeDownCast(thresholded_grid->GetCell(i));
-	  if (!tetra) {
-		  continue;
-	  }
+     tetra = vtkTetra::SafeDownCast(thresholded_grid->GetCell(i));
+     if (!tetra) {
+        continue;
+     }
 
-	  thresholded_grid->GetPoint(tetra->GetPointId(0), pt0);
-	  thresholded_grid->GetPoint(tetra->GetPointId(1), pt1);
-	  thresholded_grid->GetPoint(tetra->GetPointId(2), pt2);
-	  thresholded_grid->GetPoint(tetra->GetPointId(3), pt3);
-	  vol += vtkTetra::ComputeVolume(pt0, pt1, pt2, pt3);
+     thresholded_grid->GetPoint(tetra->GetPointId(0), pt0);
+     thresholded_grid->GetPoint(tetra->GetPointId(1), pt1);
+     thresholded_grid->GetPoint(tetra->GetPointId(2), pt2);
+     thresholded_grid->GetPoint(tetra->GetPointId(3), pt3);
+     vol += vtkTetra::ComputeVolume(pt0, pt1, pt2, pt3);
   }
 
   std::cout << "The volume of the thresholded region is" << std::endl << "LVOL: " << vol << std::endl;
 
   if (subdivide) {
-	  vtkSmartPointer<vtkSubdivideTetra> subdivided =
-		  vtkSmartPointer<vtkSubdivideTetra>::New();
-	  subdivided->SetInput(thresholded_grid);
+     vtkSmartPointer<vtkSubdivideTetra> subdivided =
+        vtkSmartPointer<vtkSubdivideTetra>::New();
+     subdivided->SetInput(thresholded_grid);
 
-	  vtkSmartPointer<vtkUnstructuredGrid> subdivided_grid = subdivided->GetOutput();
-	  subdivided_grid->Update();
+     vtkSmartPointer<vtkUnstructuredGrid> subdivided_grid = subdivided->GetOutput();
+     subdivided_grid->Update();
 
-	  vtkSmartPointer<vtkThreshold> threshold_subdivided = 
-	    vtkSmartPointer<vtkThreshold>::New();
-	  threshold_subdivided->SetInput(subdivided_grid);
+     vtkSmartPointer<vtkThreshold> threshold_subdivided = 
+       vtkSmartPointer<vtkThreshold>::New();
+     threshold_subdivided->SetInput(subdivided_grid);
       if (using_upper && using_lower)
           threshold_subdivided->ThresholdBetween(threshold_lower, threshold_upper);
       else if (using_upper)
           threshold_subdivided->ThresholdByUpper(threshold_upper);
       else if (using_lower)
           threshold_subdivided->ThresholdByLower(threshold_lower);
-	  // doesn't work because the array is not added as SCALARS, i.e. via SetScalars
-	  // threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
-	  // use like this:
-	  threshold_subdivided->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, field.c_str());
-	  threshold_subdivided->Update();
-	  vtkSmartPointer<vtkUnstructuredGrid> threshold_subdivided_grid = threshold_subdivided->GetOutput();
-	  vtkSmartPointer<vtkXMLUnstructuredGridWriter> ugw =
-		  vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-	  ugw->SetInput(threshold_subdivided_grid);
-	  ugw->SetFileName("subdivided.vtu");
-	  ugw->Write();
+     // doesn't work because the array is not added as SCALARS, i.e. via SetScalars
+     // threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
+     // use like this:
+     threshold_subdivided->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, field.c_str());
+     threshold_subdivided->Update();
+     vtkSmartPointer<vtkUnstructuredGrid> threshold_subdivided_grid = threshold_subdivided->GetOutput();
+     vtkSmartPointer<vtkXMLUnstructuredGridWriter> ugw =
+        vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+     ugw->SetInput(threshold_subdivided_grid);
+     ugw->SetFileName("subdivided.vtu");
+     ugw->Write();
 
-	  vol = 0;
-	  cell_ct = threshold_subdivided_grid->GetNumberOfCells();
+     vol = 0;
+     cell_ct = threshold_subdivided_grid->GetNumberOfCells();
 
-	  for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
-		  tetra = vtkTetra::SafeDownCast(threshold_subdivided_grid->GetCell(i));
-		  if (!tetra) {
-			  continue;
-		  }
+     for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
+        tetra = vtkTetra::SafeDownCast(threshold_subdivided_grid->GetCell(i));
+        if (!tetra) {
+           continue;
+        }
 
-		  threshold_subdivided_grid->GetPoint(tetra->GetPointId(0), pt0);
-		  threshold_subdivided_grid->GetPoint(tetra->GetPointId(1), pt1);
-		  threshold_subdivided_grid->GetPoint(tetra->GetPointId(2), pt2);
-		  threshold_subdivided_grid->GetPoint(tetra->GetPointId(3), pt3);
-		  vol += fabs(vtkTetra::ComputeVolume(pt0, pt1, pt2, pt3));
-	  }
+        threshold_subdivided_grid->GetPoint(tetra->GetPointId(0), pt0);
+        threshold_subdivided_grid->GetPoint(tetra->GetPointId(1), pt1);
+        threshold_subdivided_grid->GetPoint(tetra->GetPointId(2), pt2);
+        threshold_subdivided_grid->GetPoint(tetra->GetPointId(3), pt3);
+        vol += fabs(vtkTetra::ComputeVolume(pt0, pt1, pt2, pt3));
+     }
 
-	  std::cout << "The volume of the subdivided region is" << std::endl << "LVOL2: " << vol << std::endl;
+     std::cout << "The volume of the subdivided region is" << std::endl << "LVOL2: " << vol << std::endl;
 
-	  //vtkSmartPointer<vtkSubdivideTetra> subdivided_2 =
-	  //        vtkSmartPointer<vtkSubdivideTetra>::New();
-	  //subdivided_2->SetInput(subdivided_grid);
+     //vtkSmartPointer<vtkSubdivideTetra> subdivided_2 =
+     //        vtkSmartPointer<vtkSubdivideTetra>::New();
+     //subdivided_2->SetInput(subdivided_grid);
 
-	  //vtkSmartPointer<vtkUnstructuredGrid> subdivided_grid_2 = subdivided_2->GetOutput();
-	  //subdivided_grid_2->Update();
+     //vtkSmartPointer<vtkUnstructuredGrid> subdivided_grid_2 = subdivided_2->GetOutput();
+     //subdivided_grid_2->Update();
 
-	  //vtkSmartPointer<vtkThreshold> threshold_subdivided_2 =
-	  //  vtkSmartPointer<vtkThreshold>::New();
-	  //threshold_subdivided_2->SetInput(subdivided_grid_2);
-	  //threshold_subdivided_2->ThresholdByUpper(threshold_value);
-	  //// doesn't work because the array is not added as SCALARS, i.e. via SetScalars
-	  //// threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
-	  //// use like this:
-	  //threshold_subdivided_2->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, field.c_str());
-	  //threshold_subdivided_2->Update();
-	  //vtkSmartPointer<vtkUnstructuredGrid> threshold_subdivided_grid_2 = threshold_subdivided_2->GetOutput();
-	  //vtkSmartPointer<vtkXMLUnstructuredGridWriter> ugw_2 =
-	  //        vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-	  //ugw_2->SetInput(threshold_subdivided_grid_2);
-	  //ugw_2->SetFileName("subdivided2.vtu");
-	  //ugw_2->Write();
+     //vtkSmartPointer<vtkThreshold> threshold_subdivided_2 =
+     //  vtkSmartPointer<vtkThreshold>::New();
+     //threshold_subdivided_2->SetInput(subdivided_grid_2);
+     //threshold_subdivided_2->ThresholdByUpper(threshold_value);
+     //// doesn't work because the array is not added as SCALARS, i.e. via SetScalars
+     //// threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
+     //// use like this:
+     //threshold_subdivided_2->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, field.c_str());
+     //threshold_subdivided_2->Update();
+     //vtkSmartPointer<vtkUnstructuredGrid> threshold_subdivided_grid_2 = threshold_subdivided_2->GetOutput();
+     //vtkSmartPointer<vtkXMLUnstructuredGridWriter> ugw_2 =
+     //        vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+     //ugw_2->SetInput(threshold_subdivided_grid_2);
+     //ugw_2->SetFileName("subdivided2.vtu");
+     //ugw_2->Write();
 
-	  //vol = 0;
-	  //cell_ct = threshold_subdivided_grid_2->GetNumberOfCells();
+     //vol = 0;
+     //cell_ct = threshold_subdivided_grid_2->GetNumberOfCells();
 
-	  //for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
-	  //        tetra = vtkTetra::SafeDownCast(threshold_subdivided_grid_2->GetCell(i));
-	  //        if (!tetra) {
-	  //      	  continue;
-	  //        }
+     //for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
+     //        tetra = vtkTetra::SafeDownCast(threshold_subdivided_grid_2->GetCell(i));
+     //        if (!tetra) {
+     //           continue;
+     //        }
 
-	  //        threshold_subdivided_grid_2->GetPoint(tetra->GetPointId(0), pt0);
-	  //        threshold_subdivided_grid_2->GetPoint(tetra->GetPointId(1), pt1);
-	  //        threshold_subdivided_grid_2->GetPoint(tetra->GetPointId(2), pt2);
-	  //        threshold_subdivided_grid_2->GetPoint(tetra->GetPointId(3), pt3);
-	  //        vol += fabs(vtkTetra::ComputeVolume(pt0, pt1, pt2, pt3));
-	  //}
+     //        threshold_subdivided_grid_2->GetPoint(tetra->GetPointId(0), pt0);
+     //        threshold_subdivided_grid_2->GetPoint(tetra->GetPointId(1), pt1);
+     //        threshold_subdivided_grid_2->GetPoint(tetra->GetPointId(2), pt2);
+     //        threshold_subdivided_grid_2->GetPoint(tetra->GetPointId(3), pt3);
+     //        vol += fabs(vtkTetra::ComputeVolume(pt0, pt1, pt2, pt3));
+     //}
 
-	  //std::cout << "The volume of the subdivided region is" << std::endl << "LVOL3: " << vol << std::endl;
+     //std::cout << "The volume of the subdivided region is" << std::endl << "LVOL3: " << vol << std::endl;
 
-	  thresholded_grid = threshold_subdivided_grid;
+     thresholded_grid = threshold_subdivided_grid;
 
   }
 
@@ -479,13 +479,13 @@ int main(int argc, char *argv[])
   }
 
   if (connected_component) {
-	  vtkSmartPointer<vtkPolyDataConnectivityFilter> connectivity =
-		  vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
+     vtkSmartPointer<vtkPolyDataConnectivityFilter> connectivity =
+        vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
 
-	  connectivity->SetInput(polydata);
-	  connectivity->SetExtractionModeToLargestRegion();
-	  connectivity->Update();
-	  polydata = connectivity->GetOutput();
+     connectivity->SetInput(polydata);
+     connectivity->SetExtractionModeToLargestRegion();
+     connectivity->Update();
+     polydata = connectivity->GetOutput();
   }
 
   vtkSmartPointer<vtkXMLPolyDataWriter> writer =
