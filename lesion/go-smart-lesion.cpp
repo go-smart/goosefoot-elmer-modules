@@ -273,15 +273,6 @@ int main(int argc, char *argv[])
   vtkIdType cell_ct = grid->GetNumberOfCells(), curr_cell = 0;
   vtkTetra *tetra;
 
-  vtkSmartPointer<vtkSelectionNode> selectionNode =
-	  vtkSmartPointer<vtkSelectionNode>::New();
-  selectionNode->SetFieldType(vtkSelectionNode::CELL);
-  selectionNode->SetContentType(vtkSelectionNode::INDICES);
-
-  vtkSmartPointer<vtkIdTypeArray> selectionArray =
-	  vtkSmartPointer<vtkIdTypeArray>::New();
-  selectionArray->SetNumberOfComponents(1);
-
   double vol = 0;
   //double pt0[3] = {0., 0., 1.};
   //double pt1[3] = {0., 1., 0.};
@@ -291,6 +282,17 @@ int main(int argc, char *argv[])
   double pt1[3] = {0, 0, 0};
   double pt2[3] = {0, 0, 0};
   double pt3[3] = {0, 0, 0};
+
+  /* BEGIN SELECTION STEP */
+  vtkSmartPointer<vtkSelectionNode> selectionNode =
+	  vtkSmartPointer<vtkSelectionNode>::New();
+  selectionNode->SetFieldType(vtkSelectionNode::CELL);
+  selectionNode->SetContentType(vtkSelectionNode::INDICES);
+
+  vtkSmartPointer<vtkIdTypeArray> selectionArray =
+	  vtkSmartPointer<vtkIdTypeArray>::New();
+  selectionArray->SetNumberOfComponents(1);
+
   cell_ct = thresholded_grid->GetNumberOfCells(), curr_cell = 0;
   for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
 	  tetra = vtkTetra::SafeDownCast(thresholded_grid->GetCell(i));
@@ -299,6 +301,25 @@ int main(int argc, char *argv[])
 	  }
 	  selectionArray->InsertNextValue(i);
   }
+  selectionNode->SetSelectionList(selectionArray);
+
+  vtkSmartPointer<vtkSelection> selection =
+          vtkSmartPointer<vtkSelection>::New();
+  selection->AddNode(selectionNode);
+
+  vtkSmartPointer<vtkExtractSelectedIds> extractSelectedIds =
+          vtkSmartPointer<vtkExtractSelectedIds>::New();
+  extractSelectedIds->SetInput(0, thresholded_grid);
+  extractSelectedIds->SetInput(1, selection);
+  extractSelectedIds->Update();
+  thresholded_grid = vtkUnstructuredGrid::SafeDownCast(extractSelectedIds->GetOutput());
+  /* END SELECTION STEP */
+
+  vtkSmartPointer<vtkXMLUnstructuredGridWriter> ugw =
+          vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+  ugw->SetInput(thresholded_grid);
+  ugw->SetFileName("internal-surfaces-removed.vtu");
+  ugw->Write();
 
   for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
 	  tetra = vtkTetra::SafeDownCast(thresholded_grid->GetCell(i));
@@ -312,26 +333,8 @@ int main(int argc, char *argv[])
 	  thresholded_grid->GetPoint(tetra->GetPointId(3), pt3);
 	  vol += vtkTetra::ComputeVolume(pt0, pt1, pt2, pt3);
   }
-  selectionNode->SetSelectionList(selectionArray);
 
   std::cout << "The volume of the thresholded region is" << std::endl << "LVOL: " << vol << std::endl;
-
-  vtkSmartPointer<vtkSelection> selection =
-          vtkSmartPointer<vtkSelection>::New();
-  selection->AddNode(selectionNode);
-
-  vtkSmartPointer<vtkExtractSelectedIds> extractSelectedIds =
-          vtkSmartPointer<vtkExtractSelectedIds>::New();
-  extractSelectedIds->SetInput(0, thresholded_grid);
-  extractSelectedIds->SetInput(1, selection);
-  extractSelectedIds->Update();
-  thresholded_grid = vtkUnstructuredGrid::SafeDownCast(extractSelectedIds->GetOutput());
-  std::cout << thresholded_grid->GetNumberOfCells() << std::endl;
-  vtkSmartPointer<vtkXMLUnstructuredGridWriter> ugw =
-          vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-  ugw->SetInput(thresholded_grid);
-  ugw->SetFileName("subdivided.vtu");
-  ugw->Write();
 
   if (subdivide) {
 	  vtkSmartPointer<vtkSubdivideTetra> subdivided =
