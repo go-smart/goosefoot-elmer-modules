@@ -158,8 +158,14 @@ class ElmerLibNumaFamily(Family, MesherGSSFMixin):
                 point_sources = ET.SubElement(elmer, "pointsources")
                 location = needle['file'].split(':', 1)
 
+                extrapolated = False
+                prong_locations = self.get_needle_parameter(ix, "NEEDLE_PRONGS_LOCATIONS")
                 if location[0] == 'library':
-                    point_sources.set("system", location[1])
+                    if location[1] == 'straight tines' and prong_locations:
+                        point_sources.set("system", "extrapolated")
+                        extrapolated = True
+                    else:
+                        point_sources.set("system", location[1])
                 else:
                     raise RuntimeError("Unknown point source distribution method: " + location[0])
 
@@ -169,6 +175,13 @@ class ElmerLibNumaFamily(Family, MesherGSSFMixin):
                     extension_node = ET.SubElement(extensions, "extension")
                     extension_node.set("phase", str(phase))
                     extension_node.set("length", str(extension))
+                if extrapolated:
+                    points = ET.SubElement(point_sources, "points")
+                    for i, location in enumerate(prong_locations):
+                        point = ET.SubElement(points, "point")
+                        point.set('i', i)
+                        for c, x in zip(('x', 'y', 'z'), location):
+                            point.set(c, x)
 
         algorithms = ET.SubElement(elmer, 'algorithms')
         for result, definition in self._algorithms.items():

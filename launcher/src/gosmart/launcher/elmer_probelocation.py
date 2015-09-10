@@ -130,9 +130,11 @@ class GoSmartElmerProbeLocationFactoryExtrapolated(GoSmartElmerProbeLocationFact
             locations[i].time = time
 
             controlling_thermocouple = 0
-            for j in range(1, 9):
+            locations[i]["ends"] = []
+            locations[i]["middles"] = []
+            for j in range(0, 9):
                 controlling_thermocouple += j % 2
-                point = M([[self.points[j][x] for x in ('x', 'y', 'z')]]).T
+                point = M([self.points[j]]).T
 
                 adjusted_end = (extension / max_extension) * (point - intersection) + intersection
                 locations[i]["ends"].append((tuplify(adjusted_end), controlling_thermocouple))
@@ -162,6 +164,7 @@ class GoSmartElmerProbeLocationFactoryExtrapolated(GoSmartElmerProbeLocationFact
             self.target[t] *= self.scale
 
         self.extensions = {}
+        self.points = {}
         for node in config_node:
             if node.tag == "extensions":
                 for extension in node:

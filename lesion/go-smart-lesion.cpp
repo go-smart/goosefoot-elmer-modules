@@ -267,11 +267,11 @@ int main(int argc, char *argv[])
             << " cells after thresholding." << std::endl;
 
   tinyxml2::XMLElement* thresholdCellsNode = doc.NewElement("thresholdCells");
-  tinyxml2::XMLText* thresholdCellsText = doc.NewText(std::to_string(grid->GetNumberOfCells()).c_str());
+  tinyxml2::XMLText* thresholdCellsText = doc.NewText(std::to_string(thresholded_grid->GetNumberOfCells()).c_str());
   rootNode->InsertEndChild(thresholdCellsNode);
   thresholdCellsNode->InsertEndChild(thresholdCellsText);
 
-  vtkIdType cell_ct = grid->GetNumberOfCells(), curr_cell = 0;
+  vtkIdType cell_ct = thresholded_grid->GetNumberOfCells(), curr_cell = 0;
   vtkTetra *tetra;
 
   double vol = 0;
@@ -285,6 +285,7 @@ int main(int argc, char *argv[])
   double pt3[3] = {0, 0, 0};
 
   if (!retain_subdomain_boundaries) {
+      std::cout << "Removing internal boundaries" << std::endl;
       /* BEGIN SELECTION STEP */
       vtkSmartPointer<vtkSelectionNode> selectionNode =
          vtkSmartPointer<vtkSelectionNode>::New();
@@ -296,13 +297,17 @@ int main(int argc, char *argv[])
       selectionArray->SetNumberOfComponents(1);
 
       cell_ct = thresholded_grid->GetNumberOfCells(), curr_cell = 0;
-      for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
-         tetra = vtkTetra::SafeDownCast(thresholded_grid->GetCell(i));
+      /*
+      while (cellArray->GetNextCell(npts, pts)) {
+         id = cellArray->GetInsertLocation(npts);
+         tetra = vtkTetra::SafeDownCast(thresholded_grid->GetCell(id));
          if (!tetra) {
             continue;
          }
-         selectionArray->InsertNextValue(i);
+         selectionArray->InsertNextValue(id);
       }
+      */
+      thresholded_grid->GetIdsOfCellsOfType(VTK_TETRA, selectionArray);
       selectionNode->SetSelectionList(selectionArray);
 
       vtkSmartPointer<vtkSelection> selection =
@@ -324,6 +329,7 @@ int main(int argc, char *argv[])
   ugw->SetFileName("internal-surfaces-removed.vtu");
   ugw->Write();
 
+  /*
   for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
      tetra = vtkTetra::SafeDownCast(thresholded_grid->GetCell(i));
      if (!tetra) {
@@ -338,6 +344,7 @@ int main(int argc, char *argv[])
   }
 
   std::cout << "The volume of the thresholded region is" << std::endl << "LVOL: " << vol << std::endl;
+  */
 
   if (subdivide) {
      vtkSmartPointer<vtkSubdivideTetra> subdivided =
