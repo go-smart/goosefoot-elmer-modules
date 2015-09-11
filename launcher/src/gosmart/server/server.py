@@ -28,6 +28,7 @@ import multiprocessing
 import tempfile
 import time
 import traceback
+import gosmart.server.family as families
 
 try:
     import StatsCore
@@ -115,6 +116,19 @@ class GoSmartSimulationComponent(ApplicationSession):
             task = asyncio.async(coro, loop=loop)
 
         task.add_done_callback(lambda f: asyncio.async(self._handle_simulation_done(f, guid=guid)))
+
+        return True
+
+    def doTmpValidation(self, guid, directory):
+        # RMV: This is hacky
+        loop = asyncio.get_event_loop()
+        coro = families.register["elmer-libnuma"].validation(None, directory)
+        try:
+            task = loop.create_task(coro)
+        except AttributeError:
+            task = asyncio.async(coro, loop=loop)
+
+        task.add_done_callback(lambda f: loop.call_soon_threadsafe(lambda: self._db.updateValidation(guid, f.result())))
 
         return True
 
@@ -256,7 +270,6 @@ class GoSmartSimulationComponent(ApplicationSession):
             loop = asyncio.get_event_loop()
             loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "SUCCESS", "Success", "100", timestamp))
             validation = yield from self.current[guid].validation()
-            print(validation)
             if validation:
                 loop.call_soon_threadsafe(lambda: self._db.updateValidation(guid, validation))
         except Exception as e:
@@ -364,6 +377,7 @@ class GoSmartSimulationComponent(ApplicationSession):
                 self.register(self.doUpdateSettingsXml, u'com.gosmartsimulation%s.update_settings_xml' % i)
                 self.register(self.doUpdateFiles, u'com.gosmartsimulation%s.update_files' % i)
                 self.register(self.doRequestFiles, u'com.gosmartsimulation%s.request_files' % i)
+                self.register(self.doTmpValidation, u'com.gosmartsimulation%s.tmp_validation' % i)
                 self.register(self.doFinalize, u'com.gosmartsimulation%s.finalize' % i)
                 self.register(self.doClean, u'com.gosmartsimulation%s.clean' % i)
                 self.register(self.doCompare, u'com.gosmartsimulation%s.compare' % i)

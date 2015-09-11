@@ -109,20 +109,20 @@ class ElmerLibNumaFamily(Family, MesherGSSFMixin):
 
         yield from task.wait()
 
-        validation_file = os.path.join(working_directory, 'validation.xml')
-        print("VF:", os.path.exists(validation_file))
-        if os.path.exists(validation_file):
-            self._validation_file = validation_file
+        self._simulation_directory = working_directory
 
         return task.returncode == 0
 
     @asyncio.coroutine
-    def validation(self):
-        print("F")
-        if not self._validation_file:
-            return None
+    def validation(self, working_directory=None):
+        if not working_directory:
+            working_directory = self._simulation_directory
 
-        with open(self._validation_file, 'r') as f:
+        validation_file = os.path.join(working_directory, 'validation.xml')
+        if not os.path.exists(validation_file):
+            raise RuntimeError("Validation file not found: [%s]" % validation_file)
+
+        with open(validation_file, 'r') as f:
             tree = ET.parse(f)
             root = tree.getroot()
 
