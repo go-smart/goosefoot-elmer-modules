@@ -320,6 +320,8 @@ class GoSmartSimulationComponent(ApplicationSession):
                 )
                 print("Announced (from map): %s" % simulation)
 
+        self.onRequestIdentify()
+
     def updateStatus(self, id, percentage, message):
         timestamp = time.time()
 
