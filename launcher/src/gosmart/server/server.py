@@ -280,7 +280,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         self.current[guid].set_exit_status(True)
         print('Success', guid)
 
-        self.publish(u'com.gosmartsimulation.complete', guid, makeError('SUCCESS', 'Success'), self.current[guid].get_dir(), time.time(), validation)
+        self.publish(u'com.gosmartsimulation.complete', guid, makeError('SUCCESS', 'Success'), self.current[guid].get_dir(), timestamp, validation)
 
     @asyncio.coroutine
     def eventFail(self, guid, message):
@@ -299,7 +299,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         self.current[guid].set_exit_status(False, message)
         print('Failure', guid, message)
 
-        self.publish(u'com.gosmartsimulation.fail', guid, message, self.current[guid].get_dir(), time.time(), None)
+        self.publish(u'com.gosmartsimulation.fail', guid, message, self.current[guid].get_dir(), timestamp, None)
 
     def doRetrieveStatus(self, guid):
         simulation = self._db.retrieve(guid)
@@ -319,7 +319,7 @@ class GoSmartSimulationComponent(ApplicationSession):
             "simulation_id": simulation['guid'],
             "status": (percentage, status),
             "directory": simulation['directory'],
-            "timestamp": time.time(),
+            "timestamp": simulation['timestamp'],
             "validation": simulation['validation']
         }
 
@@ -338,7 +338,7 @@ class GoSmartSimulationComponent(ApplicationSession):
                 status = makeError(exit_code, simulation['status'])
                 percentage = simulation['percentage']
 
-                self.publish(u'com.gosmartsimulation.announce', self.server_id, simulation['guid'], (percentage, status), simulation['directory'], time.time(), simulation['validation'])
+                self.publish(u'com.gosmartsimulation.announce', self.server_id, simulation['guid'], (percentage, status), simulation['directory'], simulation['timestamp'], simulation['validation'])
                 print("Announced: %s %s %r" % (simulation['guid'], simulation['directory'], simulation['validation'] is not None))
 
         except Exception:
