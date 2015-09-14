@@ -247,6 +247,9 @@ class MesherGSSFMixin:
                         parameterNode.set("value", str(convert_parameter(parameter, typ)))
 
                 needle_active_length = self.get_needle_parameter(ix, "NEEDLE_ACTIVE_LENGTH")
+                global_active_length = self.get_needle_parameter(ix, "CONSTANT_GLOBAL_ACTIVE_LENGTH")
+                if needle_active_length is not None:
+                    needle_active_length = global_active_length
                 if needle_active_length is not None:
                     if needle_mesh is None:
                         needle_mesh = ET.SubElement(mesher, 'needle' if solid_needles else 'solid')

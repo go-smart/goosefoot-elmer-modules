@@ -301,6 +301,28 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         self.publish(u'com.gosmartsimulation.fail', guid, message, self.current[guid].get_dir(), time.time(), None)
 
+    def doRetrieveStatus(self, guid):
+        simulation = self._db.retrieve(guid)
+        exit_code = simulation['exit_code']
+
+        if exit_code is None:
+            if simulation['guid'] in self.current:
+                exit_code = 'IN_PROGRESS'
+            else:
+                exit_code = 'E_UNKNOWN'
+
+        status = makeError(exit_code, simulation['status'])
+        percentage = simulation['percentage']
+
+        return {
+            "server_id": self.server_id,
+            "simulation_id": simulation['guid'],
+            "status": (percentage, status),
+            "directory": simulation['directory'],
+            "timestamp": time.time(),
+            "validation": simulation['validation']
+        }
+
     def onRequestAnnounce(self):
         try:
             simulations = self._db.all()
@@ -383,6 +405,7 @@ class GoSmartSimulationComponent(ApplicationSession):
                 self.register(self.doCompare, u'com.gosmartsimulation%s.compare' % i)
                 self.register(self.doWorkflow, u'com.gosmartsimulation%s.workflow' % i)
                 self.register(self.doProperties, u'com.gosmartsimulation%s.properties' % i)
+                self.register(self.doRetrieveStatus, u'com.gosmartsimulation%s.retrieve_status' % i)
 
                 self.subscribe(self.onRequestAnnounce, u'com.gosmartsimulation%s.request_announce' % i)
                 self.subscribe(self.onRequestIdentify, u'com.gosmartsimulation%s.request_identify' % i)

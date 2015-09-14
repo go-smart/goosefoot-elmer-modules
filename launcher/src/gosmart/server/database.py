@@ -139,10 +139,9 @@ class SQLiteSimulationDatabase:
         return simulations
 
     def retrieve(self, guid):
-        raise NotImplementedError("This doesn't seem to be working")
         cursor = self._db.cursor()
         cursor.execute('''
-            SELECT directory
+            SELECT *
             FROM simulations
             WHERE guid=? AND deleted=0
         ''', guid)
@@ -151,7 +150,7 @@ class SQLiteSimulationDatabase:
         except Exception:
             return None
 
-        directory = simulation_row[0]
+        directory = simulation_row['directory']
 
         if not os.path.exists(directory):
             return None
