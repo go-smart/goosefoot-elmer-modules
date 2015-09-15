@@ -192,6 +192,7 @@ class GoSmartSimulationComponent(ApplicationSession):
     def doUpdateSettingsXml(self, guid, xml):
         try:
             tmpdir = tempfile.mkdtemp(prefix='gssf-')
+            os.chmod(tmpdir, 0o770)
             translator = GoSmartSimulationTranslator()
             self.current[guid] = GoSmartSimulationDefinition(
                 guid,

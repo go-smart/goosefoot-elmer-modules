@@ -209,12 +209,13 @@ class GoSmartElmer(GoSmartComponent):
         n2e = N.array(json.loads(self.logger.get_needle_constant(needle2, "NEEDLE_ENTRY_LOCATION"))) * scaling
         print(n1t, n2t, n1e, n2e)
 
-        p = N.cross(n1t - n1e, n2t - n2e)
-        if p.dot(p) < 1e-10:
-            return 0
-
         # If not given a distance from needle1 ti
         if dist_from_tip is None:
+            p = N.cross(n1t - n1e, n2t - n2e)
+            print(p)
+            if p.dot(p) < 1e-10:
+                return N.sqrt(N.dot(n2t - n1t, n2t - n1t))
+
             return abs(N.dot(n2e - n1e, p)) / N.sqrt(p.dot(p))
 
         if reference_needle is None:
@@ -228,6 +229,7 @@ class GoSmartElmer(GoSmartComponent):
 
         k = (c - n2e).dot(n1) / l
         v = c - n2e - k * (n2t - n2e)
+        print(v)
 
         return N.sqrt(v.dot(v))
 
