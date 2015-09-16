@@ -60,9 +60,11 @@ SUBROUTINE NumaProgressSolver( Model,Solver,Timestep,TransientSimulation )
     LOGICAL :: TransientSimulation
 
     REAL(KIND=dp), POINTER :: ParPtr(:)
-    REAL(KIND=dp) :: PercentageProgress
+    TYPE(Variable_t), POINTER :: TimeVar
+    REAL(KIND=dp) :: PercentageProgress, Time
     LOGICAL :: AllocationsDone = .FALSE.
     INTEGER :: PercentageSocket
+    CHARACTER(LEN=30, KIND=c_char) :: stat
     TYPE(sockaddr_un) :: socket_addr
     INTEGER :: i
 
@@ -83,9 +85,10 @@ SUBROUTINE NumaProgressSolver( Model,Solver,Timestep,TransientSimulation )
         FUNCTION make_connection()
             INTEGER :: make_connection
         END FUNCTION make_connection
-        FUNCTION output_percentage(perc)
+        FUNCTION output_percentage(stat, perc)
             USE Types
             INTEGER :: output_percentage
+            CHARACTER(LEN=30, KIND=c_char) :: stat
             REAL(KIND=dp) :: perc
         END FUNCTION output_percentage
         FUNCTION geterrno()
@@ -106,9 +109,13 @@ SUBROUTINE NumaProgressSolver( Model,Solver,Timestep,TransientSimulation )
     END IF
 
     ParPtr => GetReal( Solver % Values, 'Percentage Progress' )
+    TimeVar => VariableGet(Model % Variables, 'Time')
+    Time = TimeVar % Values(1)
 
     PercentageProgress = ParPtr(1)
-    i = output_percentage(PercentageProgress)
+    WRITE (stat, "(A5, F10.5)") "Elmer in progress: ", Time
+    PRINT *, stat
+    i = output_percentage(TRIM(stat)//C_NULL_CHAR, PercentageProgress)
 
     PRINT *, "Percentage progress is ", PercentageProgress
 !------------------------------------------------------------------------------ 

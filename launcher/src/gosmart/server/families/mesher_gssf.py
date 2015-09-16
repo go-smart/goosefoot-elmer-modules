@@ -197,19 +197,19 @@ class MesherGSSFMixin:
                 if self.get_parameter('SETTING_ORGAN_AS_SUBDOMAIN'):
                     zone = ET.SubElement(mesher, 'zone')
                     zone.set('region', idx)
-                    zone.set('priority', '0')
+                    zone.set('priority', '100')
                     zone.set('characteristic_length', farfield)
                 else:
                     ET.SubElement(mesher, 'organ').set('region', idx)
             elif region['format'] == 'zone' and not (set(region['groups']) & self._nonmeshing_groups):
                 zone = ET.SubElement(mesher, 'zone')
                 zone.set('region', idx)
-                zone.set('priority', '2')
+                zone.set('priority', '1')
                 zone.set('characteristic_length', zonefield)
             elif 'vessels' in region['groups'] or 'bronchi' in region['groups']:
                 zone = ET.SubElement(mesher, 'zone')
                 zone.set('region', idx)
-                zone.set('priority', '1')
+                zone.set('priority', '2')
                 zone.set('characteristic_length', zonefield)
 
         ET.SubElement(root, 'optimizer')
@@ -260,7 +260,7 @@ class MesherGSSFMixin:
 
                 needle_active_length = self.get_needle_parameter(ix, "NEEDLE_ACTIVE_LENGTH")
                 global_active_length = self.get_needle_parameter(ix, "CONSTANT_GLOBAL_ACTIVE_LENGTH")
-                if needle_active_length is not None:
+                if needle_active_length is None:
                     needle_active_length = global_active_length
                 if needle_active_length is not None:
                     if needle_mesh is None:

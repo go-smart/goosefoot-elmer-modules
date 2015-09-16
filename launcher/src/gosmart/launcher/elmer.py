@@ -529,11 +529,12 @@ class GoSmartElmer(GoSmartComponent):
                 while True:
                     data = client_file.readline()
                     if data:
-                        self.logger.print_line("[status]: %s" % data)
+                        percentage, status = data.split('||')
+                        self.logger.print_line("[status]: %s%% --- %s" % (percentage, status))
 
                         if self._update_status is not None:
                             try:
-                                self._update_status(float(data), "Elmer in progress")
+                                self._update_status(float(percentage), status)
                             except:
                                 pass
                     else:

@@ -37,11 +37,11 @@ int make_connection_()
     return 0;
 }
 
-int output_percentage_(double p)
+int output_percentage_(char* status, double p)
 {
-    char percstr[100];
+    char percstr[330];
 
-    sprintf(percstr, "%lf\n", p);
+    sprintf(percstr, "%lf||%s\n", p, status);
     clearerrno_();
     printf("STR: %s\n", percstr);
     send(s, percstr, strlen(percstr), 0);
