@@ -193,6 +193,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         try:
             tmpdir = tempfile.mkdtemp(prefix='gssf-')
             os.chmod(tmpdir, 0o770)
+            print("Changed permissions")
             translator = GoSmartSimulationTranslator()
             self.current[guid] = GoSmartSimulationDefinition(
                 guid,

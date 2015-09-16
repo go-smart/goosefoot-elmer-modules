@@ -154,11 +154,22 @@ class GoSmartMesherCGAL(GoSmartMesher):
             if node.tag == 'extent' and node.get('radius') is not None:
                 self.mesh['bounding_radius'] = node.get('radius')
 
-    def _prep_zone_arg(self, tag):
-        out = ":".join(str(self.logger.zones[tag][k]) for k in ("filename", "id"))
-        self._meshed_regions[tag] = {"meshed_as": "zone"}
-        self._meshed_regions[tag].update(self.logger.zones[tag])
+    def _prep_zone_arg(self, tag, surface=False):
+        if surface:
+            zone_filename = str(self.logger.surfaces[tag]["filename"])
+            zone_id = self.logger.surfaces[tag]["id"]
 
+            self._meshed_regions[tag] = {"meshed_as": "surface"}
+            self._meshed_regions[tag].update(self.logger.surfaces[tag])
+            zone_id *= -1
+        else:
+            zone_filename = str(self.logger.zones[tag]["filename"])
+            zone_id = self.logger.zones[tag]["id"]
+
+            self._meshed_regions[tag] = {"meshed_as": "zone"}
+            self._meshed_regions[tag].update(self.logger.zones[tag])
+
+        out = "%s:%d" % (zone_filename, zone_id)
         if tag in self.zone_characteristic_lengths:
             out += ":" + self.zone_characteristic_lengths[tag]
         elif tag in self.zone_priorities or tag in self.zone_activity_spheres:
@@ -174,11 +185,6 @@ class GoSmartMesherCGAL(GoSmartMesher):
             out += ":" + "_".join(str(sphere[s]) for s in ('x', 'y', 'z', 'r', 'i'))
 
         return out
-
-    def _prep_surface_arg(self, tag):
-        self._meshed_regions[tag] = {"meshed_as": "surface"}
-        self._meshed_regions[tag].update(self.logger.surfaces[tag])
-        return ":".join(str(self.logger.surfaces[tag][k]) for k in ("filename", "id"))
 
     def launch(self, needle_files, extent_file, preprocessor=None, appendix=""):
         file_locations = {}
@@ -228,7 +234,7 @@ class GoSmartMesherCGAL(GoSmartMesher):
             if isinstance(v, str):
                 v = (v,)
             try:
-                file_locations[k] = [(self._prep_zone_arg(l) if l in self.logger.zones else self._prep_surface_arg(l)) for l in v]
+                file_locations[k] = [self._prep_zone_arg(l, l not in self.logger.zones) for l in v]
             except KeyError as e:
                 self.logger.print_fatal("Key missing for '%s' in file locations" % e.args[0])
 

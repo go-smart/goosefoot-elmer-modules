@@ -159,17 +159,6 @@ class MesherGSSFMixin:
 
         ET.SubElement(mesher, 'centre')
 
-        for idx, region in self._regions.items():
-            if region['meaning'] == 'organ':
-                if self.get_parameter('SETTING_ORGAN_AS_SUBDOMAIN'):
-                    ET.SubElement(mesher, 'zone').set('region', idx)
-                else:
-                    ET.SubElement(mesher, 'organ').set('region', idx)
-            elif region['format'] == 'zone' and not (set(region['groups']) & self._nonmeshing_groups):
-                ET.SubElement(mesher, 'zone').set('region', idx)
-            elif 'vessels' in region['groups'] or 'bronchi' in region['groups']:
-                ET.SubElement(mesher, 'vessel').set('region', idx)
-
         lengthscales = ET.SubElement(mesher, 'lengthscales')
 
         if self.get_parameter('RESOLUTION_HIGH'):
@@ -199,6 +188,29 @@ class MesherGSSFMixin:
             lengthscales.set(k, str(v))
         if needlezonefield:
             lengthscales.set("needlezonefield", str(needlezonefield))
+
+        farfield = lengthscale_settings[1][1]
+        zonefield = lengthscale_settings[2][1]
+
+        for idx, region in self._regions.items():
+            if region['meaning'] == 'organ':
+                if self.get_parameter('SETTING_ORGAN_AS_SUBDOMAIN'):
+                    zone = ET.SubElement(mesher, 'zone')
+                    zone.set('region', idx)
+                    zone.set('priority', '0')
+                    zone.set('characteristic_length', farfield)
+                else:
+                    ET.SubElement(mesher, 'organ').set('region', idx)
+            elif region['format'] == 'zone' and not (set(region['groups']) & self._nonmeshing_groups):
+                zone = ET.SubElement(mesher, 'zone')
+                zone.set('region', idx)
+                zone.set('priority', '2')
+                zone.set('characteristic_length', zonefield)
+            elif 'vessels' in region['groups'] or 'bronchi' in region['groups']:
+                zone = ET.SubElement(mesher, 'zone')
+                zone.set('region', idx)
+                zone.set('priority', '1')
+                zone.set('characteristic_length', zonefield)
 
         ET.SubElement(root, 'optimizer')
         ET.SubElement(root, 'elmergrid')
