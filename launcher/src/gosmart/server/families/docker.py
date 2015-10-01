@@ -46,7 +46,9 @@ class DockerFamily(Family):
     def simulate(self, working_directory):
         proceed = yield from self.prepare_simulation(working_directory)
 
-        self._submitter.set_update_socket(self.get_percentage_socket_location(working_directory))
+        update_socket = self.get_percentage_socket_location(working_directory)
+        os.chmod(update_socket, 0o777)
+        self._submitter.set_update_socket(update_socket)
 
         regions_yaml = os.path.join(working_directory, "input", "regions.yml")
         regions = self._regions

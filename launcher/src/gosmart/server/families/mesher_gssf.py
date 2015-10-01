@@ -134,8 +134,8 @@ class MesherGSSFMixin:
 
         mesher = ET.SubElement(root, "mesher")
         mesher.set('type', 'CGAL')
-        if self.get_parameter("SETTING_SOLID_NEEDLES") is True or self.get_parameter("SETTING_ZONE_BOUNDARIES") is True:
-            mesher.set("zone_boundaries", "true")
+        #if self.get_parameter("SETTING_SOLID_NEEDLES") is True or self.get_parameter("SETTING_ZONE_BOUNDARIES") is True:
+        mesher.set("zone_boundaries", "true")
 
         mesher_inner = self.get_parameter("SETTING_AXISYMMETRIC_INNER")
         if mesher_inner is not None:
@@ -216,6 +216,8 @@ class MesherGSSFMixin:
         ET.SubElement(root, 'elmergrid')
         l = 0
         globalNeedlesNode = ET.SubElement(root, "needles")
+        if not needlezonefield:
+            needlezonefield = zonefield
         for ix, needle in self._needles.items():
             globalNeedleNode = ET.SubElement(globalNeedlesNode, "needle")
             l += 1
@@ -231,10 +233,10 @@ class MesherGSSFMixin:
                     needleNode.set("input", os.path.join("input/", location[1]))
                     needleNode.set("groups", "needles")
 
-                    needle_mesh = ET.SubElement(mesher, 'needle')
+                    needle_mesh = ET.SubElement(mesher, 'zone')
                     needle_mesh.set('region', str(l))
-                    if needlezonefield and location[0] != 'surface':
-                        needle_mesh.set("characteristic_length", needlezonefield)
+                    needle_mesh.set('characteristic_length', str(needlezonefield))
+                    needle_mesh.set('priority', '0')
                 else:
                     needleNode = ET.SubElement(needlelibrary, 'needle')
 
@@ -243,8 +245,7 @@ class MesherGSSFMixin:
 
                     if location[0] == 'library':
                         needleNode.set("id", location[1])
-                    else:
-                        needleNode.set("name", location[1])
+                    needleNode.set("name", str(l))
 
                     tip_location = self.get_needle_parameter(ix, "NEEDLE_TIP_LOCATION")
                     entry_location = self.get_needle_parameter(ix, "NEEDLE_ENTRY_LOCATION")
@@ -264,12 +265,14 @@ class MesherGSSFMixin:
                     needle_active_length = global_active_length
                 if needle_active_length is not None:
                     if needle_mesh is None:
-                        needle_mesh = ET.SubElement(mesher, 'needle' if solid_needles else 'solid')
+                        needle_mesh = ET.SubElement(mesher, 'zone')
+                        needle_mesh.set('characteristic_length', str(needlezonefield))
+                        needle_mesh.set('priority', '0')
                         needle_mesh.set('region', 'needle-' + str(l))
                     activity = ET.SubElement(needle_mesh, 'activity')
                     tip_location = self.get_needle_parameter(ix, "NEEDLE_TIP_LOCATION")
-                    for c, vt in zip(('x', 'y', 'z'), tip_location):
-                        activity.set(c, str(vt))
+                    for c, vt, vc in zip(('x', 'y', 'z'), tip_location, centre_location):
+                        activity.set(c, str(vc - vt))
                     activity.set('r', str(needle_active_length))
 
         self._mesher_xml = root

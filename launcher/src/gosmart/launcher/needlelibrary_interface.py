@@ -155,6 +155,7 @@ class GoSmartNeedleLibraryInterface(GoSmartComponent):
 
         target_paths = None if len(self.needles) == 0 else {}
 
+        print(self.needles)
         for name, n in self.needles.items():
             target_path = os.path.join(self.cwd, target_stl)
             sname = n['file']
@@ -163,5 +164,6 @@ class GoSmartNeedleLibraryInterface(GoSmartComponent):
             if os.path.exists(inactive_path):
                 target_paths[sname + "-inactive"] = inactive_path
                 self.logger.add_region('needle-%s-inactive' % n['file'], "%s-%s.inactive.stl" % (target_path, sname), ("needles-inactive", "surface"), zone=("both" if self.use_zones else False))
+        print(self.logger.surfaces)
 
         return target_paths, extent_path

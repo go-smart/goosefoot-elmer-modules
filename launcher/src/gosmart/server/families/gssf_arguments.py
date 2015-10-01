@@ -12,6 +12,7 @@ class GoSmartSimulationFrameworkArguments:
         self.only = only
         self.leavetree = leavetree
         self.configfilenames = configfilenames
+        self.status_socket = status_socket
 
     def to_list(self):
         args = {

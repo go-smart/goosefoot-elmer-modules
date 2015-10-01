@@ -60,7 +60,7 @@ class GoSmartValidation(GoSmartComponent):
         except Exception as e:
             self.logger.print_fatal("Could not copy input mesh across for validation tool: %s" % str(e))
 
-        self._launch_subprocess(self.cleaner_binary_name, [])
+        self._launch_subprocess(self.cleaner_binary_name, ['--input', 'refdata.vtp', '--output', 'refdata-clean.vtp'])
 
         try:
             shutil.copy(os.path.join(input_cwd, input_name), self.logger.make_cwd(self.suffix))

@@ -58,6 +58,31 @@
 #include <vtkDataObject.h>
 #include <vtkGeometryFilter.h>
 
+#include <CGAL/Exact_integer.h>
+#include <CGAL/Homogeneous.h>
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/Polyhedral_mesh_domain_3.h>
+#include <CGAL/IO/Polyhedron_iostream.h>
+#include <CGAL/Nef_polyhedron_3.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
+#include <CGAL/IO/Nef_polyhedron_iostream_3.h>
+#include <iostream>
+
+typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
+typedef CGAL::Polyhedron_3<K> Polyhedron;
+typedef CGAL::Exact_predicates_exact_constructions_kernel Exact_Kernel;
+typedef CGAL::Polyhedron_3<Exact_Kernel> Exact_polyhedron;
+typedef CGAL::Polyhedral_mesh_domain_3<Exact_polyhedron, Exact_Kernel> Exact_Mesh_domain;
+typedef CGAL::Nef_polyhedron_3<Exact_Kernel,
+			       CGAL::SNC_indexed_items,
+			       bool> Nef_polyhedron; 
+
+typedef Exact_Kernel::Point_3 Exact_Point;
+typedef Exact_polyhedron::HalfedgeDS Exact_HalfedgeDS;
+
+#include "PolyhedronUtils.h"
+
 /* REQUIRES PARAVIEW HEADERS
 #include "vtkIsoVolume.h"
 */
@@ -68,27 +93,69 @@ namespace po = boost::program_options;
 
 int main(int argc, char *argv[])
 {
-    vtkSmartPointer<vtkXMLPolyDataReader> reader =
-        vtkSmartPointer<vtkXMLPolyDataReader>::New();
-    reader->SetFileName("refdata.vtp");
-    reader->Update();
+    std::string input_vtp("refdata.vtp"), output_vtp("refdata_clean.vtp"), organ_vtp;
+    bool connected_component = false;
 
-    vtkSmartPointer<vtkPolyData> polydata = reader->GetOutput();
+    po::options_description options_description("Allowed options");
+    options_description.add_options()
+      ("help,h,?", "produce help message")
+      ("input,i", po::value<std::string>(&input_vtp), "input segmented ablation zone (lesion) VTP")
+      ("connectivity,c", po::value(&connected_component)->zero_tokens(), "extract largest connected component of thresholded surface")
+      ("organ,O", po::value<std::string>(&organ_vtp), "organ VTP; indicates intersection with organ should be taken")
+      ("output,o", po::value<std::string>(&output_vtp), "output segmented ablation zone (lesion) VTP");
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, options_description), vm);
+    po::notify(vm);
+
+    if (vm.count("help")) {
+      std::cout << "NUMA Segmented Lesion Cleaner - 0.1" << std::endl;
+      std::cout << options_description << std::endl;
+      return 1;
+    }
+
+    std::cout << "Outputting to " << output_vtp << std::endl;
+
+    /*
+    Exact_polyhedron P, Q;
+    PolyhedronUtils::readSurfaceFile(organ_vtp.c_str(), P);
+    PolyhedronUtils::readSurfaceFile(input_vtp.c_str(), P);
+    if(P.is_closed()) {
+        Nef_polyhedron N1(P);
+        Nef_polyhedron N2(Q);
+        N1 *= N2;
+        if(N1.is_simple()) {
+          N1.convert_to_polyhedron(P);
+          std::cout << P;
+        }
+        else {
+          std::cerr << "N1 is not a 2-manifold." << std::endl;
+        }
+    }
+*/
+    vtkSmartPointer<vtkXMLPolyDataReader> vtp_reader =
+        vtkSmartPointer<vtkXMLPolyDataReader>::New();
+    vtp_reader->SetFileName(input_vtp.c_str());
+    vtp_reader->Update();
+
+    vtkSmartPointer<vtkPolyData> polydata = vtp_reader->GetOutput();
 
     vtkSmartPointer<vtkPolyDataConnectivityFilter> connectivity =
     vtkSmartPointer<vtkPolyDataConnectivityFilter>::New();
 
-    connectivity->SetInput(polydata);
-    connectivity->SetExtractionModeToLargestRegion();
-    connectivity->Update();
-    polydata = connectivity->GetOutput();
+    if (connected_component)
+    {
+        connectivity->SetInput(polydata);
+        connectivity->SetExtractionModeToLargestRegion();
+        connectivity->Update();
+        polydata = connectivity->GetOutput();
+    }
 
-    vtkSmartPointer<vtkXMLPolyDataWriter> writer =
+    vtkSmartPointer<vtkXMLPolyDataWriter> vtp_writer =
       vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 
-    writer->SetFileName("refdata-clean.vtp");
-    writer->SetInput(polydata);
-    writer->Write();
+    vtp_writer->SetFileName(output_vtp.c_str());
+    vtp_writer->SetInput(polydata);
+    vtp_writer->Write();
 
     return EXIT_SUCCESS;
 }

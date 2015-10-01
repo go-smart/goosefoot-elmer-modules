@@ -111,6 +111,8 @@ class GoSmartElmerProbeLocationFactoryExtrapolated(GoSmartElmerProbeLocationFact
         location_times = {}
 
         intersection = M([[self.target[i] for i in ('x', 'y', 'z')]]).T
+        needleaxis = M([[self.needleaxis[i] for i in ('x', 'y', 'z')]]).T
+        needleaxis = needleaxis / N.sqrt(needleaxis.dot(needleaxis))
 
         ax, ay, az = [self.needleaxis[i] for i in ('x', 'y', 'z')]
         VV = N.array([ax, ay, az])
@@ -142,7 +144,9 @@ class GoSmartElmerProbeLocationFactoryExtrapolated(GoSmartElmerProbeLocationFact
                 adjusted_middle = 0.5 * (extension / max_extension) * (point - intersection) + intersection
                 locations[i]["middles"].append((tuplify(adjusted_middle), controlling_thermocouple))
 
+            trocar = intersection + 0.5 * extension * needleaxis  # Treated as mid-point length
             locations[i]["middles"].append((tuplify(intersection), -1))
+            locations[i]["ends"].append((tuplify(trocar), -1))
 
             locations[i]["thermocouples"] = [locations[i]["ends"][0]]
             locations[i]["thermocouples"] += locations[i]["ends"][1:8:2]
@@ -188,6 +192,7 @@ class GoSmartElmerProbeLocationFactoryStraightTines(GoSmartElmerProbeLocationFac
         intersection = M([[self.target[i] for i in ('x', 'y', 'z')]]).T
 
         ax, ay, az = [self.needleaxis[i] for i in ('x', 'y', 'z')]
+
         VV=N.array([ax,ay,az])
         if(N.linalg.norm(VV)>=1.1):
           ax=ax*0.001
@@ -202,6 +207,7 @@ class GoSmartElmerProbeLocationFactoryStraightTines(GoSmartElmerProbeLocationFac
             locations[i].time = time
 
             p9 = M([[extension, 0.0, 0.0]]).T
+            trocar = M([[- extension * 0.5, 0.0, 0.0]]).T
             radi = 45 * N.pi / 180
 
             Rz = M([[N.cos(radi), N.sin(radi), 0], [-N.sin(radi), N.cos(radi), 0], [0, 0, 1]])
@@ -221,6 +227,7 @@ class GoSmartElmerProbeLocationFactoryStraightTines(GoSmartElmerProbeLocationFac
                 locations[i]["ends"].append((tuplify(pen), controlling_thermocouple))
                 locations[i]["middles"].append((tuplify(pmn), controlling_thermocouple))
             locations[i]["middles"].append((tuplify(intersection), -1))
+            locations[i]["ends"].append((tuplify(R * trocar + intersection), -1))
 
             locations[i]["thermocouples"] = [locations[i]["ends"][0]]
             locations[i]["thermocouples"] += locations[i]["ends"][1:8:2]

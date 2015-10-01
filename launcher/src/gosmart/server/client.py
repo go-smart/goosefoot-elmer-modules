@@ -37,11 +37,12 @@ def wrapped_coroutine(f):
 
 class GoSmartSimulationClientComponent(ApplicationSession):
 
-    def __init__(self, x, gssa_file, subdirectory, output_files, input_files=None, definition_files=None, skip_clean=False):
+    def __init__(self, x, gssa_file, subdirectory, output_files, input_files=None, definition_files=None, skip_clean=False, server=None):
         ApplicationSession.__init__(self, x)
         self._gssa = ET.parse(gssa_file)
         self._definition_files = definition_files
         self._input_files = input_files
+        self._server = server
 
         if self._definition_files is not None:
             self._definition_tmp = tempfile.NamedTemporaryFile(suffix='.tar.gz')
@@ -72,22 +73,28 @@ class GoSmartSimulationClientComponent(ApplicationSession):
         self._output_files = output_files
         self._skip_clean = skip_clean
 
+    def make_call(self, suffix):
+        if self._server:
+            return "com.gosmartsimulation.%s.%s" % (self._server, suffix)
+        else:
+            return "com.gosmartsimulation.%s" % suffix
+
     @asyncio.coroutine
     def onJoin(self, details):
         print("session ready")
 
         guid = str(self._guid)
         gssa = ET.tostring(self._gssa, encoding="unicode")
-        yield from self.call('com.gosmartsimulation.init', guid)
+        yield from self.call(self.make_call('init'), guid)
         print("Initiated...")
-        yield from self.call('com.gosmartsimulation.update_settings_xml', guid, gssa)
+        yield from self.call(self.make_call('update_settings_xml'), guid, gssa)
         print("Sent XML...")
-        yield from self.call('com.gosmartsimulation.finalize', guid, self._subdirectory)
+        yield from self.call(self.make_call('finalize'), guid, self._subdirectory)
         print("Finalized settings...")
-        yield from self.call('com.gosmartsimulation.start', guid)
+        yield from self.call(self.make_call('start'), guid)
         print("Started...")
-        self.subscribe(self.onComplete, 'com.gosmartsimulation.complete')
-        self.subscribe(self.onFail, 'com.gosmartsimulation.fail')
+        self.subscribe(self.onComplete, self.make_call('complete'))
+        self.subscribe(self.onFail, self.make_call('fail'))
 
     @wrapped_coroutine
     @asyncio.coroutine
@@ -96,7 +103,7 @@ class GoSmartSimulationClientComponent(ApplicationSession):
         if validation:
             print("Validation:", validation)
         print("Requesting files")
-        files = yield from self.call('com.gosmartsimulation.request_files', guid, {
+        files = yield from self.call(self.make_call('request_files'), guid, {
             f: os.path.join('/tmp', f) for f in self._output_files
         })
         print(files)
@@ -117,7 +124,7 @@ class GoSmartSimulationClientComponent(ApplicationSession):
 
     def finalize(self, guid):
         if not self._skip_clean:
-            yield from self.call('com.gosmartsimulation.clean', guid)
+            yield from self.call(self.make_call('clean'), guid)
             self.shutdown()
         else:
             print("Skipping clean-up")

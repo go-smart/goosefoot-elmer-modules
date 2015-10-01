@@ -38,7 +38,7 @@ class StatusUpdater:
         self._update_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         if not os.path.exists(self._update_socket_location):
             return False
-        self.connect(self._update_socket_location)
+        self._update_socket.connect(self._update_socket_location)
 
     def status(self, percentage, message):
         try:

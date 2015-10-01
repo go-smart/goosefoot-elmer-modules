@@ -139,7 +139,7 @@ class GoSmartMesherCGAL(GoSmartMesher):
                 activity = node.find('activity')
                 if activity is not None:
                     inactive_region = region + " inactive"
-                    inactive_groups = tuple(g + "-inactive" for g in self.logger.zones[region]["groups"])
+                    inactive_groups = tuple(g + "-inactive" for g in self.logger.get_region(region)["groups"])
                     if inactive_region not in self.logger.surfaces:
                         self.logger.add_region(inactive_region, None, inactive_groups, zone=False)
                     inactive_index = self.logger.surfaces[inactive_region]["id"]
@@ -213,15 +213,12 @@ class GoSmartMesherCGAL(GoSmartMesher):
                 self.file_locations["needles"] = []
 
             for needle in needles:
-                if needle in self.logger.zones:
-                    if needle not in self.file_locations["zones"]:
-                        self.file_locations["zones"].append(needle)
-                    if needle not in self.zone_characteristic_lengths and self.needle_characteristic_length is not None:
-                        self.zone_characteristic_lengths[needle] = str(self.needle_characteristic_length)
-                    if needle not in self.zone_priorities:
-                        self.zone_priorities[needle] = "-1000"
-                else:
-                    self.file_locations["needles"].append(needle)
+                if needle not in self.file_locations["zones"]:
+                    self.file_locations["zones"].append(needle)
+                if needle not in self.zone_characteristic_lengths and self.needle_characteristic_length is not None:
+                    self.zone_characteristic_lengths[needle] = str(self.needle_characteristic_length)
+                if needle not in self.zone_priorities:
+                    self.zone_priorities[needle] = "-1000"
 
         if "extent" not in self.logger.surfaces:
             if extent_file is not None:
