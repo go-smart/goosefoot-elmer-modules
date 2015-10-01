@@ -58,7 +58,6 @@
 #include <vtkDataObject.h>
 #include <vtkGeometryFilter.h>
 
-#include <CGAL/Exact_integer.h>
 #include <CGAL/Homogeneous.h>
 #include <CGAL/Polyhedron_3.h>
 #include <CGAL/Polyhedral_mesh_domain_3.h>
