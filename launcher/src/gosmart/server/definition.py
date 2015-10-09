@@ -47,6 +47,7 @@ class GoSmartSimulationDefinition:
 
     @asyncio.coroutine
     def _handle_percentage_connection(self, stream_reader, stream_writer):
+        print('Got percentage connection')
         while True:
             line = yield from stream_reader.readline()
 

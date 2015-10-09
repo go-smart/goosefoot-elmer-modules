@@ -112,7 +112,10 @@ class GoSmart:
             "GO-SMART SIMULATION ENVIRONMENT",
             "-",
             "",
-            "For information, see http://gosmart-project.eu/",
+            "https://github.com/numa-engineering/gosmart-gssa",
+            ""
+            "The Go-Smart project is co-funded by: European Commission under grant agreement no. 600641."
+            "For further information, see http://gosmart-project.eu/",
             "=",
         ]
 

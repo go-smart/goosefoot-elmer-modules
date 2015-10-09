@@ -1,6 +1,8 @@
 import asyncio
 import os
 import yaml
+import io
+import tarfile
 
 from gosmart.server.family import Family
 from gosmart.server.docker import Submitter
@@ -84,19 +86,23 @@ class DockerFamily(Family):
         if not proceed:
             return False
 
+        definition_tar = os.path.join("input", "start.tar.gz")
+        self._submitter.add_input(os.path.join(working_directory, definition_tar))
+        magic_script = None
+
         if self._definition is not None:
-            with open(os.path.join(working_directory, "start.py"), "w") as f:
-                f.write(self._definition)
-            magic_script = "start.py"
-        else:
-            definition_tar = os.path.join("input", "start.tar.gz")
-            # Need to make sure this is last uploaded
-            self._submitter.add_input(os.path.join(working_directory, definition_tar))
-            if definition_tar in self._files_required:
-                del self._files_required[definition_tar]
-                print("Removing definition of tar from files required")
-            magic_script = None
-            print("Using package instead of magic script")
+            tar = tarfile.open(os.path.join(working_directory, definition_tar), "w:gz")
+            encoded_definition = self._definition.encode('utf-8')
+            stringio = io.BytesIO(encoded_definition)
+            info = tarfile.TarInfo(name="start.py")
+            info.size = len(encoded_definition)
+            tar.addfile(tarinfo=info, fileobj=stringio)
+            tar.close()
+
+        # Need to make sure this is last uploaded
+        if definition_tar in self._files_required:
+            del self._files_required[definition_tar]
+            print("Removing definition of tar from files required")
 
         loop = asyncio.get_event_loop()
         success = yield from self._submitter.run_script(
