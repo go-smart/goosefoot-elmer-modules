@@ -134,7 +134,8 @@ class Submitter:
                 self._output_directory,
                 recursive=True
             )
-            observer.start()
+            #FIXME: this causes occasional spontaneous segfaults during file updating... diagnosis pending
+            #observer.start()
 
             for f in files_required:
                 to_location = os.path.join(self._input_directory, os.path.basename(f))
@@ -163,7 +164,7 @@ class Submitter:
             if not success:
                 raise RuntimeError('Could not wait: %s', message)
 
-            observer.stop()
+            #observer.stop()
 
             self.send_command(writer, 'LOGS', None)
             success, message = yield from self.receive_response(reader)
@@ -171,6 +172,12 @@ class Submitter:
 
             if not success:
                 raise RuntimeError('Could not retrieve logs: %s', message)
+
+            exit_status = self.output(os.path.join('logs', 'exit_status'))
+            code, message = exit_status.split('\n', 1)
+            if int(code) != 0:
+                raise RuntimeError('Non-zero exit status: %d %s' % (int(code), message))
+            print('<==>', code, message)
 
             for output_file in ('docker_inner.log', 'job.out', 'job.err'):
                 print('-' * 20)

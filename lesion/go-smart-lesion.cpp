@@ -199,7 +199,8 @@ int main(int argc, char *argv[])
       for (std::map<std::string, std::string>::const_iterator it2 = primary_statistics.begin(); it2 != primary_statistics.end(); it2++) {
           dataNode = doc.NewElement(it2->first.c_str());
           const vtkVariant& var = statisticstable_prim->GetValueByName(it->first, it2->second.c_str());
-          dataText = doc.NewText(var.ToString());
+          vtkStdString dataString = var.ToString();
+          dataText = doc.NewText(dataString.c_str());
           dataNode->InsertEndChild(dataText);
           variableNode->InsertEndChild(dataNode);
       }

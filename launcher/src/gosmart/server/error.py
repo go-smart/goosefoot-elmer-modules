@@ -6,7 +6,7 @@ class Error(Enum):
 
 
 def makeError(ref, message):
-    id = ref if isinstance(ref, int) else Error[ref].value
-    code = Error(ref).name if isinstance(ref, int) else ref
+    id = ref.value if isinstance(ref, Error) else Error[ref].value
+    code = ref.name if isinstance(ref, Error) else Error[ref].name
 
     return {'id': id, 'code': code, 'message': message}

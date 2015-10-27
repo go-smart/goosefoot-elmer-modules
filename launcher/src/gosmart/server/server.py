@@ -141,6 +141,9 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         if success:
             yield from self.eventComplete(guid)
+        elif success is None:
+            # None indicates we've dealt with failure (errored) already
+            pass
         else:
             code = Error.E_UNKNOWN
             error_message = "Unknown error occurred"
@@ -216,6 +219,7 @@ class GoSmartSimulationComponent(ApplicationSession):
     def doSimulate(self, guid):
         if guid not in self.current:
             yield from self.eventFail(guid, makeError(Error.E_CLIENT, "Not fully prepared before launching - no current simulation set"))
+            success = None
 
         current = self.current[guid]
 
@@ -224,7 +228,11 @@ class GoSmartSimulationComponent(ApplicationSession):
         self.updateStatus(guid, 0, "Launched subprocess")
         yield from current.init_percentage_socket_server()
 
-        success = yield from current.simulate()
+        try:
+            success = yield from current.simulate()
+        except Exception as e:
+            yield from self.eventFail(guid, makeError(Error.E_SERVER, "[%s] %s" % (type(e), str(e))))
+            success = None
 
         return success
 

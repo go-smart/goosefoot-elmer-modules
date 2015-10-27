@@ -179,8 +179,6 @@ class GoSmartSimulationDefinition:
     def push_files(self, files):
         uploaded_files = {}
 
-        self._model_builder.retrieve_files(self.get_dir(), files)
-
         for local, remote in files.items():
             path = os.path.join(self.get_dir(), local)
             if os.path.exists(path):
@@ -197,6 +195,12 @@ class GoSmartSimulationDefinition:
     @asyncio.coroutine
     def simulate(self):
         task = yield from self._model_builder.simulate(self.get_dir())
+
+        output_directory = os.path.join(self.get_dir(), 'output')
+        if not os.path.exists(output_directory):
+            os.mkdir(output_directory)
+        self._model_builder.retrieve_files(output_directory)
+
         return task
 
     @asyncio.coroutine

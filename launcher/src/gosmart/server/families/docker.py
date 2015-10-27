@@ -10,6 +10,8 @@ from gosmart.server.parameters import convert_parameter
 
 
 class DockerFamily(Family):
+    _retrievable_files = []
+
     def __init__(self, files_required):
         self._needles = {}
         self._needle_order = {}
@@ -91,12 +93,16 @@ class DockerFamily(Family):
         magic_script = None
 
         if self._definition is not None:
+            declared_parameters, python_script = self._definition.split("\n==========ENDPARAMETERS========\n")
             tar = tarfile.open(os.path.join(working_directory, definition_tar), "w:gz")
-            encoded_definition = self._definition.encode('utf-8')
-            stringio = io.BytesIO(encoded_definition)
-            info = tarfile.TarInfo(name="start.py")
-            info.size = len(encoded_definition)
-            tar.addfile(tarinfo=info, fileobj=stringio)
+
+            for name, content in (('start.py', python_script), ('parameters.yml', declared_parameters)):
+                encoded_definition = content.encode('utf-8')
+                stringio = io.BytesIO(encoded_definition)
+                info = tarfile.TarInfo(name=name)
+                info.size = len(encoded_definition)
+                tar.addfile(tarinfo=info, fileobj=stringio)
+
             tar.close()
 
         # Need to make sure this is last uploaded
@@ -112,6 +118,7 @@ class DockerFamily(Family):
             self._files_required.keys(),
             magic_script
         )
+        print("DONE")
 
         return success
 
@@ -123,7 +130,7 @@ class DockerFamily(Family):
     def load_definition(self, xml, parameters, algorithms):
         self.load_core_definition(xml, parameters, algorithms)
 
-    def retrieve_files(self, destination, files):
-        for f in files:
+    def retrieve_files(self, destination):
+        for f in self._retrievable_files:
             print(f, '->', destination)
             print(self._submitter.copy_output(f, destination))

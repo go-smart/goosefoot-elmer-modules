@@ -1,0 +1,28 @@
+from distutils.core import setup
+from distutils.command.install import install
+import subprocess
+import os
+
+
+class WrappedInstall(install):
+    def run(self):
+        install.run(self)
+        subprocess.call(['./create-unix.sh'])
+
+setup(
+    name='dockerlaunch',
+    version='0.1',
+    packages=['dockerlaunch'],
+    package_dir={'dockerlaunch': '${CMAKE_CURRENT_SOURCE_DIR}/dockerlaunch'},
+    package_data={'dockerlaunch': ['${CMAKE_CURRENT_SOURCE_DIR}/data/indocker.py']},
+
+    description='Launcher for Docker containers to provide some measure of sandbox protection',
+    author='Phil Weir - NUMA Engineering Services Ltd.',
+    author_email='phil.weir@numa.ie',
+    url='http://gosmart-project.eu/',
+
+    scripts=[
+        os.path.join('${CMAKE_CURRENT_SOURCE_DIR}', '/scripts/dockerlaunchd')
+    ],
+    cmdclass={'install': WrappedInstall}
+)

@@ -94,7 +94,22 @@ class DockerInnerHandler(AIOEventHandler, PatternMatchingEventHandler):
 
 
 def exit(loop, observer, future=None):
-    return
+    exit_file = os.path.join(log_directory, 'exit_status')
+
+    with open(exit_file, 'w') as f:
+        if not future:
+            f.write('-9999\nNo future returned')
+        elif future.result() != 0:
+            try:
+                err_file = os.path.join(log_directory, 'job.err')
+                with open(err_file, 'r') as err:
+                    snippet = '\n'.join(err.readlines()[-10:])
+            except:
+                snippet = "Could not retrieve STDERR"
+            f.write('%d\nError in script: %s' % (future.result(), snippet))
+        else:
+            f.write('0\nOK')
+
     observer.stop()
     loop.stop()
     logging.info("Stopped event loop")
@@ -114,10 +129,6 @@ def run(loop, magic_script):
     logging.info('Observation thread started')
 
 if __name__ == "__main__":
-    print("TESTING")
-    with open('/shared/output/test', 'w') as f:
-        f.write('hello?')
-
     parser = argparse.ArgumentParser(description='Manage a single script run for docker-launch')
     args = parser.parse_args()
     magic_script = "start.tar.gz"

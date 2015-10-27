@@ -15,9 +15,11 @@ with open(config_target, "w") as f:
     f.write("""
 fortran_modules_dir = '{0}'
 git_revision = '{1}'
+etc_location = '{2}'
 """.format(
         "${CMAKE_Fortran_MODULE_DESTINATION}",
-        "${GIT_REVISION}"
+        "${GIT_REVISION}",
+        "${CMAKE_INSTALL_SYSCONFDIR}"
     ))
 
 sars_prefix = '${CMAKE_CURRENT_SOURCE_DIR}' + '/src/gosmart/'

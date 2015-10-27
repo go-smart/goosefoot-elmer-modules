@@ -25,6 +25,12 @@ from gosmart.server.database import SQLiteSimulationDatabase
 
 import argparse
 import uuid
+import logging
+import gosmart_sf_config
+
+
+logging.getLogger('watchdog.observers.inotify_buffer').setLevel(logging.DEBUG)
+print(gosmart_sf_config.etc_location)
 
 
 def launch(x, server_id):

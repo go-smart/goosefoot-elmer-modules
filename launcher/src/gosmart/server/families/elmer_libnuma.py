@@ -131,7 +131,7 @@ class ElmerLibNumaFamily(Family, MesherGSSFMixin):
 
             return json.dumps(dict([(b.tag, b.text) for b in root]))
 
-    def retrieve_files(self, destination, files):
+    def retrieve_files(self, destination):
         pass
 
     @asyncio.coroutine

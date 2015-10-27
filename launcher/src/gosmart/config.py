@@ -24,6 +24,7 @@ power_profiles_directory = os.path.join(os.path.dirname(__file__), 'data', 'powe
 fortran_template_directory = os.path.join(os.path.dirname(__file__), 'data', 'elmer_modules')
 fortran_modules_directory = gosmart_sf_config.fortran_modules_dir
 git_revision = gosmart_sf_config.git_revision
+etc_location = gosmart_sf_config.etc_location
 
 elmer_binary_location = shutil.which("ElmerSolver_mpi")
 elmer_prefix = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(elmer_binary_location)), os.pardir))

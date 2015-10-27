@@ -18,6 +18,7 @@
 import os
 import pkgutil
 import sys
+from lxml import etree as ET
 
 
 def scan():
