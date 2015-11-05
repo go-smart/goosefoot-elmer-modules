@@ -21,4 +21,7 @@ from gosmart.server.families.docker import DockerFamily
 class GFoamFamily(DockerFamily):
     family_name = "gFoam"
     _docker_image = 'gosmart/gfoam'
-    _retrievable_files = ['lesion.vtp', 'output.vtu']
+
+    def __init__(self, *args, **kwargs):
+        self._retrievable_files += ['lesion.vtp', 'output.vtu']
+        super().__init__(*args, **kwargs)

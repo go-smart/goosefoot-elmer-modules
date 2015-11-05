@@ -380,7 +380,11 @@ class GoSmartSimulationComponent(ApplicationSession):
             print(e)
             traceback.print_exc(file=sys.stderr)
 
-        self.publish('com.gosmartsimulation.status', id, (percentage, makeError('IN_PROGRESS', message)), timestamp, None)
+        directory = None
+        if id in self.current:
+            directory = self.current[id].get_dir()
+
+        self.publish('com.gosmartsimulation.status', id, (percentage, makeError('IN_PROGRESS', message)), directory, timestamp, None)
 
     def onRequestIdentify(self):
         try:

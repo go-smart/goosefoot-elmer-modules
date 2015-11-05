@@ -10,7 +10,7 @@ from gosmart.server.parameters import convert_parameter
 
 
 class DockerFamily(Family):
-    _retrievable_files = []
+    _retrievable_files = ['logs/job.err', 'logs/job.out']
 
     def __init__(self, files_required):
         self._needles = {}
