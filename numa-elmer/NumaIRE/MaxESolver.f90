@@ -29,20 +29,21 @@ SUBROUTINE MaxESolver( Model,Solver,Timestep,TransientSimulation)
       LOGICAL :: TransientSimulation
 
       TYPE(Element_t), POINTER :: Element
-      TYPE(Variable_t), POINTER :: JouleHeatingVar, ElectricConductivityVar
+      TYPE(Variable_t), POINTER :: JouleHeatingVar, ElectricConductivityVar, &
+          SurvivalVar
       TYPE(ValueList_t), POINTER :: Material
       REAL(KIND=dp), POINTER :: JouleHeating(:), &
           MaxE(:), MaxEPrev(:)
       REAL(KIND=dp), ALLOCATABLE :: ElectricConductivity(:)
-      REAL(KIND=dp), POINTER :: ElectricConductivityVector(:), E(:)
-      REAL(KIND=dp) :: jh, cond
+      REAL(KIND=dp), POINTER :: ElectricConductivityVector(:), E(:), S(:)
+      REAL(KIND=dp) :: jh, cond, E0, A0, K1, K2
       INTEGER, POINTER :: JouleHeatingPerm(:), ElectricConductivityPerm(:), &
           MaxEPerm(:)
       INTEGER, ALLOCATABLE :: ElementNodes(:)
-      INTEGER :: i, N, NodeCount, k, j
+      INTEGER :: i, N, NodeCount, k, j, PulseNumber
       LOGICAL :: AllocationsDone = .FALSE., Found
 
-      SAVE ElectricConductivity, E, ElectricConductivityVector, ElementNodes
+      SAVE ElectricConductivity, E, S, ElectricConductivityVector, ElementNodes
 
       JouleHeatingVar => VariableGet(Solver % Mesh % Variables, "Joule Heating")
       JouleHeating => JouleHeatingVar % Values
@@ -51,13 +52,20 @@ SUBROUTINE MaxESolver( Model,Solver,Timestep,TransientSimulation)
       MaxE => Solver % Variable % Values
       MaxEPerm => Solver % Variable % Perm
       MaxEPrev => Solver % Variable % PrevValues(:,1)
+      SurvivalVar => VariableGet(Solver % Mesh % Variables, "Survival")
+      S => SurvivalVar % Values
 
       N = SIZE(MaxEPerm)
+      PulseNumber = GetInteger(Solver % Values, 'Pulse Number', Found)
+      E0 = 399600.0
+      A0 = 144100.0
+      K1 = 0.03
+      K2 = 0.06
 
       IF (.NOT. AllocationsDone) THEN
           ALLOCATE(ElectricConductivity(1:Solver % Mesh % MaxElementNodes))
           ALLOCATE(ElectricConductivityVector(1:N))
-          ALLOCATE(E(1:N))
+          ALLOCATE(E(1:N), S(1:N))
           ALLOCATE(ElementNodes(1:Solver % Mesh % MaxElementNodes))
 
           CALL VariableAdd(Solver % Mesh % Variables, Solver % Mesh, &
@@ -67,6 +75,10 @@ SUBROUTINE MaxESolver( Model,Solver,Timestep,TransientSimulation)
           CALL VariableAdd( Solver % Mesh % Variables, Solver % Mesh, &
               Solver, 'E', 1, &
               E, MaxEPerm )
+
+          !CALL VariableAdd( Solver % Mesh % Variables, Solver % Mesh, &
+          !    Solver, 'Survival', 1, &
+          !    S, MaxEPerm )
 
           AllocationsDone = .TRUE.
       END IF
@@ -84,12 +96,22 @@ SUBROUTINE MaxESolver( Model,Solver,Timestep,TransientSimulation)
             j = Element % NodeIndexes(k)
 
             ElectricConductivityVector(MaxEPerm(j)) = ElectricConductivity(k)
-
-            jh = JouleHeating(MaxEPerm(j))
-            cond = ElectricConductivityVector(MaxEPerm(j))
-            E(MaxEPerm(j)) = SQRT(jh / cond)
-            MaxE(MaxEPerm(j)) = MAX(MaxE(MaxEPerm(j)), MaxEPrev(MaxEPerm(j)), E(MaxEPerm(j)))
         END DO
+      END DO
+      DO j = 1, SIZE(MaxEPerm)
+        jh = JouleHeating(MaxEPerm(j))
+        cond = ElectricConductivityVector(MaxEPerm(j))
+        E(MaxEPerm(j)) = SQRT(jh / cond)
+        ! Perhaps should be this: MaxE(MaxEPerm(j)) = MAX(MaxE(MaxEPerm(j)), MAXEPrev(MaxEPerm(j)), E(MaxEPerm(j)))
+        ! but I'm not sure we want (as prev model seems to, by my reading) take the max over the convergence iterations also
+        MaxE(MaxEPerm(j)) = MAX(MAXEPrev(MaxEPerm(j)), E(MaxEPerm(j)))
+
+        !A Numerical Investigation of the Electric and Thermal
+        !Cell Kill Distributions in Electroporation-Based Therapies
+        !in Tissue (PLOS ONE 2014)
+        !Paulo A. Garcia, Rafael V. Davalos, Damijan Miklavcic
+        S(MaxEPerm(j)) = MIN(S(MaxEPerm(j)), &
+            1 / (1 + EXP((MaxE(MaxEPerm(j)) - E0 * EXP(-K1 * PulseNumber)) / (A0 * EXP(-K2 * PulseNumber)))))
       END DO
 
 END SUBROUTINE
