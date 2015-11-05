@@ -49,6 +49,7 @@ class GoSmartValidation(GoSmartComponent):
 
         input_cwd = os.path.join(self.logger.get_cwd(), input_cwd)
         input_name = self.logger.runname + ".vtp"
+        clean_input_name = self.logger.runname + "-clean.vtp"
         output_name = self.logger.runname + "-deviation.vtp"
         analysis_name = self.logger.runname + "-analysis.xml"
         refdata_name = self.logger.zones_excluded[self.refdata]['filename']
@@ -60,16 +61,17 @@ class GoSmartValidation(GoSmartComponent):
         except Exception as e:
             self.logger.print_fatal("Could not copy input mesh across for validation tool: %s" % str(e))
 
-        self._launch_subprocess(self.cleaner_binary_name, ['--input', 'refdata.vtp', '--output', 'refdata-clean.vtp'])
-
         try:
             shutil.copy(os.path.join(input_cwd, input_name), self.logger.make_cwd(self.suffix))
         except Exception as e:
             self.logger.print_fatal("Could not copy input mesh across for validation tool: %s" % str(e))
 
+        self._launch_subprocess(self.cleaner_binary_name, ['--connectivity', '--input', 'refdata.vtp', '--output', 'refdata-clean.vtp'])
+        self._launch_subprocess(self.cleaner_binary_name, ['--connectivity', '--input', input_name, '--output', clean_input_name])
+
         args = [
             'refdata-clean.vtp',
-            input_name,
+            clean_input_name,
             analysis_name,
             output_name,
             1 if self.registration else 0

@@ -175,7 +175,7 @@ class GoSmartLogger(GoSmartComponent):
         elif name in self.surfaces:
             return self.surfaces[name]
         else:
-            print(self.surfaces, self.zones)
+            self.print_error("Can't find region %s" % name)
 
     def ensure_constant(self, name, value, warn=False, group="CONSTANT", typ=None):
         self.add_or_update_constant(name, value, warn, group, override=False, typ=typ)

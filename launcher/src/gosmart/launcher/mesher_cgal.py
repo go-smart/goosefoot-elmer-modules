@@ -139,7 +139,10 @@ class GoSmartMesherCGAL(GoSmartMesher):
                 activity = node.find('activity')
                 if activity is not None:
                     inactive_region = region + " inactive"
-                    inactive_groups = tuple(g + "-inactive" for g in self.logger.get_region(region)["groups"])
+                    region_detail = self.logger.get_region(region)
+                    if not region_detail:
+                        continue
+                    inactive_groups = tuple(g + "-inactive" for g in region_detail["groups"])
                     if inactive_region not in self.logger.surfaces:
                         self.logger.add_region(inactive_region, None, inactive_groups, zone=False)
                     inactive_index = self.logger.surfaces[inactive_region]["id"]

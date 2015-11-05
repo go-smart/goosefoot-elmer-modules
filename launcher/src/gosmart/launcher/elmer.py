@@ -74,6 +74,9 @@ class Parameter:
     def __str__(self):
         return str(self.render())
 
+    def __bool__(self):
+        return bool(self._value)
+
     def get_name(self):
         return self._attr
 
@@ -400,7 +403,7 @@ class GoSmartElmer(GoSmartComponent):
         for regions in re.finditer(r'((BOUNDARIES_|BODIES_|)REGIONS_[A-Z0-9_]*)', sif_definition):
             regions = regions.group(1)
             if regions not in self._sif_mapping:
-                self._sif_mapping[regions] = "!Boundary missing: %s" % regions
+                self._sif_mapping[regions] = None
                 self.logger.print_debug("%s empty" % regions)
 
         # p and c are ParameterDicts, that is, you can get an item by using object syntax: p.KEY
