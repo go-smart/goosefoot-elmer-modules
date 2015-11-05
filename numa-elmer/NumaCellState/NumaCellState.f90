@@ -83,7 +83,8 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
     TYPE(Nodes_t)   :: ElementNodes
     TYPE(Matrix_t), POINTER :: StiffMatrix
 
-    REAL (KIND=DP), POINTER :: CellState(:), CellStatePrev(:), Temperature(:), ForceVector(:), CellStateKm1(:)
+    REAL (KIND=DP), POINTER :: CellState(:), CellStatePrev(:), Temperature(:), ForceVector(:), &
+        CellStateKm1(:)!, CellStatePrev2(:)
 
     REAL(KIND=dp), ALLOCATABLE ::  DeathHeatingTime(:), &
         DeathTemperature(:), AblationLength(:,:), &
@@ -95,7 +96,8 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
         Relax, SaveRelax, RelativeChange, Norm, PrevNorm, CumulativeTime,Time,PrevTime, &
         arealt, at, at0, srealt, st, totat, dt, totst,CPUTime,RealTime, ExponentialRate
 
-    REAL(KIND=dp) :: Te, A, A_p, A_k, A_km1, D, D_p, D_k, D_km1, V_k, V_km1, Tk, kf, kfb, kb, fAk, fDk, fAkm1, fDkm1
+    REAL(KIND=dp) :: Te, A, A_p, A_k, A_km1, D, D_p, D_k, D_km1, V_k, V_p, V_km1, Tk, kf, kfb, kb, fAk, fDk, fAp, fDp, &
+        fAkm1, fDkm1
 !    REAL(KIND=dp),ALLOCATABLE:: PanchCells(:,:)
     INTEGER :: i, j, k, m, t, n, istat, LocalNodes, ADOFs, k_dof, TDOFs, CellStateModel, &
         NonlinearIter, iter
@@ -119,6 +121,7 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
 
     CellState     => Solver % Variable % Values
     CellStatePrev => Solver % Variable % PrevValues(:,1)
+    !CellStatePrev2 => Solver % Variable % PrevValues(:,2)
     CellStatePerm => Solver % Variable % Perm
     ADOFs =  Solver % Variable % DOFs
     SolverParams => GetSolverParams()
@@ -171,6 +174,7 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
         END IF    
 
         CellStatePrev = CellState
+        !CellStatePrev2 = CellState
 
         IF ( istat /= 0 ) THEN
             CALL Fatal( 'NumaCellStateSolve', 'Memory allocation error.' )
@@ -416,16 +420,32 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
 
                     A_p = CellStatePrev(2 * k - 1)
                     D_p = CellStatePrev(2 * k)
+                    V_p = 1 - A_p - D_p
+
+                    !A_p2 = CellStatePrev2(2 * k - 1)
+                    !D_p2 = CellStatePrev2(2 * k)
+                    !V_p2 = 1 - A_p2 - D_p2
 
                     Te = Temperature((i-1)*TDOFs + TDOFs)
-
                     kfb = kfb * (exp((Te - 273.15) / Tk) - exp((312 - 273.15) / Tk) * 0.1)
 
-                    fAk = A_k - A_p - dt * (- kfb * (1 - A_k) * A_k + kb * V_k)
-                    fDk = D_k - D_p - dt * kfb * (1 - A_k) * V_k
-                    fAkm1 = A_km1 - A_p - dt * (- kfb * (1 - A_km1) * A_km1 + kb * V_km1)
-                    fDkm1 = D_km1 - D_p - dt * kfb * (1 - A_km1) * V_km1
+                    fAp = - kfb * (1 - A_p) * A_p + kb * V_p
+                    fDp = kfb * (1 - A_p) * V_p
+                    !fAp2 = - kfb * (1 - A_p2) * A_p2 + kb * V_p2
+                    !fDp2 = kfb * (1 - A_p2) * V_p2
 
+                    fAk = - kfb * (1 - A_k) * A_k + kb * V_k
+                    fDk = kfb * (1 - A_k) * V_k
+                    fAkm1 = - kfb * (1 - A_km1) * A_km1 + kb * V_km1
+                    fDkm1 = kfb * (1 - A_km1) * V_km1
+
+                    !RK2
+                    fAk = A_k - A_p - (dt / 2) * (fAk + fAp)
+                    fDk = D_k - D_p - (dt / 2) * (fDk + fDp)
+                    fAkm1 = A_km1 - A_p - (dt / 2) * (fAkm1 + fAp)
+                    fDkm1 = D_km1 - D_p - (dt / 2) * (fDkm1 + fDp)
+
+                    !SECANT METHOD
                     IF (iter > 1 .AND. ABS(fAk - fAkm1) > 0 .AND. &
                                 ABS(fDk - fDkm1) > 0) THEN
                         CellState(2 * k - 1) = ( A_km1 * fAk - A_k * fAkm1 ) / (fAk - fAkm1)
@@ -434,6 +454,40 @@ SUBROUTINE NumaCellStateSolver( Model,Solver,Timestep,TransientSimulation )
                         CellState(2 * k - 1) = A_k - fAk
                         CellState(2 * k) = D_k - fDk
                     END IF
+
+                    !A_km1 = CellStateKm1(2 * k - 1)
+                    !D_km1 = CellStateKm1(2 * k)
+                    !V_km1 = 1 - A_km1 - D_km1
+
+                    !A_k = CellState(2 * k - 1)
+                    !D_k = CellState(2 * k)
+                    !V_k = 1 - A_k - D_k
+
+                    !CellStateKm1(2 * k - 1) = CellState(2 * k - 1)
+                    !CellStateKm1(2 * k) = CellState(2 * k)
+
+                    !A_p = CellStatePrev(2 * k - 1)
+                    !D_p = CellStatePrev(2 * k)
+                    !V_p = 1 - A_p - D_p
+
+                    !Te = Temperature((i-1)*TDOFs + TDOFs)
+
+                    !kfb = kfb * (exp((Te - 273.15) / Tk) - exp((312 - 273.15) / Tk) * 0.1)
+
+                    !fAk = A_k - A_p - dt * (- kfb * (1 - A_k) * A_k + kb * V_k)
+                    !fDk = D_k - D_p - dt * kfb * (1 - A_k) * V_k
+                    !fAkm1 = A_km1 - A_p - dt * (- kfb * (1 - A_km1) * A_km1 + kb * V_km1)
+                    !fDkm1 = D_km1 - D_p - dt * kfb * (1 - A_km1) * V_km1
+
+                    !!SECANT METHOD
+                    !IF (iter > 1 .AND. ABS(fAk - fAkm1) > 0 .AND. &
+                    !            ABS(fDk - fDkm1) > 0) THEN
+                    !    CellState(2 * k - 1) = ( A_km1 * fAk - A_k * fAkm1 ) / (fAk - fAkm1)
+                    !    CellState(2 * k) = ( D_km1 * fDk - D_k * fDkm1 ) / (fDk - fDkm1)
+                    !ELSE
+                    !    CellState(2 * k - 1) = A_k - fAk
+                    !    CellState(2 * k) = D_k - fDk
+                    !END IF
 
 
 !------------------------------------------------------------------------------
