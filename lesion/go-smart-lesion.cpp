@@ -57,6 +57,8 @@
 #include <vtkDataObject.h>
 #include <vtkGeometryFilter.h>
 
+#include "vtkIsoVolume/vtkIsoVolume.h"
+
 /* REQUIRES PARAVIEW HEADERS
 #include "vtkIsoVolume.h"
 */
@@ -243,22 +245,31 @@ int main(int argc, char *argv[])
   }
   else
   {
-      /*
-      vtkSmartPointer<vtkIsoVolume> isoVolume = 
+      vtkSmartPointer<vtkIsoVolume> threshold =
         vtkSmartPointer<vtkIsoVolume>::New();
-      isoVolume->SetInput(grid_scaled);
+      threshold->SetInput(grid_scaled);
 
+      threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, field.c_str());
       if (using_upper && using_lower)
-          isoVolume->ThresholdBetween(threshold_lower, threshold_upper);
+      {
+          threshold->ThresholdBetween(threshold_lower, threshold_upper);
+          std::cout << "IV between limits : " << threshold_lower << " and " << threshold_upper << std::endl;
+      }
       else if (using_upper)
-          isoVolume->ThresholdBetween(-1e20, threshold_upper);
+      {
+          //threshold->ThresholdByLower(threshold_upper); /* Yes, but this is the only way ThresholdBetween also makes sense */
+          threshold->ThresholdBetween(-1e6, threshold_upper);
+          std::cout << "IV by upper limit : " << threshold_upper << std::endl;
+      }
       else if (using_lower)
-          isoVolume->ThresholdBetween(threshold_lower, 1e20);
-      isoVolume->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, field.c_str());
-      isoVolume->Update();
+      {
+          //threshold->ThresholdByUpper(threshold_lower);
+          threshold->ThresholdBetween(threshold_lower, 1e6);
+          std::cout << "IV by lower limit : " << threshold_lower << std::endl;
+      }
+      threshold->Update();
 
-      thresholded_grid = vtkUnstructuredGrid::SafeDownCast(isoVolume->GetOutput());
-      */
+      thresholded_grid = dynamic_cast<vtkUnstructuredGrid*>(threshold->GetOutputDataObject(0));
   }
 
   // doesn't work because the array is not added as SCALARS, i.e. via SetScalars
@@ -276,10 +287,6 @@ int main(int argc, char *argv[])
   vtkTetra *tetra;
 
   double vol = 0;
-  //double pt0[3] = {0., 0., 1.};
-  //double pt1[3] = {0., 1., 0.};
-  //double pt2[3] = {1., 0., 0.};
-  //double pt3[3] = {0., 0., 0.};
   double pt0[3] = {0, 0, 0};
   double pt1[3] = {0, 0, 0};
   double pt2[3] = {0, 0, 0};
@@ -298,17 +305,8 @@ int main(int argc, char *argv[])
       selectionArray->SetNumberOfComponents(1);
 
       cell_ct = thresholded_grid->GetNumberOfCells(), curr_cell = 0;
-      /*
-      while (cellArray->GetNextCell(npts, pts)) {
-         id = cellArray->GetInsertLocation(npts);
-         tetra = vtkTetra::SafeDownCast(thresholded_grid->GetCell(id));
-         if (!tetra) {
-            continue;
-         }
-         selectionArray->InsertNextValue(id);
-      }
-      */
       thresholded_grid->GetIdsOfCellsOfType(VTK_TETRA, selectionArray);
+      thresholded_grid->GetIdsOfCellsOfType(VTK_WEDGE, selectionArray);
       selectionNode->SetSelectionList(selectionArray);
 
       vtkSmartPointer<vtkSelection> selection =
@@ -330,131 +328,7 @@ int main(int argc, char *argv[])
   ugw->SetFileName("internal-surfaces-removed.vtu");
   ugw->Write();
 
-  /*
-  for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
-     tetra = vtkTetra::SafeDownCast(thresholded_grid->GetCell(i));
-     if (!tetra) {
-        continue;
-     }
-
-     thresholded_grid->GetPoint(tetra->GetPointId(0), pt0);
-     thresholded_grid->GetPoint(tetra->GetPointId(1), pt1);
-     thresholded_grid->GetPoint(tetra->GetPointId(2), pt2);
-     thresholded_grid->GetPoint(tetra->GetPointId(3), pt3);
-     vol += vtkTetra::ComputeVolume(pt0, pt1, pt2, pt3);
-  }
-
-  std::cout << "The volume of the thresholded region is" << std::endl << "LVOL: " << vol << std::endl;
-  */
-
-  if (subdivide) {
-     vtkSmartPointer<vtkSubdivideTetra> subdivided =
-        vtkSmartPointer<vtkSubdivideTetra>::New();
-     subdivided->SetInput(thresholded_grid);
-
-     vtkSmartPointer<vtkUnstructuredGrid> subdivided_grid = subdivided->GetOutput();
-     subdivided_grid->Update();
-
-     vtkSmartPointer<vtkThreshold> threshold_subdivided = 
-       vtkSmartPointer<vtkThreshold>::New();
-     threshold_subdivided->SetInput(subdivided_grid);
-      if (using_upper && using_lower)
-          threshold_subdivided->ThresholdBetween(threshold_lower, threshold_upper);
-      else if (using_upper)
-          threshold_subdivided->ThresholdByUpper(threshold_upper);
-      else if (using_lower)
-          threshold_subdivided->ThresholdByLower(threshold_lower);
-     // doesn't work because the array is not added as SCALARS, i.e. via SetScalars
-     // threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
-     // use like this:
-     threshold_subdivided->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, field.c_str());
-     threshold_subdivided->Update();
-     vtkSmartPointer<vtkUnstructuredGrid> threshold_subdivided_grid = threshold_subdivided->GetOutput();
-     vtkSmartPointer<vtkXMLUnstructuredGridWriter> ugw =
-        vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-     ugw->SetInput(threshold_subdivided_grid);
-     ugw->SetFileName("subdivided.vtu");
-     ugw->Write();
-
-     vol = 0;
-     cell_ct = threshold_subdivided_grid->GetNumberOfCells();
-
-     for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
-        tetra = vtkTetra::SafeDownCast(threshold_subdivided_grid->GetCell(i));
-        if (!tetra) {
-           continue;
-        }
-
-        threshold_subdivided_grid->GetPoint(tetra->GetPointId(0), pt0);
-        threshold_subdivided_grid->GetPoint(tetra->GetPointId(1), pt1);
-        threshold_subdivided_grid->GetPoint(tetra->GetPointId(2), pt2);
-        threshold_subdivided_grid->GetPoint(tetra->GetPointId(3), pt3);
-        vol += fabs(vtkTetra::ComputeVolume(pt0, pt1, pt2, pt3));
-     }
-
-     std::cout << "The volume of the subdivided region is" << std::endl << "LVOL2: " << vol << std::endl;
-
-     //vtkSmartPointer<vtkSubdivideTetra> subdivided_2 =
-     //        vtkSmartPointer<vtkSubdivideTetra>::New();
-     //subdivided_2->SetInput(subdivided_grid);
-
-     //vtkSmartPointer<vtkUnstructuredGrid> subdivided_grid_2 = subdivided_2->GetOutput();
-     //subdivided_grid_2->Update();
-
-     //vtkSmartPointer<vtkThreshold> threshold_subdivided_2 =
-     //  vtkSmartPointer<vtkThreshold>::New();
-     //threshold_subdivided_2->SetInput(subdivided_grid_2);
-     //threshold_subdivided_2->ThresholdByUpper(threshold_value);
-     //// doesn't work because the array is not added as SCALARS, i.e. via SetScalars
-     //// threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
-     //// use like this:
-     //threshold_subdivided_2->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, field.c_str());
-     //threshold_subdivided_2->Update();
-     //vtkSmartPointer<vtkUnstructuredGrid> threshold_subdivided_grid_2 = threshold_subdivided_2->GetOutput();
-     //vtkSmartPointer<vtkXMLUnstructuredGridWriter> ugw_2 =
-     //        vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
-     //ugw_2->SetInput(threshold_subdivided_grid_2);
-     //ugw_2->SetFileName("subdivided2.vtu");
-     //ugw_2->Write();
-
-     //vol = 0;
-     //cell_ct = threshold_subdivided_grid_2->GetNumberOfCells();
-
-     //for ( vtkIdType i = 0 ; i < cell_ct ; i++ ) {
-     //        tetra = vtkTetra::SafeDownCast(threshold_subdivided_grid_2->GetCell(i));
-     //        if (!tetra) {
-     //           continue;
-     //        }
-
-     //        threshold_subdivided_grid_2->GetPoint(tetra->GetPointId(0), pt0);
-     //        threshold_subdivided_grid_2->GetPoint(tetra->GetPointId(1), pt1);
-     //        threshold_subdivided_grid_2->GetPoint(tetra->GetPointId(2), pt2);
-     //        threshold_subdivided_grid_2->GetPoint(tetra->GetPointId(3), pt3);
-     //        vol += fabs(vtkTetra::ComputeVolume(pt0, pt1, pt2, pt3));
-     //}
-
-     //std::cout << "The volume of the subdivided region is" << std::endl << "LVOL3: " << vol << std::endl;
-
-     thresholded_grid = threshold_subdivided_grid;
-
-  }
-
   vtkSmartPointer<vtkPolyData> polydata;
-
-  /*
-  vtkSmartPointer<vtkCellArray> cell_array = thresholded_grid->GetCells();
-  cell_array->InitTraversal();
-  vtkIdType npts, *pts, id;
-  vtkSmartPointer<vtkIdTypeArray> ids =
-      vtkSmartPointer<vtkIdTypeArray>::New();
-  ids->SetNumberOfComponents(1);
-
-  while ((id = cell_array->GetNextCell(npts, pts))) {
-      if (thresholded_grid->GetCell(id)->GetCellDimension() == 3)
-          ids->InsertNextValue(id);
-  }
-  */
-
 
   if (geometry_filter) {
       vtkSmartPointer<vtkGeometryFilter> geometry_filter =
