@@ -69,10 +69,14 @@ class GoSmartSimulationDefinition:
         working_directory = self.get_dir()
         self._percentage_socket_location = self._model_builder.get_percentage_socket_location(working_directory)
         print('Status socket for %s : %s' % (self._guid, self._percentage_socket_location))
-        self._percentage_socket_server = yield from asyncio.start_unix_server(
-            self._handle_percentage_connection,
-            self._percentage_socket_location
-        )
+        try:
+            self._percentage_socket_server = yield from asyncio.start_unix_server(
+                self._handle_percentage_connection,
+                self._percentage_socket_location
+            )
+        except Exception as e:
+            print('Could not connect to socket: %s' % str(e))
+            self._percentage_socket_server = None
 
     def __init__(self, guid, xml_string, tmpdir, translator, finalized=False, update_status_callback=None):
         self._guid = guid
