@@ -59,7 +59,7 @@ class HTTPTransferrer:
             try:
                 serverFile = urllib2.urlopen(sourceUrlStr)
             except:
-                raise makeError(Error.E_SERVER, "download failed")
+                raise RuntimeError(makeError(Error.E_SERVER, "download failed"))
             localFile = open(destinationStr, "wb")
             localFile.write(serverFile.read())
             serverFile.close()

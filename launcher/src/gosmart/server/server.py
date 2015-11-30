@@ -49,7 +49,7 @@ class GoSmartSimulationComponent(ApplicationSession):
     client = None
     _db = None
 
-    def __init__(self, x, server_id, database):
+    def __init__(self, x, server_id, database, ignore_development=False):
         global use_observant
 
         ApplicationSession.__init__(self, x)
@@ -57,6 +57,7 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         self.server_id = server_id
         self.current = {}
+        self._ignore_development = ignore_development
 
         if use_observant:
             config = CParser()
@@ -204,6 +205,7 @@ class GoSmartSimulationComponent(ApplicationSession):
                 tmpdir,
                 translator,
                 finalized=False,
+                ignore_development=self._ignore_development,
                 update_status_callback=lambda p, m: self.updateStatus(guid, p, m)
             )
             self.publish(u'com.gosmartsimulation.announce', self.server_id, guid, [0, 'XML uploaded'], tmpdir, time.time())

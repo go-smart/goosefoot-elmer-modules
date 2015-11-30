@@ -26,6 +26,7 @@ from gosmart.server.transferrer import transferrer_register
 from zope.interface.verify import verifyObject
 from gosmart.server.transferrer import ITransferrer
 import gosmart.server.family as families
+import gosmart.server.shadow_watcher as shadow_watcher
 
 from lxml import etree as ET
 
@@ -38,6 +39,7 @@ class GoSmartSimulationDefinition:
     _files = None
     _exit_status = None
     _model_builder = None
+    _shadowing = False
 
     def set_exit_status(self, success, message=None):
         self._exit_status = (success, message)
@@ -66,6 +68,10 @@ class GoSmartSimulationDefinition:
 
     @asyncio.coroutine
     def init_percentage_socket_server(self):
+        if self._shadowing:
+            print('No percentages: shadowing')
+            self._percentage_socket_server = None
+            return
         working_directory = self.get_dir()
         self._percentage_socket_location = self._model_builder.get_percentage_socket_location(working_directory)
         print('Status socket for %s : %s' % (self._guid, self._percentage_socket_location))
@@ -78,13 +84,14 @@ class GoSmartSimulationDefinition:
             print('Could not connect to socket: %s' % str(e))
             self._percentage_socket_server = None
 
-    def __init__(self, guid, xml_string, tmpdir, translator, finalized=False, update_status_callback=None):
+    def __init__(self, guid, xml_string, tmpdir, translator, finalized=False, ignore_development=False, update_status_callback=None):
         self._guid = guid
         self._dir = tmpdir
         self._finalized = finalized
         self._files = {}
         self._translator = translator
         self._update_status_callback = update_status_callback
+        self._ignore_development = ignore_development
 
         try:
             self.create_xml_from_string(xml_string)
@@ -150,15 +157,19 @@ class GoSmartSimulationDefinition:
             if family is None or family not in families.register:
                 raise RuntimeError("Unknown family of models : %s" % family)
 
-            files_required = self._translator.get_files_required()
+            if self._ignore_development and 'DEVELOPMENT' in parameters and parameters['DEVELOPMENT']:
+                self._shadowing = True
+                print("Shadowing mode ON for this definition")
+            else:
+                files_required = self._translator.get_files_required()
 
-            self._model_builder = families.register[family](files_required)
-            self._model_builder.load_definition(numerical_model_node, parameters=parameters, algorithms=algorithms)
+                self._model_builder = families.register[family](files_required)
+                self._model_builder.load_definition(numerical_model_node, parameters=parameters, algorithms=algorithms)
 
-            self._files.update(files_required)
-            self._transferrer.connect()
-            self._transferrer.pull_files(self._files, self.get_dir(), self.get_remote_dir())
-            self._transferrer.disconnect()
+                self._files.update(files_required)
+                self._transferrer.connect()
+                self._transferrer.pull_files(self._files, self.get_dir(), self.get_remote_dir())
+                self._transferrer.disconnect()
         except Exception:
             traceback.print_exc(file=sys.stderr)
             return False
@@ -181,6 +192,10 @@ class GoSmartSimulationDefinition:
         return True
 
     def push_files(self, files):
+        if self._shadowing:
+            print("Not simulating: shadowing mode ON for this definition")
+            return {}
+
         uploaded_files = {}
 
         for local, remote in files.items():
@@ -198,6 +213,12 @@ class GoSmartSimulationDefinition:
 
     @asyncio.coroutine
     def simulate(self):
+        if self._shadowing:
+            print("Not simulating: shadowing mode ON for this definition")
+            task = yield from shadow_watcher.observe(self._guid, self._transferrer)
+
+            return task
+
         task = yield from self._model_builder.simulate(self.get_dir())
 
         output_directory = os.path.join(self.get_dir(), 'output')
@@ -209,5 +230,10 @@ class GoSmartSimulationDefinition:
 
     @asyncio.coroutine
     def validation(self):
-        task = yield from self._model_builder.validation()
+        if self._shadowing:
+            print("Not validating: shadowing mode ON for this definition")
+            return None
+
+        task = yield from self._model_builder.validation(self.get_dir())
+
         return task

@@ -33,8 +33,8 @@ logging.getLogger('watchdog.observers.inotify_buffer').setLevel(logging.DEBUG)
 print(gosmart_sf_config.etc_location)
 
 
-def launch(x, server_id):
-    component = GoSmartSimulationComponent(x, server_id, lambda: SQLiteSimulationDatabase("simulations.sqlite3"))
+def launch(x, server_id, ignore_development=False):
+    component = GoSmartSimulationComponent(x, server_id, lambda: SQLiteSimulationDatabase("simulations.sqlite3"), ignore_development)
 
     return component
 
@@ -45,7 +45,8 @@ if __name__ == "__main__":
     parser.add_argument("--sftp-host", help="server hosting SFTP", default="localhost")
     parser.add_argument("--sftp-port", help="port hosting SFTP", default="9001", type=int)
     parser.add_argument("--key-file", help="file for authenticating to SFTP", default="id_rsa")
-    parser.add_argument("sid", help="Server UUID (should be subdirectory of current directory", default=None, nargs='?')
+    parser.add_argument("--ignore-development", action='store_true')
+    parser.add_argument("sid", help="Server UUID (should be subdirectory of current directory)", default=None, nargs='?')
     args = parser.parse_args()
 
     key_file = args.key_file
@@ -53,6 +54,7 @@ if __name__ == "__main__":
     websocket_port = args.websocket_port
     sftp_port = args.sftp_port
     sftp_host = args.sftp_host
+    ignore_development = args.ignore_development
 
     if not args.sid:
         server_id = str(uuid.uuid4())
@@ -60,4 +62,4 @@ if __name__ == "__main__":
         server_id = args.sid
 
     runner = ApplicationRunner(url="ws://%s:%d/ws" % (host, websocket_port), realm="realm1")
-    runner.run(lambda x: launch(x, server_id=server_id))
+    runner.run(lambda x: launch(x, server_id=server_id, ignore_development=ignore_development))
