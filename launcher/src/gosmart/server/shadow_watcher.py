@@ -12,8 +12,8 @@ def observe(guid, transferrer):
     completed = False
 
     checks = 0
-    progress_file = 'progress.txt'
-    target = {progress_file: '%s/progress.txt' % guid.lower()}
+    progress_file = 'progress.vtp'
+    target = {progress_file: '%s/progress.vtp' % guid.lower()}
     target_dir = '/tmp/obs-%s' % guid
     while checks < _MAX_CHECKS:
         checks += 1
