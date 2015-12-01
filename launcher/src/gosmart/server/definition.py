@@ -215,10 +215,11 @@ class GoSmartSimulationDefinition:
     def simulate(self):
         if self._shadowing:
             print("Not simulating: shadowing mode ON for this definition")
-            task = yield from shadow_watcher.observe(self._guid, self._transferrer,
-                                                     self._update_status_callback)
+            raise RuntimeError("Failing here to leave simulation for external server control")
+            #task = yield from shadow_watcher.observe(self._guid, self._transferrer,
+            #                                         self._update_status_callback)
 
-            return task
+            #return task
 
         task = yield from self._model_builder.simulate(self.get_dir())
 
