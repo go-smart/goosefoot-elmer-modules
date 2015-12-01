@@ -1,33 +1,55 @@
 import asyncio
+import shutil
 import os
 
 # Approximately max minutes * 6
 _MAX_CHECKS = 600
+_TESTING = False
+
+_PROGRESS_FILE = 'progress.vtp'
 
 
 @asyncio.coroutine
-def observe(guid, transferrer):
+def observe(guid, transferrer, update_callback):
     transferrer.connect()
 
-    completed = False
+    completed = None
 
     checks = 0
-    progress_file = 'progress.vtp'
-    target = {progress_file: '%s/progress.vtp' % guid.lower()}
+    target = {_PROGRESS_FILE: '%s/progress.vtp' % guid.lower()}
     target_dir = '/tmp/obs-%s' % guid
+    try:
+        shutil.rmtree(target_dir)
+    except:
+        pass
+    os.mkdir(target_dir)
     while checks < _MAX_CHECKS:
         checks += 1
         yield from asyncio.sleep(10)
         try:
-            transferrer.pull_files(target, target_dir, '.')
+            if not _TESTING:
+                transferrer.pull_files(target, target_dir, '.')
+            else:
+                shutil.copyfile('/tmp/%s.vtp' % guid.lower(), os.path.join(target_dir, _PROGRESS_FILE))
         except Exception as e:
             print(e)
             pass
         else:
-            with open(os.path.join(target_dir, progress_file), 'r') as f:
-                completed = f.read() == guid.upper()
-            break
+            with open(os.path.join(target_dir, _PROGRESS_FILE), 'r') as f:
+                lines = f.read().split('\n')
+                if lines[1] == 'SUCCESS':
+                    completed = True
+                elif lines[1] == 'IN_PROGRESS':
+                    update_callback(float(lines[2]) if len(lines[2]) > 0 else None, "\n".join(lines[3:]))
+                else:
+                    completed = "%s\n%s" % (lines[1], "\n".join(lines[3:]))
+            os.unlink(os.path.join(target_dir, _PROGRESS_FILE))
+            if completed is not None:
+                break
 
     transferrer.disconnect()
+
+    if completed is not True:
+        raise RuntimeError(completed)
 
     return completed

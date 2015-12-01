@@ -280,7 +280,7 @@ class GoSmartSimulationComponent(ApplicationSession):
         print(timestamp)
         try:
             loop = asyncio.get_event_loop()
-            loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, "SUCCESS", "Success", "100", timestamp))
+            loop.call_soon_threadsafe(lambda: self.setStatus(guid, "SUCCESS", "Success", "100", timestamp))
             validation = yield from self.current[guid].validation()
             if validation:
                 loop.call_soon_threadsafe(lambda: self._db.updateValidation(guid, validation))
@@ -303,7 +303,7 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         try:
             loop = asyncio.get_event_loop()
-            loop.call_soon_threadsafe(lambda: self._db.setStatus(guid, message["code"], message["message"], None, timestamp))
+            loop.call_soon_threadsafe(lambda: self.setStatus(guid, message["code"], message["message"], None, timestamp))
         except Exception as e:
             print(e)
             traceback.print_exc(file=sys.stderr)
@@ -369,6 +369,18 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         self.onRequestIdentify()
 
+    def setStatus(self, id, key, message, percentage, timestamp):
+        self._db.setStatus(id, key, message, percentage, timestamp)
+        with open(os.path.join(self.current[id].get_dir(), 'last_message'), 'w') as f:
+            f.write("%s\n" % id)
+            f.write("%s\n" % key.strip())
+            if percentage:
+                f.write("%lf\n" % float(percentage))
+            else:
+                f.write("\n")
+            if message:
+                f.write(message.strip())
+
     def updateStatus(self, id, percentage, message):
         timestamp = time.time()
 
@@ -377,7 +389,7 @@ class GoSmartSimulationComponent(ApplicationSession):
 
         try:
             loop = asyncio.get_event_loop()
-            loop.call_soon_threadsafe(lambda: self._db.setStatus(id, 'IN_PROGRESS', message, percentage, timestamp))
+            loop.call_soon_threadsafe(lambda: self.setStatus(id, 'IN_PROGRESS', message, percentage, timestamp))
         except Exception as e:
             print(e)
             traceback.print_exc(file=sys.stderr)

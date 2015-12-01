@@ -215,7 +215,8 @@ class GoSmartSimulationDefinition:
     def simulate(self):
         if self._shadowing:
             print("Not simulating: shadowing mode ON for this definition")
-            task = yield from shadow_watcher.observe(self._guid, self._transferrer)
+            task = yield from shadow_watcher.observe(self._guid, self._transferrer,
+                                                     self._update_status_callback)
 
             return task
 
