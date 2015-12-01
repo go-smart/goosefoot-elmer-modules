@@ -56,8 +56,11 @@
 #include <vtkDescriptiveStatistics.h>
 #include <vtkDataObject.h>
 #include <vtkGeometryFilter.h>
+#include <vtkTriangleFilter.h>
 
-#include "vtkIsoVolume/vtkIsoVolume.h"
+#ifndef IGNORE_ISO_VOLUME
+  #include "vtkIsoVolume/vtkIsoVolume.h"
+#endif
 
 /* REQUIRES PARAVIEW HEADERS
 #include "vtkIsoVolume.h"
@@ -71,8 +74,8 @@ int main(int argc, char *argv[])
 {
   float threshold_lower, threshold_upper, scaling_value;
   bool connected_component = false, subdivide = false, parallel = false, using_upper = false, using_lower = false,
-       threshold_not_isovolume = true, geometry_filter = false, retain_subdomain_boundaries = false;
-  int smoothing_iterations = 0;
+       threshold_not_isovolume = false, geometry_filter = false, retain_subdomain_boundaries = false;
+  int smoothing_iterations = 0, exclude_subdomain = -1;
   std::string input_vtu("in.vtu"), output_vtk("out.vtk"), field("dead"), analysis_xml("analysis.xml");
 
   tinyxml2::XMLDocument doc;
@@ -87,10 +90,11 @@ int main(int argc, char *argv[])
     ("scale,S", po::value<float>(&scaling_value)->default_value(1), "pre-scaling of results; default 1")
     ("field,f", po::value<std::string>(&field), "field to threshold on")
     ("parallel,p", po::value(&parallel)->zero_tokens(), "assume input data is PVTU not VTU")
-    /*("threshold,p", po::value(&threshold_not_isovolume)->zero_tokens(), "switch from using an IsoVolume to using a Threshold")*/
+    ("threshold,x", po::value(&threshold_not_isovolume)->zero_tokens(), "switch from using an IsoVolume to using a Threshold")
     ("connectivity,c", po::value(&connected_component)->zero_tokens(), "extract largest connected component of thresholded surface")
     ("subdivide,s", po::value(&subdivide)->zero_tokens(), "subdivide before thresholding")
     ("smoothing-iterations,i", po::value<int>(&smoothing_iterations)->default_value(0), "number of iterations in smoother (0 to skip)")
+    ("exclude-subdomain,e", po::value<int>(&exclude_subdomain)->default_value(-1), "exclude subdomain of given index")
     ("input,i", po::value<std::string>(&input_vtu), "input volume mesh file")
     ("analysis,a", po::value<std::string>(&analysis_xml), "analysis output file")
     ("output,o", po::value<std::string>(&output_vtk), "output file")
@@ -216,12 +220,58 @@ int main(int argc, char *argv[])
       rootNode->InsertEndChild(variableNode);
   }
 
-  vtkSmartPointer<vtkUnstructuredGrid> thresholded_grid;
+  vtkSmartPointer<vtkUnstructuredGrid> thresholded_grid = grid_scaled;
+
+  if (exclude_subdomain >= 0) {
+      std::cout << "Removing subdomain " << exclude_subdomain << std::endl;
+      /* BEGIN SELECTION STEP */
+      vtkSmartPointer<vtkSelectionNode> selectionNode =
+         vtkSmartPointer<vtkSelectionNode>::New();
+      selectionNode->SetFieldType(vtkSelectionNode::CELL);
+      selectionNode->SetContentType(vtkSelectionNode::INDICES);
+
+      vtkSmartPointer<vtkIdTypeArray> selectionArray =
+         vtkSmartPointer<vtkIdTypeArray>::New();
+      selectionArray->SetNumberOfComponents(1);
+
+      vtkIntArray* cell_array = vtkIntArray::SafeDownCast(thresholded_grid->GetCellData()->GetArray("GeometryIds"));
+      vtkCellArray* ca = thresholded_grid->GetCells();
+      int curr_cell = 0;
+      vtkSmartPointer<vtkIdList> pts = vtkIdList::New();
+      for (ca->InitTraversal() ; ca->GetNextCell(pts) ; curr_cell++)
+      {
+          if (cell_array->GetValue(curr_cell) != exclude_subdomain)
+              selectionArray->InsertNextValue(curr_cell);
+      }
+
+      selectionNode->SetSelectionList(selectionArray);
+
+      vtkSmartPointer<vtkSelection> selection =
+              vtkSmartPointer<vtkSelection>::New();
+      selection->AddNode(selectionNode);
+
+      vtkSmartPointer<vtkExtractSelectedIds> extractSelectedIds =
+              vtkSmartPointer<vtkExtractSelectedIds>::New();
+      extractSelectedIds->SetInput(0, thresholded_grid);
+      extractSelectedIds->SetInput(1, selection);
+      extractSelectedIds->Update();
+      thresholded_grid = vtkUnstructuredGrid::SafeDownCast(extractSelectedIds->GetOutput());
+  vtkSmartPointer<vtkXMLUnstructuredGridWriter> writer =
+      vtkSmartPointer<vtkXMLUnstructuredGridWriter>::New();
+
+  writer->SetFileName("out.vtu");
+  writer->SetInput(thresholded_grid);
+  writer->Write();
+      /* END SELECTION STEP */
+  }
+
+#ifndef IGNORE_ISO_VOLUME
   if (threshold_not_isovolume)
+#endif
   {
       vtkSmartPointer<vtkThreshold> threshold = 
         vtkSmartPointer<vtkThreshold>::New();
-      threshold->SetInput(grid_scaled);
+      threshold->SetInput(thresholded_grid);
 
       if (using_upper && using_lower)
       {
@@ -243,11 +293,13 @@ int main(int argc, char *argv[])
 
       thresholded_grid = threshold->GetOutput();
   }
+#ifndef IGNORE_ISO_VOLUME
   else
   {
+
       vtkSmartPointer<vtkIsoVolume> threshold =
         vtkSmartPointer<vtkIsoVolume>::New();
-      threshold->SetInput(grid_scaled);
+      threshold->SetInput(thresholded_grid);
 
       threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, field.c_str());
       if (using_upper && using_lower)
@@ -271,6 +323,7 @@ int main(int argc, char *argv[])
 
       thresholded_grid = dynamic_cast<vtkUnstructuredGrid*>(threshold->GetOutputDataObject(0));
   }
+#endif
 
   // doesn't work because the array is not added as SCALARS, i.e. via SetScalars
   // threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, vtkDataSetAttributes::SCALARS);
@@ -361,6 +414,14 @@ int main(int argc, char *argv[])
           std::cout << "Skipping smoother" << std::endl;
           polydata = surface_filter->GetOutput();
       }
+  }
+
+  if (!threshold_not_isovolume) {
+      vtkSmartPointer<vtkTriangleFilter> triangleFilter =
+          vtkSmartPointer<vtkTriangleFilter>::New();
+      triangleFilter->SetInput(polydata);
+      triangleFilter->Update();
+      polydata = triangleFilter->GetOutput();
   }
 
   if (connected_component) {
