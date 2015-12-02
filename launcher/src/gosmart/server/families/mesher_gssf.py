@@ -174,6 +174,8 @@ class MesherGSSFMixin:
 
         nearfield = self.get_parameter('RESOLUTION_FIELD_NEAR')
         needlezonefield = self.get_parameter('RESOLUTION_FIELD_NEEDLE_ZONE')
+        if not needlezonefield:
+            needlezonefield = self.get_parameter('RESOLUTION_NEEDLE_ZONE_FIELD')
         farfield = self.get_parameter('RESOLUTION_FIELD_FAR')
         zonefield = self.get_parameter('RESOLUTION_FIELD_ZONE')
 
