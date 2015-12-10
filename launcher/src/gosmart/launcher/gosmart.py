@@ -235,6 +235,7 @@ class GoSmart:
 
         for k, f in final_output.items():
             shutil.copy(os.path.join(self.logger.get_cwd(), f), os.path.join(self.logger.get_cwd(), "output", "%s-%s" % (self.logger.runname, k)))
+            shutil.copy(os.path.join(self.logger.get_cwd(), f), os.path.join(self.logger.get_cwd(), "output", k))
 
     def renumber_bodies(self, msh_files):
         present_ids = {}
