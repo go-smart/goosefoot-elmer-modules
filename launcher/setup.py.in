@@ -47,9 +47,13 @@ setup(name='gosmart',
 
           'data/templates/inner-basic-mwa.xml',
           'data/templates/inner-basic-mwa-coarse.xml',
+          'data/templates/inner-microsulis-mwa.xml',
+          'data/templates/inner-microsulis-mwa-coarse.xml',
 
           'data/templates/go-smart-axisymm_basic-mwa.geo',
+          'data/templates/go-smart-axisymm_microsulis-mwa.geo',
           'data/templates/go-smart-axisymm_basic-mwa_needleless.geo',
+          'data/templates/go-smart-axisymm_microsulis-mwa_needleless.geo',
           'data/templates/go-smart-template_ps.sif',
           'data/templates/go-smart-template_ps-modbioheat.sif',
           'data/templates/go-smart-template_ps-newelmer.sif',

@@ -80,6 +80,7 @@ class GoSmartMesherAxisymmetric(GoSmartMesher):
         geo_mapping.update(self._geo_mapping)
         geo_mapping.update(self.logger.get_region_ids())
         geo_template_filename = os.path.basename("go-smart-axisymm_%s.geo" % self.template_name)
+        self.logger.print_line(geo_template_filename)
         geo_template_stream = open(os.path.join(gosmart.config.template_directory, "templates", geo_template_filename), "r")
         geo_template = string.Template(geo_template_stream.read())
         geo_template_stream.close()

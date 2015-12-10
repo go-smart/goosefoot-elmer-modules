@@ -74,7 +74,7 @@ SUBROUTINE NumaPowerFieldTrigger( Model,Solver,Timestep,TransientSimulation )
         RecalculatePowerPtr(:)
     REAL(KIND=dp), POINTER :: PhasesPtr(:,:)
     REAL(KIND=dp) :: PreviousPower, PresentPower
-    CHARACTER(LEN=255) :: DataSolverFilename
+    CHARACTER(LEN=255) :: DataSolverFilename, DataSolverPrefix
 
     INTEGER :: t, j, active, n, TDOFs, ActiveThermocouples, LocalNodes, &
         PowerControl_Integ_Length, CurrentPhase
@@ -149,7 +149,12 @@ SUBROUTINE NumaPowerFieldTrigger( Model,Solver,Timestep,TransientSimulation )
             CALL Fatal("NumaPowerCheck", "Need a target data solver to update filename")
         END IF
         DataSolver => Model % Solvers(j)
-        WRITE(DataSolverFilename, '("sar-",I4.4,".dat")') NINT(PresentPower)
+
+        DataSolverPrefix = GetString(Solver % Values, 'Profile File Prefix', Found)
+        IF ( .NOT. Found ) THEN
+            DataSolverPrefix = "sar-"
+        END IF
+        WRITE(DataSolverFilename, '(A, I4.4,".dat")') TRIM(DataSolverPrefix), NINT(PresentPower)
 
         PRINT *, "Switching to input file: ", DataSolverFilename
         CALL ListAddString(DataSolver % Values, "Point Data Filename", DataSolverFilename)
