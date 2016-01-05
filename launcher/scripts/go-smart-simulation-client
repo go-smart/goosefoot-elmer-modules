@@ -24,6 +24,7 @@ import argparse
 from gosmart.server.client import GoSmartSimulationClientComponent
 
 
+# Start up a new client object with the context of an Autobahn WAMP application
 def launch(x):
     cpt = GoSmartSimulationClientComponent(
         x,
@@ -45,13 +46,14 @@ if __name__ == "__main__":
     parser.add_argument("--host", help="host to connect to", default="localhost")
     parser.add_argument("--websocket-port", help="port hosting websocket", default="9000", type=int)
     parser.add_argument("--skip-clean", help="do not clean up after run", action='store_true', default=False)
-    parser.add_argument("--output", help="file to request as output", nargs='+', default="output.vtp")
+    parser.add_argument("--output", help="file(s) to request as output", nargs='+', default="output.vtp")
     parser.add_argument("--definition", help="file(s) containing module / text of the definition node (which should exist but be empty in the GSSA file)", default=None, nargs='+')
     parser.add_argument("--input", help="input files for surfaces, etc.", default=None, nargs='+')
     parser.add_argument("--server", help="specific server to contact (UUID)", default=None)
     args = parser.parse_args()
     input_file = args.gssa_file
 
+    # Assign arguments to sensible variables
     host = args.host
     websocket_port = args.websocket_port
     subdirectory = args.subdir
@@ -60,5 +62,8 @@ if __name__ == "__main__":
     server = args.server
     input_files = args.input
     skip_clean = args.skip_clean
+
+    # Instantiate an ApplicationRunner, that will make the WAMP connection and
+    # call our launch function once all is well
     runner = ApplicationRunner(url="ws://%s:%d/ws" % (host, websocket_port), realm="realm1")
     runner.run(launch)
