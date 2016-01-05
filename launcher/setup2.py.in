@@ -1,10 +1,17 @@
 from distutils.core import setup
 import os
 
+# The Python2 code is primarily needed for the needle library, which needs to process
+# STLs and STEP files via PythonOCC, so requires (as of initial development) Py2
+# TODO: amalgamate needlelibrary with Py3 lib when PythonOCC has proper support
+
+# Find all the needles, as these will need to be available to the code after installation
 needle_library = []
 for root, dirs, files in os.walk('${CMAKE_CURRENT_SOURCE_DIR}/src/gosmart2/data/needles'):
     needle_library += [os.path.join(root, name) for name in files]
 
+# Set up the package as ``gosmart2`` and subpackages
+# TODO: extract standard fields from a configuration file
 setup(name='gosmart',
       version='${PACKAGE_VERSION}',
       packages=['gosmart2', 'gosmart2.needlelibrary', 'gosmart2.preprocessor'],
