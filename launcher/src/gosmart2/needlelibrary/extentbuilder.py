@@ -15,15 +15,19 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from config import *
 from OCC import gp
 
 from OCC.BRepBuilderAPI import BRepBuilderAPI_Transform as BRepTransform
 
 
+# Define a simulation extent, based on case-specific parameters, with methods to
+# transform to the required target. Derived classes implement specific shapes.
 class ExtentBuilder:
 
     def __init__(self, logger, centre, radius, **parameters):
+        # We nearly always need a centre (focal point in some sense) and radius
         self.logger = logger
         self.centre = centre
         self.radius = radius
@@ -34,8 +38,10 @@ class ExtentBuilder:
         raise RuntimeError("Implement this - derived from ExtentBuilder")
 
     def build(self):
+        # Get the subclass-specific reference shape
         shape = self.make_reference(**self.parameters)
 
+        # Transform it as required by our initializing parameters
         transform = gp.gp_Trsf()
         transform.SetScale(self.origin, self.radius)
 
@@ -54,17 +60,16 @@ class ExtentBuilder:
         transform = gp.gp_Trsf()
         transform.SetTranslation(gp.gp_Vec(*target))
 
+        # FIXME: this needs some explanation... should it be here?
         needle_transform = BRepTransform(self.needle, transform, False)
         needle_transform.Build()
         self.needle = needle_transform.Shape()
 
     def write_stl(self, filename):
-
-	if OCCVersion=="0.16":
-		stl_writer = StlAPI_Writer()
-		stl_writer.Write(self.shape,filename)
-	else:
-		stl_writer = STL.STLExporter(filename, True)
-		stl_writer.set_shape(self.shape)
-		stl_writer.write_file()
-
+        if OCCVersion == "0.16":
+                stl_writer = StlAPI_Writer()
+                stl_writer.Write(self.shape, filename)
+        else:
+                stl_writer = STL.STLExporter(filename, True)
+                stl_writer.set_shape(self.shape)
+                stl_writer.write_file()

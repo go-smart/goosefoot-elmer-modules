@@ -24,18 +24,19 @@ from gosmart2.config import template_directory
 from gosmart2.needlelibrary import extentbuilder
 from OCC.TopoDS import TopoDS_Shape
 
+
+# Create an OCC sphere of given radius
 class SphereBuilder(extentbuilder.ExtentBuilder):
 
     def make_reference(self, **parameters):
         filename = os.path.join(template_directory, "needles", "sphere.stl")
-	if OCCVersion=="0.16":
-		shape=TopoDS_Shape()
-		stl_importer=StlAPI_Reader()
-		stl_importer.Read(shape,filename)
-	        return shape
-	else:
-	        stl_importer = STL.STLImporter(filename)
-        	stl_importer.read_file()
-        	shape = stl_importer.get_shape()
-        	return shape
-
+        if OCCVersion == "0.16":
+                shape = TopoDS_Shape()
+                stl_importer = StlAPI_Reader()
+                stl_importer.Read(shape, filename)
+                return shape
+        else:
+                stl_importer = STL.STLImporter(filename)
+                stl_importer.read_file()
+                shape = stl_importer.get_shape()
+                return shape

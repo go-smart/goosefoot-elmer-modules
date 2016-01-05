@@ -15,6 +15,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from OCC.BRepPrimAPI import BRepPrimAPI_MakeBox
 from OCC import gp
 from OCC.BRepBuilderAPI import BRepBuilderAPI_Transform as BRepTransform
@@ -22,6 +23,7 @@ from OCC.BRepBuilderAPI import BRepBuilderAPI_Transform as BRepTransform
 from gosmart2.needlelibrary import extentbuilder
 
 
+# Create an OCC box of given length, width and height
 class CuboidBuilder(extentbuilder.ExtentBuilder):
 
     def make_reference(self, **parameters):
@@ -31,7 +33,7 @@ class CuboidBuilder(extentbuilder.ExtentBuilder):
         box_shape = BRepPrimAPI_MakeBox(l, w, h)
 
         transform = gp.gp_Trsf()
-        transform.SetTranslation(gp.gp_Vec(-l/2, -w/2, -h/2))
+        transform.SetTranslation(gp.gp_Vec(-l / 2, -w / 2, -h / 2))
 
         shape_transform = BRepTransform(box_shape.Shape(), transform, False)
         shape_transform.Build()

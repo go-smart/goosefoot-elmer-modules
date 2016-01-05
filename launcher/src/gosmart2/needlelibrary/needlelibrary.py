@@ -15,7 +15,10 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#pylint: disable=line-too-long
+
+# TODO: this file needs quite a bit of tidying and crud-removal, once PythonOCC
+# is Py3 compatible
+
 import os
 import sys
 import argparse
@@ -28,6 +31,9 @@ from . import cuboidbuilder
 from lxml import etree as ET
 from distutils.version import LooseVersion, StrictVersion
 
+
+# Simple logger class to be superseded by the Py3 logger when PythonOCC
+# compatible
 class GoSmart2Logger:
     def __init__(self, runname):
         self.runname = runname
@@ -47,11 +53,6 @@ class GoSmart2Logger:
 # of the class are required, special care should be
 # taken
 class NeedleLibrary:
-    #TODO: Ensure this is the actual binary installed, perhaps using setup.py.in
-    #Note that elmer_binary is _not necessarily_ the serial binary - it is
-    #whichever binary is to be run by this process, so when we daisy-chain through
-    #MPI run, the elmer_binary passed to the child via the arguments is the MPI
-    #one. As such, when it runs, its "elmer_binary" is then ElmerSolver_mpi
     logfilename = "/tmp/go-smart-needle-library-%d" % os.getpid()
     outfile = "needle.stl"
     extentfile = "extent.stl"
@@ -99,12 +100,20 @@ class NeedleLibrary:
         self.logger.print_line()
 
     def launch(self):
+        # Loop through the needles, outputting transformed STL surfaces for each
         for name, needle in self.needles.items():
             needle_manipulator = None
             needle_target = [self.target[i] + needle["offset"][i] for i in (0, 1, 2)]
+
+            # TODO: tidy all this into the logger
             print(self.target)
             print(needle["offset"])
             print(needle_target)
+
+            # If we have an ID, then the manipulator should be able to find it
+            # in the library (TODO: this is a separate job; shouldn't be in the
+            # manipulator). Otherwise, we should have a STEP file given to us to
+            # define it.
             if needle["id"] != 'none' and needle["id"] is not None:
                 self.logger.print_line("Using needle: %s (axis: %s; target: %s)" % (needle["id"], str(needle["axis"]), str(needle_target)))
                 needle_manipulator = manipulator.Manipulator(self.logger, needle_id=needle["id"])
@@ -112,12 +121,16 @@ class NeedleLibrary:
                 self.logger.print_line("Using needle: %s (axis: %s; target: %s)" % (needle["stepfile"], str(needle["axis"]), str(needle_target)))
                 needle_manipulator = manipulator.Manipulator(self.logger, filename=needle["stepfile"])
 
+            # TODO: should this error our if a needle cannot be output? Is there
+            # a reason that it doesn't?
             if needle_manipulator is not None:
                 needle_manipulator.scale(self.scaling)
                 needle_manipulator.reorient(needle["axis"])
                 needle_manipulator.translate(needle_target)
                 needle_manipulator.write_stl("%s-%s" % (self.outfile, needle["file"]))
 
+        # The domain extent, if specified as a primitive for STL output, rather
+        # than being left for analytic definition in the mesher (i.e. a maximal radius)
         extent_target = [self.target[i] + self.offset[i] for i in (0, 1, 2)]
         if self.extent_type == 'sphere':
             self.logger.print_line("Extent is %s; target %s, radius %lf" % (self.extent_type, str(extent_target), self.radius))
@@ -171,6 +184,7 @@ class NeedleLibrary:
         else:
             self.scaling = 1.0
         version = root.get("version")
+        # FIXME: remove alternative - this has been deprecated long enough
         if version is not None and StrictVersion(version) >= StrictVersion("1.0.1"):
             if root.tag != "needlelibrary":
                 self.logger.print_fatal("This settings file seems not to be for Go-Smart Needle Library (or is for the wrong version)")
