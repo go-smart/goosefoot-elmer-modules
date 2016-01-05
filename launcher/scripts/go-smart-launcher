@@ -28,8 +28,10 @@ from gosmart.launcher import errors
 
 
 def main():
+    # We outsource argument parsing to the utils module
     args = utils.parse_args()
 
+    # Ensure we can dump error message to FS (allow for a persistent record)
     error_location = 'error_message'
     if args.global_working_directory:
         error_location = os.path.join(args.global_working_directory, error_location)
@@ -38,9 +40,11 @@ def main():
     except OSError:
         pass
 
+    # Create the application object and initialize it with what we know
     try:
         wrapper = gosmart.GoSmart(args=args, global_working_directory=args.global_working_directory, update_status=args.update_status)
     except Exception as e:
+        # Return an error that fits with the GoSmartError classes
         if isinstance(e, errors.GoSmartError):
             code = e.code
         else:
@@ -52,11 +56,14 @@ def main():
         traceback.print_exc()
         return -1
 
+    # Let the user know we have arrived
     wrapper.print_header()
 
     try:
+        # Unless passed in the arguments, we run a single process
         wrapper.launch(default_procs=1)
     except Exception as e:
+        # Catch any error and ensure GS error is thrown
         if isinstance(e, errors.GoSmartError):
             code = e.code
         else:
