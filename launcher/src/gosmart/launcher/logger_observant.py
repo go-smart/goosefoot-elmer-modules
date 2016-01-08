@@ -17,6 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gosmart.launcher.logger import GoSmartLogger
 
+# NB: redbrain has renamed observant to vigilant. The comments use 'vigilant' as
+# the correct current name for the project. The code should be updated when
+# vigilant support is updated to a sufficiently recent version
+
+# See if we can find vigilant
 try:
     import StatsCore
     from StatsCore.SimpleTransports import UDPStatsTransport, TCPStatsTransport
@@ -28,10 +33,11 @@ except:
     use_observant = False
 
 
-class GoSmartLoggerObservant(GoSmartLogger):
+# This is a derived class of GSL including some vigilant support
+class GoSmartLoggerVigilant(GoSmartLogger):
     def __init__(self, observant=None, *args, **kwargs):
         global use_observant
-        super(GoSmartLoggerObservant, self).__init__(*args, **kwargs)
+        super(GoSmartLoggerVigilant, self).__init__(*args, **kwargs)
 
         self._use_observant = use_observant
 
@@ -42,7 +48,7 @@ class GoSmartLoggerObservant(GoSmartLogger):
 
             if self._use_observant:
                 self._start_observing()
-                self.print_line('Initiated Observant')
+                self.print_line('Initiated Vigilant')
 
     def _start_observing(self):
         config = CParser()
@@ -68,7 +74,7 @@ class GoSmartLoggerObservant(GoSmartLogger):
         self.log_line(line, prefix, color, color_text, color_bright, transmit=True)
 
     def log_line(self, line='', prefix='| ', color="GREEN", color_text=True, color_bright=False, transmit=True):
-        super(GoSmartLoggerObservant, self).print_line(line, prefix, color, color_text, color_bright)
+        super(GoSmartLoggerVigilant, self).print_line(line, prefix, color, color_text, color_bright)
 
         #FIXME: this can hold up the logging until the original process chokes on the lack of pipe cleanage
         #if self._use_observant and transmit and self.client is not None:

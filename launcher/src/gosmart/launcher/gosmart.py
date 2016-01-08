@@ -32,7 +32,7 @@ from gosmart.launcher.lesion import GoSmartLesion
 from gosmart.launcher.validation import GoSmartValidation
 from gosmart.launcher.elmer import GoSmartElmer
 from gosmart.launcher.elmergrid import GoSmartElmerGrid
-from gosmart.launcher.logger_observant import GoSmartLoggerObservant
+from gosmart.launcher.logger_observant import GoSmartLoggerVigilant
 from gosmart.launcher.mesh_optimizer import GoSmartMeshOptimizer
 from gosmart.launcher.mesher import GoSmartMesher
 from gosmart.launcher.mesher_axisymmetric import GoSmartMesherAxisymmetric
@@ -53,12 +53,8 @@ if colorama_imported:
 # of the class are required, special care should be
 # taken
 class GoSmart:
-    # TODO: Ensure this is the actual binary installed, perhaps using setup.py.in
-    # Note that elmer_binary is _not necessarily_ the serial binary - it is
-    # whichever binary is to be run by this process, so when we daisy-chain through
-    # MPI run, the elmer_binary passed to the child via the arguments is the MPI
-    # one. As such, when it runs, its "elmer_binary" is then ElmerSolver_mpi
     outfilename = "logger/go-smart-elmer-%d" % os.getpid()
+
     silent = False
     my_rank = None
     configfiles = []
@@ -66,25 +62,39 @@ class GoSmart:
     child_procs = None
     only = None
     elmer_binary = None
-    _update_status_socket = None
 
+    _update_status_socket = None
     _update_status_callback = None
 
     header_width = None
 
     def __init__(self, runname='default', args=[], global_working_directory=None, observant=None, update_status=None):
+        # This allows us to run GSSF from any location and use a passed working directory
         if global_working_directory is None:
             global_working_directory = os.getcwd()
 
-        self.logger = GoSmartLoggerObservant(runname=runname, logfile="%s.log" % self.outfilename, global_working_directory=global_working_directory, observant=observant)
+        # We use observant (now known as vigilant) to monitor GSSF processes, if
+        # possible. If not, this is a transparent wrapper around GoSmartLogger
+        self.logger = GoSmartLoggerVigilant(
+            runname=runname,
+            logfile="%s.log" % self.outfilename,
+            global_working_directory=global_working_directory,
+            observant=observant)
 
+        # Check through the command line arguments for any relevant settings
         self.parse_args(args)
+
+        # Go through the GSSF-XML input
         self.parse_config_files()
 
+        # If we have been given a status socket, then connect and store the
+        # details for logging progress later
         if update_status is not None:
             self._update_status_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             self._update_status_socket.connect(update_status)
 
+        # Make sure each component knows the process-specific logging prefix, so
+        # they all match
         for component in self.components.values():
             if isinstance(component, list):
                 for cpt in component:
@@ -92,11 +102,14 @@ class GoSmart:
             else:
                 component.set_outfile_prefix(self.outfilename)
 
+    # Write a percentage progress line to the status socket, if we have one
     def update_status(self, percentage, message):
         if self._update_status_socket is not None:
             bytestring = '%lf|%s\n' % (percentage, '\\n'.join(message.splitlines()))
             self._update_status_socket.sendall(bytestring.encode('utf-8'))
 
+    # If a component is found in the top level of the GSSF-XML, we store it and
+    # name it accordingly. We also add it as a member.
     def add_component(self, name, component):
         if self.only is not None and self.only != name:
             return component
@@ -106,6 +119,7 @@ class GoSmart:
         setattr(self, name, component)
         return component
 
+    # Output key information on each run
     def print_header(self):
         header = [
             "=",
@@ -132,6 +146,7 @@ class GoSmart:
 
         self.logger.print_line()
 
+    # Start off the GSSF workflow
     def launch(self, default_procs=1):
         if self.child_procs is None:
             self.child_procs = default_procs
@@ -141,14 +156,20 @@ class GoSmart:
         self.logger.init_time = time.time()
         self.logger.print_debug("Seconds since Unix epoch: %d " % self.logger.init_time)
 
+        # Provide version strings to aid reproducibility. These repos should
+        # be on Github, so it is possible to go back and check results.
         self.logger.print_line("Using GSSF version: %s" % gosmart.config.git_revision)
         self.logger.print_line("Using Elmer (NUMA-modified) version: %s" % gosmart.config.elmer_git_revision)
 
+        # Start counting percentage progress
         overall_percentage = 0.0
         percentage_per_component = 100 / len(self.components)
 
+        # By default, we use a analytically-defined extent
+        extent_file = None
         needle_files = {}
-        extent_file = None  # os.path.join("needlelibrary", "%s-extent.stl" % self.logger.runname)
+
+        # Run the needle library if it is not supposed to be skipped
         if "needlelibrary" in self.components:
             self.update_status(overall_percentage, "Needlelibrary starting")
             overall_percentage = overall_percentage + percentage_per_component
@@ -159,6 +180,9 @@ class GoSmart:
 
         msh_files = {}
         default_msh_file = GoSmartMesher.get_default_msh_outfile(os.path.join('mesher', self.logger.runname), "mesher")
+
+        # Start the mesher. If we skip it, make a cursory attempt to find a
+        # pre-existing mesh
         if "mesher" in self.components:
             self.update_status(overall_percentage, "Mesher starting")
             msh_files.update(self.mesher.launch(needle_files, extent_file,
@@ -171,6 +195,8 @@ class GoSmart:
         else:
             self.update_status(overall_percentage, "Skipped mesher")
 
+        # If we have an inner mesh, which will have been added when reading the
+        # XML, then we run that too
         if hasattr(self, "mesher_inner"):
             for mesher_inner in self.mesher_inner:
                 if mesher_inner.skip:
@@ -182,6 +208,7 @@ class GoSmart:
                     msh_files.update(mesher_inner.launch(needle_files, None))
                     self.update_status(overall_percentage, "Mesher-inner complete")
 
+        # The optimizer comes next, cleaning any meshes produced above
         if hasattr(self, "optimizer"):
             self.update_status(overall_percentage, "Optimizer starting")
             overall_percentage = overall_percentage + percentage_per_component
@@ -195,8 +222,13 @@ class GoSmart:
                     msh_files[k] = optimized_msh_file
             self.update_status(overall_percentage, "Optimizer complete")
 
+        # Here, we renumber bodies to make sure that mesh indexing is
+        # consecutive based on the presence of cells in the mesh - this is
+        # required by Elmer. Turns out be kind of tricky.
         msh_files = self.renumber_bodies(msh_files)
         eg_trees = {}
+
+        # ElmerGrid then converts to Elmer's mesh format
         if "elmergrid" in self.components:
             self.update_status(overall_percentage, "ElmerGrid starting")
             overall_percentage = overall_percentage + percentage_per_component
@@ -207,6 +239,7 @@ class GoSmart:
             for k, v in msh_files.items():
                 eg_trees[k] = "elmergrid/%s%s" % (self.logger.runname, k)
 
+        # We run ElmerSolver
         if "elmer" in self.components:
             self.update_status(overall_percentage, "Elmer starting")
             self.elmer.set_update_status(lambda p, m: self.update_status(p / percentage_per_component + overall_percentage, m))
@@ -214,6 +247,7 @@ class GoSmart:
             self.launch_elmer(mesh_locations=eg_trees)
             self.update_status(overall_percentage, "Elmer complete")
 
+        # ... extract the lesion ...
         if "lesion" in self.components:
             self.update_status(overall_percentage, "Lesion starting")
             overall_percentage = overall_percentage + percentage_per_component
@@ -221,6 +255,7 @@ class GoSmart:
             self.update_status(overall_percentage, "Lesion complete")
             final_output["lesion_surface.vtp"] = lesion_surface
 
+        # ... and validate
         if "validation" in self.components:
             self.update_status(overall_percentage, "Validation starting")
             overall_percentage = overall_percentage + percentage_per_component
@@ -230,6 +265,9 @@ class GoSmart:
             final_output["validation_analysis.xml"] = validation_analysis
             shutil.copyfile(validation_analysis, os.path.join(self.logger.get_cwd(), "validation.xml"))
 
+        # If we have output to amalgamate into a single handy location, copy it
+        # there
+
         if len(final_output) > 0:
             os.makedirs(self.logger.make_cwd("output"), exist_ok=True)
 
@@ -237,6 +275,10 @@ class GoSmart:
             shutil.copy(os.path.join(self.logger.get_cwd(), f), os.path.join(self.logger.get_cwd(), "output", "%s-%s" % (self.logger.runname, k)))
             shutil.copy(os.path.join(self.logger.get_cwd(), f), os.path.join(self.logger.get_cwd(), "output", k))
 
+    # For Elmer usage, we need contiguous numbering of subdomains that actually
+    # appear in the SIF file. This is not necessarily all of the numbered
+    # domains that we have already been passed, so we must renumber the MSH
+    # files, and our GSSF regions, accordingly.
     def renumber_bodies(self, msh_files):
         present_ids = {}
 
@@ -327,49 +369,77 @@ class GoSmart:
 
         return msh_files
 
+    # This gives additional flexibility in choosing the number of processes for
+    # running Elmer
     def launch_elmer(self, default_procs=1, **kwargs):
         if self.child_procs is None:
             self.child_procs = default_procs
 
         self.elmer.launch(self.child_procs, **kwargs)
 
+    # Update internal asettings based on the command line arguments
     def parse_args(self, args):
         global colorama_imported
 
+        # Suppress output
         self.logger.silent = args.silent
+
+        # Debug output
         self.logger.debug = args.debug
+
+        # Clean the working directory tree before overwriting
         self.logger.leavetree = args.leavetree
+
+        # Location of logs
         if args.outfilename is not None:
             self.outfilename = args.outfilename
+
+        # Add PID of main process to logs
         if args.addpid:
             self.outfilename += "-" + str(os.getpid())
+
+        # Specific binary for ElmerSolver
         if args.elmer_binary is not None:
             self.elmer_binary = args.elmer_binary
+
+        # Launch Elmer over N processors (with MPI)
         if args.nprocs is not None:
             self.child_procs = int(args.nprocs)
+
+        # Only run one component (used when bootstrapping for multiple Elmer
+        # processes)
         if args.only is not None:
             self.only = args.only
 
+        # Output to terminal in colour
         if not args.baw and colorama_imported:
             colorama.init()
         else:
+            # This overrides the first try-catch import test
             colorama_imported = False
 
+        # Schedule all listed config files to be processed
         if len(args.configfilenames) > 0:
             self.configfiles = args.configfilenames
 
+    # Process a GSSF-XML file
     def parse_config_file(self, filename):
         filename = os.path.join(self.logger.get_cwd(), filename)
 
         configtree = ET.parse(filename)
         root = configtree.getroot()
 
+        # Make sure we have the right type of file
         if root.tag != "gosmart":
-            self.logger.print_fatal("This settings file seems not to be for Go-Smart")
+            if root.tag == "simulationDefinition":
+                self.logger.print_fatal("This settings file seems to be GSSA-XML, not GSSF-XML")
+            else:
+                self.logger.print_fatal("This settings file seems not to be for Go-Smart")
 
         if root.get('debug') == "true":
             self.logger.debug = True
 
+        # This is the GSSF-XML version
         if root.get('version') is not None:
             self.logger.version = StrictVersion(root.get('version'))
         else:
@@ -379,12 +449,15 @@ class GoSmart:
         if runname is not None:
             self.logger.runname = runname
 
+        # The logger will get constants from this
+        # FIXME: then why do we check for a constants section later?
         self.logger.parse_config(root)
 
         only_needle = None
         for section in root:
             skip = (section.get("skip") == "true")
 
+            # Needle Library component
             if section.tag == 'needlelibrary' and not skip:
                 needlelibrary = self.add_component('needlelibrary', GoSmartNeedleLibraryInterface(self.logger))
                 needlelibrary.parse_config(section)
@@ -398,10 +471,14 @@ class GoSmart:
                         only_needle = None
                         break
 
+                # If there is only one needle, and it has an offset, we store
+                # its location as NEEDLE_X, etc. in the global space
+                # This should be DEPRECATED
                 if only_needle is not None and only_needle.get("offset"):
                     for c, o in zip(('x', 'y', 'z'), only_needle.get("offset").split(" ")):
                         self.logger.add_or_update_constant(c, self.logger.get_constant(c, group="needle") + float(o), group="needle", typ="float")
 
+            # This is the official way of adding needles
             elif section.tag == 'needles':
                 for needle in section:
                     if needle.tag != 'needle':
@@ -419,31 +496,51 @@ class GoSmart:
                         else:
                             raise GoSmartModelError("There should be at most one node (parameters) inside needle section")
 
+            # This is DEPRECATED
             elif section.tag == 'preprocessor':
                 preprocessor = self.add_component('preprocessor', GoSmartPreprocessorInterface(self.logger))
                 preprocessor.parse_config(section)
+            # Core geometry facts
             elif section.tag == 'geometry':
                 for setting in section:
+                    # The focal point for the simulation (from where all offsets
+                    # should be measured)
                     if setting.tag == 'centre':
                         for c in ('x', 'y', 'z'):
                             self.logger.geometry["centre"][c] = float(setting.get(c))
                             self.logger.add_or_update_constant(c, float(setting.get(c)), group="needle", typ="float")
+                    # The dominant axis. This is not necessarily the axis of
+                    # the/a needle, but it provides a default axis where one is
+                    # needed
                     elif setting.tag == 'needleaxis':
                         self.logger.geometry["needleaxis"].append({})
                         for c in ('x', 'y', 'z'):
                             self.logger.geometry["needleaxis"][0][c] = float(setting.get(c))
                             self.logger.add_or_update_constant("axis " + c, float(setting.get(c)), group="needle", typ="float")
+                    # Scaling difference between input meshes and simulation.
+                    # In many cases, input STL will be in mm, whereas simulation
+                    # is in m, to match SI constants
                     elif setting.tag == 'simulationscaling':
                         self.logger.geometry["simulationscaling"] = float(setting.get("ratio"))
                     else:
                         raise GoSmartModelError("Not understood geometry tag")
+            # Geometrical regions within the simulation
             elif section.tag == 'regions' or section.tag == 'definitions':
                 for region in section:
+                    # 'region' is DEPRECATED (and equivalent to 'surface')
                     if region.tag in ('region', 'surface', 'zone', 'both'):
+                        # Groups: these allow us to forget about individual
+                        # regions in the SIF template, and describe possibly
+                        # multiple subdomains as a collective
+                        # Format: "group1; group2; ..."
                         if region.get("groups"):
                             groups = [s.strip() for s in region.get("groups").split(";")]
                         else:
                             groups = []
+
+                        # Add a region - a zone (volumetric) or a surface
+                        # (boundary) or both (embedded boundary of volumetric
+                        # subdomain)
                         groups.append(region.tag)
                         if region.tag == "zone":
                             self.logger.add_region(region.get("name"), region.get("input"), groups, zone=True)
@@ -451,16 +548,23 @@ class GoSmart:
                             self.logger.add_region(region.get("name"), region.get("input"), groups, zone="both")
                         elif region.tag == "region" or region.tag == "surface":
                             self.logger.add_region(region.get("name"), region.get("input"), groups, zone=False)
+                    # TODO: work out if this is still necessary
                     elif region.tag in ('cad',):
                         self.logger.add_file(region.tag, region.get("name"), region.get("input"))
                     else:
                         raise GoSmartModelError("Not understood region tag")
+            # Meshing configuration
             elif section.tag == 'mesher':
+                # This allows for meshes of embedded, e.g. axisymmetric,
+                # problems
                 inner = section.find("inner")
                 self.has_inner = (inner is not None)
 
                 type = section.get('type')
 
+                # FIXME: skipping the entire meshing section does not pick up
+                # extant 2D meshes. As a workaround, we allow skip="outer" to
+                # re-use only 3D and regenerate 2D.
                 skip_outer = (section.get("skip") == "outer")
 
                 if type == "CGAL":
@@ -473,35 +577,50 @@ class GoSmart:
                 if not skip_outer and not skip:
                     self.add_component('mesher', mesher)
 
+                # Load the mesher config
                 mesher.parse_config(section)
 
+                # If we have an inner section
                 if self.has_inner:
                     self.mesher_inner = []
 
+                    # FIXME: SURELY this shouldn't be hardcoded??
                     self.logger.add_region("catheter", None, ("zone",), zone=True)
                     self.logger.add_region("slot", None, ("zone",), zone=True)
                     self.logger.add_region("dielectric cable", None, ("zone",), zone=True)
 
+                    # Make sure we know to run inner mesher later
                     self.components['mesher_inner'] = self.mesher_inner
                     for inner_node in section.iterfind('inner'):
                         inner_type = inner_node.get('type')
                         inner_name = inner_node.get('name')
 
+                        # It is possible we have multiple inners, such as a fine
+                        # and a coarse variant
                         if inner_name is None:
                             inner_name = "mesher_inner"
                         else:
                             inner_name = "mesher_inner-%s" % slugify(inner_name)
 
+                        # This also has a type
                         if inner_type == "CGAL":
                             component = GoSmartMesherCGAL(self.logger)
                         elif inner_type == "axisymmetric":
                             component = GoSmartMesherAxisymmetric(self.logger)
                         else:
                             self.logger.print_fatal("Unknown mesher type %s in %s" % (inner_type, filename))
+
                         component.suffix = inner_name
 
+                        # Configure the specific meshing component
                         component.parse_config(section)
 
+                        # This may have a template, a library layout that
+                        # defines it
+                        # TODO: find some way of making this sensibly includable
+                        # in GSSF-XML (maybe as a separate input file).
+                        # Moreover, should this be available on the outer level if
+                        # that can be axisymmetric?
                         template_set = inner_node.get("template")
                         if template_set is not None:
                             template_filename = "templates/inner-%s.xml" % template_set
@@ -512,9 +631,12 @@ class GoSmart:
 
                         component.parse_config(inner_node)
 
+                        # The inner mesh is constrained to this region
                         if inner_node.get("region") is not None:
                             component.alter_extent(inner_node.get("region"))
 
+                        # Which mesh should the needle be (geometrically)
+                        # embedded in? Inner/outer/both
                         if inner_node.get("needle") is not None:
                             if inner_node.get("needle") == "inner only":
                                 if not skip_outer and not skip:
@@ -527,26 +649,38 @@ class GoSmart:
                         self.mesher_inner.append(component)
                         component.skip = skip
 
+            # The optimizer cleans the mesh
             elif section.tag == 'optimizer' and not skip:
                 self.add_component('optimizer', GoSmartMeshOptimizer(self.logger))
+            # The lesion component extracts an isosurface from the Elmer
+            # volumetric output
             elif section.tag == 'lesion' and not skip:
                 lesion = self.add_component('lesion', GoSmartLesion(self.logger))
                 lesion.parse_config(section)
+            # The validation compares the lesion output to a reference STL surface
             elif section.tag == 'validation' and not skip:
                 validation = self.add_component('validation', GoSmartValidation(self.logger))
                 validation.parse_config(section)
+            # ElmerGrid scales and converts to Elmer mesh format
             elif section.tag == 'elmergrid' and not skip:
                 elmergrid = self.add_component('elmergrid', GoSmartElmerGrid(self.logger))
                 elmergrid.parse_config(section)
+            # Elmer solves the simulation problem
             elif section.tag == 'elmer' and not skip:
                 elmer = self.add_component('elmer', GoSmartElmer(self.logger, elmer_binary=self.elmer_binary))
                 elmer.parse_config(section)
-            elif section.tag == 'constants' and not skip:
+            # Any constants that should end up in the global parameter
+            # dictionary (for SIF template usage) should be placed here
+            elif (section.tag == 'constants' or section.tag == 'parameters') and not skip:
+                # DEPRECATED: use a library set of constants
                 default_set = section.get("defaults")
 
                 if default_set is not None:
                     self.logger._load_constant_set(default_set)
 
+                # Loop through and add each constant listed. Note that we do not
+                # check the tag name - we eventually want to migrate to calling
+                # these parameters - this allows us to do so progressively
                 for constant in section:
                     value = constant.get("value")
                     if value is None:
@@ -562,11 +696,19 @@ class GoSmart:
             if skip:
                 self.logger.print_line("* Skipping %s as indicated in settings file %s" % (section.tag, filename))
 
+        # Output all regions loaded so far (this should include any generated by
+        # the needle library)
         self.logger.print_debug(self.logger.zones)
         self.logger.print_debug(self.logger.surfaces)
+
+        # Append this config file to the Elmer component list, as it may need to
+        # bootstrap us if there are multiple processes to be fired off and we
+        # are the first one
         if hasattr(self, "elmer"):
             self.elmer.configfiles.append(filename)
 
+    # Parse all config files. This hasn't been tested properly
+    # though for more than one.
     def parse_config_files(self):
         if len(self.configfiles) == 0:
             self.logger.print_fatal("No config files were supplied")
