@@ -32,6 +32,8 @@ try:
 except:
     use_observant = False
 
+from .config import etc_location
+
 
 # This is a derived class of GSL including some vigilant support
 class GoSmartLoggerVigilant(GoSmartLogger):
@@ -41,6 +43,7 @@ class GoSmartLoggerVigilant(GoSmartLogger):
 
         self._use_observant = use_observant
 
+        # If we have a running vigilant client, go ahead and use it
         if observant is not None:
             self.client = observant
         else:
@@ -52,7 +55,7 @@ class GoSmartLoggerVigilant(GoSmartLogger):
 
     def _start_observing(self):
         config = CParser()
-        config.read('/home/pweir/Code/observant/etc/observant/observant.cfg')
+        config.read(os.path.join(etc_location, 'vigilant.cfg'))
 
         lock = str(config.get('daemon', 'lock'))
         sock = str(config.get('daemon', 'sock'))

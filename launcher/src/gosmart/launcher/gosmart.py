@@ -32,7 +32,7 @@ from gosmart.launcher.lesion import GoSmartLesion
 from gosmart.launcher.validation import GoSmartValidation
 from gosmart.launcher.elmer import GoSmartElmer
 from gosmart.launcher.elmergrid import GoSmartElmerGrid
-from gosmart.launcher.logger_observant import GoSmartLoggerVigilant
+from gosmart.launcher.logger_vigilant import GoSmartLoggerVigilant
 from gosmart.launcher.mesh_optimizer import GoSmartMeshOptimizer
 from gosmart.launcher.mesher import GoSmartMesher
 from gosmart.launcher.mesher_axisymmetric import GoSmartMesherAxisymmetric
