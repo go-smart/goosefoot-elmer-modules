@@ -29,7 +29,7 @@ etc_location = '{2}'
 """.format(
         "${CMAKE_Fortran_MODULE_DESTINATION}",
         "${GIT_REVISION}",
-        "${CMAKE_INSTALL_SYSCONFDIR}"
+        "${ETC_FULL_LOCATION}"
     ))
 
 # At the moment, we require pre-computed steady-state profiles for certain

@@ -27,10 +27,11 @@ if (PYTHON3)
                        DEPENDS ${DEPS})
 
     # Add this new command as a target for ALL
-    add_custom_target(target ALL DEPENDS ${OUTPUT})
+    add_custom_target(target ALL DEPENDS ${OUTPUT} ${CMAKE_CURRENT_SOURCE_DIR}/conf/vigilant.cfg)
 
     # On install, run setup.py [install]
     install(CODE "execute_process(COMMAND ${PYTHON3} ${SETUP_PY} install --prefix=${CMAKE_INSTALL_PREFIX})")
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/conf/vigilant.cfg DESTINATION ${ETC_LOCATION} COMPONENT config)
 endif()
 
 # TODO: at least provide a useful warning or error out if truly essential

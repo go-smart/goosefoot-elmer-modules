@@ -15,19 +15,28 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import os
 import gosmart_sf_config
 import shutil
 
+# TODO: find a better way of integrating shared data locations
 template_directory = os.path.join(os.path.dirname(__file__), 'data')
 power_profiles_directory = os.path.join(os.path.dirname(__file__), 'data', 'power_profiles')
 fortran_template_directory = os.path.join(os.path.dirname(__file__), 'data', 'elmer_modules')
+
+# The location of the FORTRAN modules is decided at build time, so is in the
+# CMake generated module
 fortran_modules_directory = gosmart_sf_config.fortran_modules_dir
 git_revision = gosmart_sf_config.git_revision
 etc_location = gosmart_sf_config.etc_location
 
+# Elmer properties (as GSSF => Elmer workflow)
 elmer_binary_location = shutil.which("ElmerSolver_mpi")
 elmer_prefix = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(elmer_binary_location)), os.pardir))
 elmer_home = os.path.join(elmer_prefix, "share", "elmersolver")
+
+# Find the Elmer revision with which we are working - this is important for the
+# log files, as it makes post hoc bisection possible
 with open(os.path.join(elmer_home, "gitrev")) as f:
         elmer_git_revision = f.read()
