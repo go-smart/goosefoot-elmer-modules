@@ -20,8 +20,8 @@ from config import *
 from OCC.TopoDS import TopoDS_Shape
 import os
 
-from gosmart2.config import template_directory
-from gosmart2.needlelibrary import extentbuilder
+from .config import template_directory
+from .needlelibrary import extentbuilder
 from OCC.TopoDS import TopoDS_Shape
 
 

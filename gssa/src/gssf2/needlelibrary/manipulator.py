@@ -47,7 +47,7 @@ import os
 import numpy as N
 from slugify import slugify
 
-from gosmart2.config import template_directory
+from .config import template_directory
 
 REFERENCE_SCALING = 0.001
 
