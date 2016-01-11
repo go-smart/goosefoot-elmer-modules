@@ -21,7 +21,7 @@
 from autobahn.asyncio.wamp import ApplicationRunner
 import argparse
 
-from gosmart.server.client import GoSmartSimulationClientComponent
+from gssa.client import GoSmartSimulationClientComponent
 
 
 # Start up a new client object with the context of an Autobahn WAMP application

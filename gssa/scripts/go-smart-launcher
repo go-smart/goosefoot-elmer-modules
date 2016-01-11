@@ -22,9 +22,9 @@ import sys
 import os
 import traceback
 
-from gosmart.launcher import gosmart
-from gosmart.launcher import utils
-from gosmart.launcher import errors
+from gssf import gssf
+from gssf import utils
+from gssf import errors
 
 
 def main():
@@ -42,7 +42,7 @@ def main():
 
     # Create the application object and initialize it with what we know
     try:
-        wrapper = gosmart.GoSmart(args=args, global_working_directory=args.global_working_directory, update_status=args.update_status)
+        wrapper = gssf.GSSF(args=args, global_working_directory=args.global_working_directory, update_status=args.update_status)
     except Exception as e:
         # Return an error that fits with the GoSmartError classes
         if isinstance(e, errors.GoSmartError):

@@ -36,17 +36,17 @@ etc_location = '{2}'
 # treatments. Obviously this isn't particularly configurable, so an alternative,
 # ideally one that allows a pre-computed result from one simulation to be used
 # as a parameter for another, would be preferable.
-sars_prefix = '${CMAKE_CURRENT_SOURCE_DIR}' + '/src/gosmart/'
+sars_prefix = '${CMAKE_CURRENT_SOURCE_DIR}' + '/src/gssf/'
 sars = [d[len(sars_prefix):] for d in glob.glob(sars_prefix + 'data/power_profiles/sar-*.dat')]
 
 # Standard configuration, including GSSF (launcher) and GSSA (server) modules,
 # along with a whole lot of important package data. Standard fields should be
 # loaded from configuration files ultimately
-setup(name='gosmart',
+setup(name='Go-Smart Simulation',
       version='${PACKAGE_VERSION}',
-      packages=['gosmart', 'gosmart.launcher', 'gosmart.comparator', 'gosmart.server', 'gosmart.server.families', 'gosmart_sf_config'],
-      package_dir={'gosmart': '${CMAKE_CURRENT_SOURCE_DIR}/src/gosmart', 'gosmart_sf_config': config_directory},
-      package_data={'gosmart': [
+      packages=['gssf', 'gssf', 'gssf.comparator', 'gssa', 'gssa.families', 'gosmart_sf_config'],
+      package_dir={'gssf': '${CMAKE_CURRENT_SOURCE_DIR}/src/gssf', 'gssa': '${CMAKE_CURRENT_SOURCE_DIR}/src/gssa', 'gosmart_sf_config': config_directory},
+      package_data={'gssf': [
           'data/go-smart-probe-location-template.txt',
           'data/go-smart-power-over-time.txt',
 

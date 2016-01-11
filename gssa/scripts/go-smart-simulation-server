@@ -20,8 +20,8 @@
 
 from autobahn.asyncio.wamp import ApplicationRunner
 
-from gosmart.server.server import GoSmartSimulationComponent
-from gosmart.server.database import SQLiteSimulationDatabase
+from gssa.server import GoSmartSimulationComponent
+from gssa.database import SQLiteSimulationDatabase
 
 import argparse
 import uuid

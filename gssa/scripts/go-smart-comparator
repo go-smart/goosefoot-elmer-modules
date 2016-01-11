@@ -20,7 +20,7 @@
 
 # This tool is a simple wrapper around the Comparator module, allowing two GSSA
 # XMLs to be compared conceptually
-from gosmart.comparator import Comparator
+from gssa.comparator import Comparator
 import argparse
 
 

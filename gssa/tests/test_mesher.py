@@ -39,7 +39,7 @@ import time
 import os
 import pickle
 from subprocess import check_output
-from gosmart.launcher import gosmart
+from gssf import gssf
 
 
 class ArgParseMock:
@@ -118,7 +118,7 @@ def test_mesher_cube(tmpdir):
     cwd = os.getcwd()
     os.chdir(p)
 
-    launcher = gosmart.GoSmart(args=args)
+    launcher = gssf.GSSF(args=args)
 
     start = time.time()
     launcher.launch(default_procs=1)
@@ -145,7 +145,7 @@ def test_mesher_cube_dense(tmpdir):
     cwd = os.getcwd()
     os.chdir(p)
 
-    launcher = gosmart.GoSmart(args=args)
+    launcher = gssf.GSSF(args=args)
 
     start = time.time()
     launcher.launch(default_procs=1)
