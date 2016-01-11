@@ -1,0 +1,30 @@
+site_name: Go-Smart Simulation Architecture Documentation
+pages:
+    - Home: index.md
+    - About: about.md
+    - Comparison: comparison.md
+    - Clinical Domain Model: cdm.md
+    - Errors: errors.md
+    - Server:
+        - Overview: 'server/overview.md'
+        - Executables: 'server/executables.md'
+    - GSSF:
+        - Overview: 'gssf/overview.md'
+        - go-smart-launcher: 'gssf/go-smart-launcher.md'
+        - GSSF XML Format: 'gssf/xml.md'
+        - Logging &amp; Errors: 'gssf/logging.md'
+        - Constants (Parameters): 'gssf/constants.md'
+        - Regions &amp; Geometry: 'gssf/regions.md'
+        - Needle Library Component: 'gssf/needle-library.md'
+        - Meshing Components: 'gssf/mesher.md'
+        - Optimizer Component: 'gssf/optimizer.md'
+        - ElmerGrid Component: 'gssf/elmergrid.md'
+        - ElmerSolver Component: 'gssf/elmer.md'
+        - Lesion Component: 'gssf/lesion.md'
+        - Validation Component: 'gssf/validation.md'
+        - Extensions to Elmer: 'gssf/numa-elmer.md'
+        - Utilities: 'gssf/utilities.md'
+    - mesher-cgal: 'mesher-cgal.md'
+theme: readthedocs
+extra_css:
+    - extra.css
