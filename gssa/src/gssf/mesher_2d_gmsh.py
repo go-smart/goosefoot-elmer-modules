@@ -19,12 +19,13 @@ import os
 import string
 import errno
 
-from gosmart.launcher.mesher import GoSmartMesher
-from gosmart.launcher.globals import slugify
-import gosmart.config
+from .mesher import GoSmartMesher
+from .globals import slugify
+from . import config
 
 
-class GoSmartMesherAxisymmetric(GoSmartMesher):
+# This class uses GMSH to mesh 2D domains for use in axisymmetric problems
+class GoSmartMesher2DGMSH(GoSmartMesher):
     mesher_binary = 'gmsh'
 
     def __init__(self, logger):
@@ -41,6 +42,7 @@ class GoSmartMesherAxisymmetric(GoSmartMesher):
         super().parse_config(config_node)
 
         for node in config_node:
+            # Use the library .geo template given in the XML
             if node.tag == 'template':
                 if node.get('height') is not None:
                     self.height = float(node.get('height'))
@@ -48,6 +50,8 @@ class GoSmartMesherAxisymmetric(GoSmartMesher):
                     self.width = float(node.get('width'))
 
                 self.template_name = node.get('name')
+                # Go through all of the (dimension) subnodes in this node and provide
+                # them as $CONSTANT_XYZ variables in the template
                 for dimension in node:
                     self._geo_mapping[slugify("CONSTANT_%s" % dimension.get('name'))] = dimension.get('value')
                     self.logger.ensure_constant(dimension.get('name'), dimension.get('value'), typ='float')
@@ -55,6 +59,8 @@ class GoSmartMesherAxisymmetric(GoSmartMesher):
                 self.nearfield = float(node.get('nearfield'))
                 self.farfield = float(node.get('farfield'))
 
+    # The distinction between this and _launch_mesh is legacy and should
+    # probably be removed
     def launch(self, needle_file, extent_file, preprocessor=None, appendix=""):
         self.output_prefix = "%s/%s" % (self.suffix, self.logger.runname)
 
@@ -67,21 +73,24 @@ class GoSmartMesherAxisymmetric(GoSmartMesher):
         return meshes
 
     def _launch_mesh(self, template, appendix):
-        # output_prefix = "%s/%s" % (self.suffix, self.logger.runname)
-
-        # f = lambda n: n.replace("OUTDIR", self.suffix)
-
+        # Always-available parameters
         geo_mapping = {
             "NEARFIELD": self.nearfield,
             "FARFIELD": self.farfield,
             "INNERHEIGHT": self.height,
             "INNERWIDTH": self.width,
         }
+
+        # Add in all the dimensions from the XML
         geo_mapping.update(self._geo_mapping)
+
+        # Add in region IDs
         geo_mapping.update(self.logger.get_region_ids())
+
+        # Pick out the library template
         geo_template_filename = os.path.basename("go-smart-axisymm_%s.geo" % self.template_name)
         self.logger.print_line(geo_template_filename)
-        geo_template_stream = open(os.path.join(gosmart.config.template_directory, "templates", geo_template_filename), "r")
+        geo_template_stream = open(os.path.join(config.template_directory, "templates", geo_template_filename), "r")
         geo_template = string.Template(geo_template_stream.read())
         geo_template_stream.close()
 
@@ -92,12 +101,14 @@ class GoSmartMesherAxisymmetric(GoSmartMesher):
                 self.print_fatal("Could not create %s directory: %s" %
                                  (self.suffix, str(e)))
 
+        # Substitute template entries
         geo_file = "%s.geo" % self.logger.runname
         geo_string = geo_template.substitute(geo_mapping)
         geo_stream = open(os.path.join(self.logger.make_cwd(self.suffix), geo_file), "w")
         geo_stream.write(geo_string)
         geo_stream.close()
 
+        # Run GMSH with only the 2D meshing argument
         args = ["-2", geo_file]
 
         self.cwd = self.suffix

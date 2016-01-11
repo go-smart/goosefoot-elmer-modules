@@ -23,24 +23,24 @@ import errno
 import shutil
 import time
 import json
-import gosmart.config
+from . import config
 import socket
 from distutils.version import StrictVersion
 from lxml import etree as ET
 
-from gosmart.launcher.lesion import GoSmartLesion
-from gosmart.launcher.validation import GoSmartValidation
-from gosmart.launcher.elmer import GoSmartElmer
-from gosmart.launcher.elmergrid import GoSmartElmerGrid
-from gosmart.launcher.logger_vigilant import GoSmartLoggerVigilant
-from gosmart.launcher.mesh_optimizer import GoSmartMeshOptimizer
-from gosmart.launcher.mesher import GoSmartMesher
-from gosmart.launcher.mesher_axisymmetric import GoSmartMesherAxisymmetric
-from gosmart.launcher.mesher_cgal import GoSmartMesherCGAL
-from gosmart.launcher.needlelibrary_interface import GoSmartNeedleLibraryInterface
-from gosmart.launcher.preprocessor import GoSmartPreprocessorInterface
-from gosmart.launcher.globals import colorama_imported, slugify
-from gosmart.launcher.errors import GoSmartModelError
+from .lesion import GoSmartLesion
+from .validation import GoSmartValidation
+from .elmer import GoSmartElmer
+from .elmergrid import GoSmartElmerGrid
+from .logger_vigilant import GoSmartLoggerVigilant
+from .mesh_optimizer import GoSmartMeshOptimizer
+from .mesher import GoSmartMesher
+from .mesher_2d_gmsh import GoSmartMesher2DGMSH
+from .mesher_3d_cgal import GoSmartMesher3DCGAL
+from .needlelibrary_interface import GoSmartNeedleLibraryInterface
+from .preprocessor import GoSmartPreprocessorInterface
+from .globals import colorama_imported, slugify
+from .errors import GoSmartModelError
 
 if colorama_imported:
     import colorama
@@ -52,7 +52,7 @@ if colorama_imported:
 # that if, for some unknown reason, multiple instances
 # of the class are required, special care should be
 # taken
-class GoSmart:
+class GoSmartSimulationFramework:
     outfilename = "logger/go-smart-elmer-%d" % os.getpid()
 
     silent = False
@@ -158,8 +158,8 @@ class GoSmart:
 
         # Provide version strings to aid reproducibility. These repos should
         # be on Github, so it is possible to go back and check results.
-        self.logger.print_line("Using GSSF version: %s" % gosmart.config.git_revision)
-        self.logger.print_line("Using Elmer (NUMA-modified) version: %s" % gosmart.config.elmer_git_revision)
+        self.logger.print_line("Using GSSF version: %s" % config.git_revision)
+        self.logger.print_line("Using Elmer (NUMA-modified) version: %s" % config.elmer_git_revision)
 
         # Start counting percentage progress
         overall_percentage = 0.0
@@ -568,9 +568,9 @@ class GoSmart:
                 skip_outer = (section.get("skip") == "outer")
 
                 if type == "CGAL":
-                    mesher = GoSmartMesherCGAL(self.logger)
+                    mesher = GoSmartMesher3DCGAL(self.logger)
                 elif type == "axisymmetric":
-                    mesher = GoSmartMesherAxisymmetric(self.logger)
+                    mesher = GoSmartMesher2DGMSH(self.logger)
                 else:
                     self.logger.print_fatal("Unknown mesher type %s in %s" % (type, filename))
 
@@ -604,9 +604,9 @@ class GoSmart:
 
                         # This also has a type
                         if inner_type == "CGAL":
-                            component = GoSmartMesherCGAL(self.logger)
+                            component = GoSmartMesher3DCGAL(self.logger)
                         elif inner_type == "axisymmetric":
-                            component = GoSmartMesherAxisymmetric(self.logger)
+                            component = GoSmartMesher2DGMSH(self.logger)
                         else:
                             self.logger.print_fatal("Unknown mesher type %s in %s" % (inner_type, filename))
 
@@ -624,7 +624,7 @@ class GoSmart:
                         template_set = inner_node.get("template")
                         if template_set is not None:
                             template_filename = "templates/inner-%s.xml" % template_set
-                            with open(os.path.join(self.logger.get_cwd(), gosmart.config.template_directory, template_filename), "r") as template_file:
+                            with open(os.path.join(self.logger.get_cwd(), config.template_directory, template_filename), "r") as template_file:
                                 configtree = ET.parse(template_file)
                                 root = configtree.getroot()
                                 component.parse_config(root)

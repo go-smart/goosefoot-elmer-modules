@@ -18,9 +18,10 @@
 import os
 import shutil
 
-from gosmart.launcher.component import GoSmartComponent
+from .component import GoSmartComponent
 
 
+# Underlying class for defining a mesher
 class GoSmartMesher(GoSmartComponent):
     suffix = 'mesher'
 
@@ -37,6 +38,8 @@ class GoSmartMesher(GoSmartComponent):
     def parse_config(self, config_node):
         super().parse_config(config_node)
 
+    # All meshers should return an MSH, at least at the moment, to simplify our
+    # ElmerGrid usage
     def launch(self, needle_files, extent_file, args=None, appendix=""):
         super().launch()
 
@@ -53,6 +56,8 @@ class GoSmartMesher(GoSmartComponent):
         if extent_file is not None and os.path.exists(extent_file):
             filelist.append(("extent", extent_file))
 
+        # Here we find any awkward in-workflow generated files that may be
+        # required, i.e. needles and extents
         for f in filelist:
             t = os.path.join(self.logger.make_cwd(self.suffix), "needle-%s.stl" % f[0])
             if f[1] is not None:

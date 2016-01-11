@@ -18,19 +18,21 @@
 import os.path
 import shutil
 
-from gosmart.launcher.component import GoSmartComponent
+from .component import GoSmartComponent
 
 
-# Class to hold settings specific to the mesh optimizer
+# Class to hold settings specific to the mesh optimizer (GMSH)
 class GoSmartMeshOptimizer(GoSmartComponent):
     suffix = 'optimizer'
 
+    # This relates optimization method to the actual GMSH flags
     _methods = {"gmsh": "-optimize", "netgen": "-optimize_netgen"}
 
-    # from_format = 14 -GMSH
     def __init__(self, logger, method=None, optimizer_binary=None):
         super().__init__(logger)
 
+        # If we don't have an override, this works out as
+        # 'gmsh -0 -optimize ...'
         if optimizer_binary is None:
             optimizer_binary = "gmsh"
         if method is None:
@@ -62,6 +64,7 @@ class GoSmartMeshOptimizer(GoSmartComponent):
         copied_mesh = os.path.join(self.logger.get_cwd(), copied_mesh)
         output_mesh = os.path.join(self.logger.get_cwd(), output_mesh)
 
+        # Get mesh, probably from the mesher, ready for optimization
         try:
             shutil.copy(input_mesh, copied_mesh)
         except Exception as e:

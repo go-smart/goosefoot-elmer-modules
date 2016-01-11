@@ -17,6 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import numpy as N
 
+
+# If we can use colorama, import it and provide pretty colour output
 colorama_imported = False
 try:
     import colorama
@@ -24,10 +26,15 @@ try:
 except:
     colorama_imported = False
 
+# We use this for relaunching when multiple processes are used
 launcher_command = "go-smart-launcher"
 
+# Ups the level of debug statements
+# TODO: switch all this to the logging module
 debug = False
 
+# If we cannot find the install-time configuration, guess these binaries - it is
+# unlikely that they are wrong
 defaults = {
     "elmer binary": "ElmerSolver_mpi",
     "fortran binary": "gfortran",
@@ -36,8 +43,8 @@ defaults = {
     "preprocessor command": "go-smart-preprocessor",
 }
 
-numa_elmer_library_directory = "lib/numa-elmer"
-
+# DEPRECATED: certain pre-known SIF templates require dynamically compiled
+# modules
 _elmer_modules_required = {
     "rfa point sources": [],
     "rfa point sources (modified bioheat)": [],
@@ -49,10 +56,12 @@ _elmer_modules_required = {
     "ire": [],
 }
 
+# Used to test approximate equality (e.g. simulationscaling~=1)
 EPS = 1e-8
 
 
 # TODO:PTW:THIS SHOULD BE REPLACED WITH SLUGIFY!!!
+# However, we need to now check that that won't break anything
 def slugify(inp):
     inp = inp.upper().replace('-', ' ')
     inp = inp.replace('(', '')
@@ -62,11 +71,16 @@ def slugify(inp):
     return inp
 
 
+# Utility to create a rotation matrix for Elmer
 def _generate_rotation_matrix(x, y, z, backward=False):
     R = _generate_rotation_matrix_numpy(x, y, z, backward)
     return " ".join([str(d) for d in R.flat])
 
 
+# Create rotation matrix to take a reference axis to a desired axis
+# This is primarily useful for taking points on, say, a reference needle, to the
+# actual orientation of the embedded needle, prior to translation from the
+# origin. It uses Rodrigues' rotation formula.
 def _generate_rotation_matrix_numpy(x, y, z, backward=False, rx=0, ry=1, rz=0):
     a = N.array((rx, ry, rz))
     b = N.array((float(x), float(y), float(z)))
@@ -77,6 +91,10 @@ def _generate_rotation_matrix_numpy(x, y, z, backward=False, rx=0, ry=1, rz=0):
         U = a
         V = b
 
+    # As our rotation axis, we choose the cross product of the supplied vectors.
+    # If they are parallel, we take the vector perpendicular to U in the x-y
+    # plane. If U and V lie on the z-axis (which happens surprisingly often), we
+    # choose the x-axis.
     n = N.cross(U, V) / (N.linalg.norm(U) * N.linalg.norm(V))
     s = N.linalg.norm(n)
     if abs(s) > 1e-12:
@@ -87,6 +105,7 @@ def _generate_rotation_matrix_numpy(x, y, z, backward=False, rx=0, ry=1, rz=0):
         n = N.array((-y, x, 0))
         n = n / N.linalg.norm(n)
 
+    # The remainder of the routine is as standard in R. rotation formula
     c = N.dot(U, V) / (N.linalg.norm(U) * N.linalg.norm(V))
 
     nx = N.matrix(((0, -n[2], n[1]),
@@ -96,6 +115,9 @@ def _generate_rotation_matrix_numpy(x, y, z, backward=False, rx=0, ry=1, rz=0):
     return R
 
 
+# These are hard-coded algorithms for calculating additional SIF template
+# parameters when the requirements are all available. The lambda formula takes
+# the requirements as arguments in the order they are listed below.
 _sif_calculations = {
     "PERFUSION_COEFFICIENT": {"requirements":
                               ("CONSTANT_PERFUSION_RATE_TISSUE",

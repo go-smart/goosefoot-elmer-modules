@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from gosmart.launcher.logger import GoSmartLogger
+from .logger import GoSmartLogger
 
 # NB: redbrain has renamed observant to vigilant. The comments use 'vigilant' as
 # the correct current name for the project. The code should be updated when
@@ -54,9 +54,15 @@ class GoSmartLoggerVigilant(GoSmartLogger):
                 self.print_line('Initiated Vigilant')
 
     def _start_observing(self):
+        # ``StatsCore`` is the original observant daemon. It seems to have been
+        # replaced more recently by ``vigilant.daemon.Daemon``
+        # TODO: update for vigilant Daemon
+
+        # Get vigilant to read its own config
         config = CParser()
         config.read(os.path.join(etc_location, 'vigilant.cfg'))
 
+        # Extract the information we need from the config object
         lock = str(config.get('daemon', 'lock'))
         sock = str(config.get('daemon', 'sock'))
         transport_type = str(config.get('transport', 'type'))
@@ -65,22 +71,31 @@ class GoSmartLoggerVigilant(GoSmartLogger):
         transport_means = UDPStatsTransport if transport_type == 'udp' else TCPStatsTransport
         transport = transport_means(host=host, port=port)
 
+        # Start the daemon
         self.client = StatsCore.attachOrCreateStatsDaemon(transport, pid=lock, sock=sock)
+
+        # Tell the daemon who we are
         self.client.postWatchPid('go-smart-launcher', os.getpid())
+
+        # Give it a second to avoid confusion by posting before registered
+        # TODO: tidy this up!
         time.sleep(1)
 
     def print_debug(self, line='', prefix='| '):
+        # Hijack GSL's print routine
         if self.debug:
             self.log_line(line, prefix, color="CYAN", transmit=False)
 
     def print_line(self, line='', prefix='| ', color="GREEN", color_text=True, color_bright=False):
+        # Hijack GSL's print routine
         self.log_line(line, prefix, color, color_text, color_bright, transmit=True)
 
     def log_line(self, line='', prefix='| ', color="GREEN", color_text=True, color_bright=False, transmit=True):
+        # Print as normal, but also fire off to vigilant if appropriate
         super(GoSmartLoggerVigilant, self).print_line(line, prefix, color, color_text, color_bright)
 
-        #FIXME: this can hold up the logging until the original process chokes on the lack of pipe cleanage
-        #if self._use_observant and transmit and self.client is not None:
+        # FIXME: this can hold up the logging until the original process chokes on the lack of pipe cleanage
+        # if self._use_observant and transmit and self.client is not None:
         #    self.client.postLogMessageForKey('go-smart-launcher', line)
 
     def __del__(self):

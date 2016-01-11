@@ -17,10 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 
-from gosmart.launcher.component import GoSmartComponent
-from gosmart.launcher.globals import defaults
+from .component import GoSmartComponent
+from .globals import defaults
 
 
+# This is DEPRECATED
 class GoSmartPreprocessorInterface(GoSmartComponent):
     suffix = 'preprocessor'
 

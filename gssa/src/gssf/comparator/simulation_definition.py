@@ -18,7 +18,7 @@
 
 from munkres import Munkres
 from difflib import Differ
-from gosmart.server import parameters
+from .. import parameters
 
 # CDM: Clinical Domain Model (see documentation)
 

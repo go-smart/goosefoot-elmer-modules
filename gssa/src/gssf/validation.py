@@ -18,7 +18,7 @@
 import os
 import shutil
 
-from gosmart.launcher.component import GoSmartComponent
+from .component import GoSmartComponent
 
 
 # Note that this module requires availability of the (closed source) Aalto validation tool
@@ -34,9 +34,11 @@ class GoSmartValidation(GoSmartComponent):
         super().__init__(logger)
 
     def parse_config(self, config_node):
+        # If we do not have registration explicitly set to 'false', we let the Aalto tool handle it itself
         if config_node.get('registration') and config_node.get('registration').lower() == 'false':
             self.registration = False
 
+        # This should be a region already defined, providing our segmented ablation lesion surface
         self.refdata = config_node.get('reference')
 
         super().parse_config(config_node)
@@ -49,8 +51,12 @@ class GoSmartValidation(GoSmartComponent):
 
         input_cwd = os.path.join(self.logger.get_cwd(), input_cwd)
         input_name = self.logger.runname + ".vtp"
+
+        # Clean clinician-segmented and simulation input, i.e. remove additional disconnected components (noise)
         clean_input_name = self.logger.runname + "-clean.vtp"
+        # This is the translated&/rotated simulated surface, with a deviation field spread over it
         output_name = self.logger.runname + "-deviation.vtp"
+        # The output analysis will be stored here
         analysis_name = self.logger.runname + "-analysis.xml"
         refdata_name = self.logger.zones_excluded[self.refdata]['filename']
 
@@ -66,9 +72,11 @@ class GoSmartValidation(GoSmartComponent):
         except Exception as e:
             self.logger.print_fatal("Could not copy input mesh across for validation tool: %s" % str(e))
 
+        # Clean input data
         self._launch_subprocess(self.cleaner_binary_name, ['--connectivity', '--input', 'refdata.vtp', '--output', 'refdata-clean.vtp'])
         self._launch_subprocess(self.cleaner_binary_name, ['--connectivity', '--input', input_name, '--output', clean_input_name])
 
+        # Perform validation
         args = [
             'refdata-clean.vtp',
             clean_input_name,

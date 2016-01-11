@@ -18,6 +18,7 @@
 import argparse
 
 
+# Manages the argparse args for go-smart-launcher
 def parse_args():
     parser = argparse.ArgumentParser(description='Wrapper for Go-Smart simulation environment')
     parser.add_argument('--elmer', dest='elmer_binary', help='Name of the ElmerSolver binary')

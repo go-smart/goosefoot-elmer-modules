@@ -19,31 +19,53 @@ import re
 import os
 import shutil
 
-from gosmart.launcher.component import GoSmartComponent
-from gosmart.launcher.globals import EPS
-from gosmart.launcher.errors import GoSmartClientError, GoSmartServerError
+from .component import GoSmartComponent
+from .globals import EPS
+from .errors import GoSmartClientError, GoSmartServerError
 
 
 # Class to hold settings specific to the lesion post-processing
 class GoSmartLesion(GoSmartComponent):
     suffix = 'lesion'
 
+    # This is the binary to use for GSL
     binary_name = 'go-smart-lesion'
+
+    # Default threshold (works for cell death)
     threshold = 0.8
+
+    # Choice of time point in the Elmer output
     selection = 'most-recent'
+
+    # Field to threshold against
     field = 'dead'
+
+    # Ensure resulting lesion bounds a connected space (by choosing largest
+    # component)
     connectivity = False
+
+    # DEPRECATED: subdivide mesh before thresholding
     subdivide = False
+
+    # DEPRECATED: adjust for gaps due to neighbouring cell variation by
+    # averaging the surface
     smoothing_iterations = 0
+
+    # Rescale to pre-simulation level
     scaling = 1000
+
     threshold_lower = None
     threshold_upper = None
 
+    # Utility to find the most recent file in a directory from a subset matching
+    # a criterion
     def _most_recent(self, cwd, prefix, criterion):
         filtered = filter(lambda f: criterion(f, prefix), os.listdir(cwd))
         most_recent = max(filtered, key=lambda f: os.stat(os.path.join(self.logger.get_cwd(), cwd, f)).st_mtime)
         return most_recent
 
+    # Utility to find the file with the highest timestep postfix in a directory from a subset matching
+    # a criterion
     def _largest_time(self, cwd, prefix, criterion):
         filtered = filter(lambda f: criterion(f, prefix), os.listdir(cwd))
         largest_time = max(filtered, key=lambda f: re.findall(r'\d+', f)[0])
@@ -52,6 +74,7 @@ class GoSmartLesion(GoSmartComponent):
     def __init__(self, logger):
         super().__init__(logger)
 
+        # Relate the GSSF-XML selection to a routine
         self._find_input = {
             "most-recent": self._most_recent,
             "largest-time": self._largest_time,
@@ -89,6 +112,7 @@ class GoSmartLesion(GoSmartComponent):
         else:
             self.smoothing_iterations = 0
 
+    # Start the lesion cutting
     def launch(self, input_cwd=None, input_prefix=None, is_parallel=False):
         super().launch()
 
@@ -97,14 +121,18 @@ class GoSmartLesion(GoSmartComponent):
 
         input_cwd = os.path.join(self.logger.get_cwd(), input_cwd)
 
+        # If running in parallel, our lesion will be spread over multiple files
         if is_parallel:
             criterion = lambda f, p: f.startswith(p) and f.endswith(".pvtu")
         else:
             criterion = lambda f, p: f.startswith(p) and f.endswith(".vtu")
 
+        # Count the number of files in the input directory (Elmer output) having
+        # a given prefix
         def prefix_ct(p):
             return len([f for f in os.listdir(input_cwd) if criterion(f, p)])
 
+        # Work out the correct prefix for the Elmer VTU results
         if input_prefix is None:
             input_prefix = self.logger.runname.lower()
             if prefix_ct(input_prefix) != 0:
@@ -118,17 +146,20 @@ class GoSmartLesion(GoSmartComponent):
         if prefix_ct(input_prefix) == 0:
             raise GoSmartServerError("No VTU output found for prefix %s" % input_prefix)
 
+        # Get the actual file chooser from the selection type
         selection_method = self._find_input[self.selection]
         input_name = selection_method(input_cwd, input_prefix, criterion)
 
         output_name = self.logger.runname + ".vtp"
         analysis_name = self.logger.runname + "-analysis.xml"
 
+        # Copy the chosen file to our local working directory
         try:
             shutil.copy(os.path.join(input_cwd, input_name), self.logger.make_cwd(self.suffix))
         except Exception as e:
             self.logger.print_fatal("Could not copy input mesh across for lesion exciser: %s" % str(e))
 
+        # Set the arguments for go-smart-lesion
         args = [
             "--input", input_name,
             "--output", output_name,
@@ -155,5 +186,9 @@ class GoSmartLesion(GoSmartComponent):
 
         self.cwd = self.suffix
 
+        # Fire off go-smart-lesion
         self._launch_subprocess(self.binary_name, args)
+
+        # Return the output file that should be held for the user on the grand
+        # exit
         return os.path.join(self.cwd, output_name)

@@ -20,6 +20,7 @@ R4 = 0.895 / 1000;
 slotelevation = 6 / 1000;
 slotheight = 1 / 1000;
 dielectricextension = 0.135 / 1000;
+tissue_top = height;
 
 bottomclearance = 10 / 1000;
 
@@ -28,8 +29,8 @@ bottomclearance = 10 / 1000;
 // dcl = $NEARFIELD / 1000 / L;
 // ccl = $NEARFIELD / 1000 / L;
 // scl = $NEARFIELD / 1000 / L;
-NEARFIELD = 0.05;
-FARFIELD = 3.0;
+NEARFIELD = 0.03;
+FARFIELD = 6.0;
 ncl = NEARFIELD / 1000 / L;
 fcl = FARFIELD / 1000 / L;
 dcl = 2 * NEARFIELD / 1000 / L;
@@ -69,8 +70,8 @@ Point(2) = { (0.+eps), (dy_tip - vdelta) / M, 0., ncl };
 Point(3) = { r_tip / L, (dy_tip_2 - vdelta)/ M, 0., ncl };
 //Point(4) = { r_tip / L, (l_ferrule_1 - vdelta) / M, 0., ncl };
 //Point(5) = { r_tip / L, (l_shaft - vdelta) / M, 0., ncl };
-Point(6) = { r_tip / L, (height - vdelta) / M, 0., ncl };
-Point(7) = { width / L, (height - vdelta) / M, 0., fcl };
+Point(6) = { r_tip / L, (height + tissue_top - vdelta) / M, 0., ncl };
+Point(7) = { width / L, (height + tissue_top - vdelta) / M, 0., fcl };
 Point(8) = { width / L, (- bottomclearance + dy_tip - vdelta) / M, 0., fcl };
 
 // Ferrule
@@ -415,7 +416,7 @@ Physical Surface($REGION_CATHETER) = {4, 12, 14};
 /* Boundaries */
 
 // Scattering Boundary Condition
-Physical Line(2) = { 83, 93, 6, 7, 8 };
+Physical Line(2) = { 83, 6 };
 
 // Conductor Boundary Condition (Upper + Lower)
 Physical Line(3) = { 41, 42000, 42001, 42002, 42003, 43, 44,
@@ -431,6 +432,6 @@ Physical Line(1) = { 1, -36, -44 };
 Physical Line(4) = { 63 };
 
 // Temperature Boundary Condition
-Physical Line(5) = { 6, 7, 8 };
+Physical Line(5) = { 5, 7, 8 }; // Added in needle shaft
 
 Coherence;
