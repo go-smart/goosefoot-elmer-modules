@@ -4,9 +4,9 @@ import yaml
 import io
 import tarfile
 
-from gosmart.server.family import Family
-from gosmart.server.docker import Submitter
-from gosmart.server.parameters import convert_parameter
+from ..family import Family
+from ..docker import Submitter
+from ..parameters import convert_parameter
 
 
 class DockerFamily(Family):
@@ -54,12 +54,12 @@ class DockerFamily(Family):
         os.chmod(update_socket, 0o777)
         self._submitter.set_update_socket(update_socket)
 
-        regions_yaml = os.path.join(working_directory, "input", "regions.yml")
-        regions = self._regions
-        with open(regions_yaml, "w") as f:
-            yaml.dump(regions, f, default_flow_style=False)
+        # regions_yaml = os.path.join(working_directory, "input", "regions.yml")
+        # regions = self._regions
+        # with open(regions_yaml, "w") as f:
+        #     yaml.dump(regions, f, default_flow_style=False)
 
-        self._submitter.add_input(regions_yaml)
+        # self._submitter.add_input(regions_yaml)
 
         parameters_yaml = os.path.join(working_directory, "input", "parameters.yml")
         parameters = self._parameters

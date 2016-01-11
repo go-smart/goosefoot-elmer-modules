@@ -15,10 +15,10 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from gosmart.server.families.docker import DockerFamily
+from .docker import DockerFamily
 
 import asyncio
-from gosmart.server.families.mesher_gssf import MesherGSSFMixin
+from .mesher_gssf import MesherGSSFMixin
 
 
 class FenicsFamily(DockerFamily, MesherGSSFMixin):

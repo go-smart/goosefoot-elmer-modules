@@ -20,7 +20,7 @@
 import os
 import json
 import asyncio
-from gosmart.server.parameters import read_parameters, convert_parameter
+from .parameters import read_parameters, convert_parameter
 
 register = {}
 
@@ -84,7 +84,7 @@ class Family(metaclass=FamilyType):
                     self._regions[region.get('id')]["format"] = 'both'
                 else:
                     self._regions[region.get('id')]["format"] = 'zone'
-            if self._regions[region.get('id')]["format"] in ('surface', 'zone', 'both') and region.get('input'):
+            if self._regions[region.get('id')]["format"] in ('surface', 'zone', 'both', 'mesh') and region.get('input'):
                 self._files_required[os.path.join('input', target_file)] = region.get('input')  # Any changes to local/remote dirs here
             self._regions_by_meaning[region.get('name')].append(self._regions[region.get('id')])
 
@@ -125,6 +125,6 @@ class Family(metaclass=FamilyType):
     def validation(self):
         return None
 
-from gosmart.server.families import scan
+from .families import scan
 
 scan()

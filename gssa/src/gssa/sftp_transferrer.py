@@ -22,7 +22,7 @@ import paramiko
 
 import os
 
-from gosmart.server.transferrer import ITransferrer
+from .transferrer import ITransferrer
 
 
 @implementer(ITransferrer)

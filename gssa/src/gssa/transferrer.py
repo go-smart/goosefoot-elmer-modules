@@ -40,9 +40,9 @@ class ITransferrer(zope.interface.Interface):
         """Configure this transferrer using the transferrer node of a GSSA-XML input"""
 
 
-from gosmart.server.http_transferrer import HTTPTransferrer
-from gosmart.server.sftp_transferrer import SFTPTransferrer
-from gosmart.server.tmp_transferrer import TmpTransferrer
+from .http_transferrer import HTTPTransferrer
+from .sftp_transferrer import SFTPTransferrer
+from .tmp_transferrer import TmpTransferrer
 
 
 transferrer_register = {

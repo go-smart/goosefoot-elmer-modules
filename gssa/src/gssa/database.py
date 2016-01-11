@@ -20,7 +20,7 @@ import traceback
 import sys
 import os
 
-from gosmart.server.definition import GoSmartSimulationDefinition
+from .definition import GoSmartSimulationDefinition
 
 
 class SQLiteSimulationDatabase:

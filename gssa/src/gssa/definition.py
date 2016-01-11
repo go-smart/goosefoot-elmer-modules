@@ -22,11 +22,11 @@ import traceback
 
 # Replace with better integrated approach!
 import asyncio
-from gosmart.server.transferrer import transferrer_register
+from .transferrer import transferrer_register
 from zope.interface.verify import verifyObject
-from gosmart.server.transferrer import ITransferrer
-import gosmart.server.family as families
-import gosmart.server.shadow_watcher as shadow_watcher
+from .transferrer import ITransferrer
+import .family as families
+import .shadow_watcher as shadow_watcher
 
 from lxml import etree as ET
 

@@ -28,7 +28,7 @@ import multiprocessing
 import tempfile
 import time
 import traceback
-import gosmart.server.family as families
+from . import family as families
 
 try:
     import StatsCore
@@ -38,9 +38,9 @@ try:
 except:
     use_observant = False
 
-from gosmart.server.definition import GoSmartSimulationDefinition
-from gosmart.comparator import Comparator
-from gosmart.server.translator import GoSmartSimulationTranslator
+from .definition import GoSmartSimulationDefinition
+from .comparator import Comparator
+from .translator import GoSmartSimulationTranslator
 from .error import Error, makeError
 
 

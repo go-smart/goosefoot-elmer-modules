@@ -7,7 +7,7 @@ import os
 import requests
 from .error import Error, makeError
 
-from gosmart.server.transferrer import ITransferrer
+from .transferrer import ITransferrer
 
 
 @implementer(ITransferrer)

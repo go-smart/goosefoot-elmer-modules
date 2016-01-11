@@ -7,7 +7,7 @@ import os
 import tempfile
 import tarfile
 
-from gosmart.server.transferrer import ITransferrer
+from .transferrer import ITransferrer
 
 
 @implementer(ITransferrer)
@@ -58,7 +58,7 @@ class TmpTransferrer:
                 shutil.copy(remote, absolute_path)
             except FileNotFoundError as e:
                 print("Could not transfer %s on /tmp to %s - not found" % (remote, absolute_path))
-                raise e
+                # raise e
 
     def push_files(self, files, root, remote_root):
         for local, remote in files.items():

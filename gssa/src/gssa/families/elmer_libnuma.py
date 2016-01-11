@@ -15,8 +15,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-from gosmart.server.family import Family
-from gosmart.server.parameters import convert_parameter
+from .family import Family
+from .parameters import convert_parameter
 
 
 import os
@@ -26,8 +26,8 @@ import sys
 import json
 import traceback
 
-from gosmart.server.families.gssf_arguments import GoSmartSimulationFrameworkArguments
-from gosmart.server.families.mesher_gssf import MesherGSSFMixin
+from .families.gssf_arguments import GoSmartSimulationFrameworkArguments
+from .families.mesher_gssf import MesherGSSFMixin
 
 
 class ElmerLibNumaFamily(Family, MesherGSSFMixin):

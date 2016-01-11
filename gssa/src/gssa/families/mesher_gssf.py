@@ -8,9 +8,9 @@ import sys
 import shutil
 import yaml
 
-from gosmart.server.parameters import convert_parameter
+from ..parameters import convert_parameter
 
-from gosmart.server.families.gssf_arguments import GoSmartSimulationFrameworkArguments
+from ..families.gssf_arguments import GoSmartSimulationFrameworkArguments
 
 
 class MesherGSSFMixin:
@@ -31,36 +31,52 @@ class MesherGSSFMixin:
             traceback.print_exc(file=sys.stderr)
             raise e
 
-        tree = ET.ElementTree(translated_xml)
+        input_msh = os.path.join(working_directory, "input", "input.msh")
+        labelling_yaml = os.path.join(working_directory, "input", "mesh_labelling.yml")
 
-        with open(os.path.join(working_directory, "settings.xml"), "wb") as f:
-            tree.write(f, pretty_print=True)
+        success = False
 
-        args = ["go-smart-launcher"] + self._args.to_list()
+        uploaded_msh = os.path.join(working_directory, "input", "mesh-0.msh")
+        if os.path.exists(uploaded_msh):
+            shutil.copyfile(uploaded_msh, input_msh)
+            print("Found uploaded msh")
+            success = True
 
-        task = yield from asyncio.create_subprocess_exec(
-            *[a for a in args if a not in ('stdin', 'stdout', 'stderr')],
-            cwd=working_directory
-        )
+        if not os.path.exists(input_msh):
+            tree = ET.ElementTree(translated_xml)
 
-        yield from task.wait()
+            with open(os.path.join(working_directory, "settings.xml"), "wb") as f:
+                tree.write(f, pretty_print=True)
 
-        msh_input = os.path.join(working_directory, "mesher", "elmer_libnuma.msh")
-        mesh_labelling_yaml = os.path.join(working_directory, "mesher", "mesh_labelling.yml")
-        shutil.copyfile(msh_input, os.path.join(working_directory, "input", "input.msh"))
-        self._files_required["input.msh"] = msh_input
+            args = ["go-smart-launcher"] + self._args.to_list()
 
-        with open(mesh_labelling_yaml, "r") as f:
-            mesh_labelling = yaml.load(f)
+            task = yield from asyncio.create_subprocess_exec(
+                *[a for a in args if a not in ('stdin', 'stdout', 'stderr')],
+                cwd=working_directory
+            )
 
-        regions = mesh_labelling.copy()
-        regions.update(self._regions)
-        for k, v in regions.items():
-            if k in mesh_labelling:
-                v.update(mesh_labelling[k])
-        self._regions = regions
+            yield from task.wait()
 
-        return task.returncode == 0
+            msh_input = os.path.join(working_directory, "mesher", "elmer_libnuma.msh")
+            mesh_labelling_yaml = os.path.join(working_directory, "mesher", "mesh_labelling.yml")
+            shutil.copyfile(msh_input, input_msh)
+            shutil.copyfile(mesh_labelling_yaml, labelling_yaml)
+
+            success = (task.returncode == 0)
+
+            with open(labelling_yaml, "r") as f:
+                mesh_labelling = yaml.load(f)
+
+            regions = mesh_labelling.copy()
+            regions.update(self._regions)
+            for k, v in regions.items():
+                if k in mesh_labelling:
+                    v.update(mesh_labelling[k])
+            self._regions = regions
+
+        self._files_required["input.msh"] = input_msh
+
+        return success
 
     def to_mesh_xml(self):
         root = ET.Element('gosmart')
@@ -134,7 +150,7 @@ class MesherGSSFMixin:
 
         mesher = ET.SubElement(root, "mesher")
         mesher.set('type', 'CGAL')
-        #if self.get_parameter("SETTING_SOLID_NEEDLES") is True or self.get_parameter("SETTING_ZONE_BOUNDARIES") is True:
+        # if self.get_parameter("SETTING_SOLID_NEEDLES") is True or self.get_parameter("SETTING_ZONE_BOUNDARIES") is True:
         mesher.set("zone_boundaries", "true")
 
         mesher_inner = self.get_parameter("SETTING_AXISYMMETRIC_INNER")
@@ -209,6 +225,7 @@ class MesherGSSFMixin:
                 zone.set('priority', '1')
                 zone.set('characteristic_length', zonefield)
             elif 'vessels' in region['groups'] or 'bronchi' in region['groups']:
+                # FIXME: surely this should be a surface/vessel tag?
                 zone = ET.SubElement(mesher, 'zone')
                 zone.set('region', idx)
                 zone.set('priority', '2')
