@@ -16,7 +16,7 @@ This tool is configured as follows:
 ```
 
 The `REFERENCEREGION` should be defined  in the `regions` section of
-[GSSF-XML](xmd.md) and provides the surface to which the lesion output by the
+[GSSF-XML](xml.md) and provides the surface to which the lesion output by the
 [lesion](lesion.md) component will be compared. If `registration` is `true`, the
 comparison will be made after an error minimizing rigid transformation,
 effectively providing post-operative registration. If `false`, it assumes

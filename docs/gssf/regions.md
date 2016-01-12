@@ -26,7 +26,7 @@ one of the three tags:
 ```
 
 The `REGIONNAME` may be any string used to refer to the region elsewhere in the
-configuration (such as the [mesher](meshing.md)) and the `INPUTLOCATION` is
+configuration (such as the [mesher](mesher.md)) and the `INPUTLOCATION` is
 usually the filename of the STL surface defining the region. This may be given
 relative to the working directory. Generally, STL files are kept in an `input/`
 subdirectory.

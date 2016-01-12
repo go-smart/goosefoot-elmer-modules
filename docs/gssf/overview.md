@@ -40,7 +40,7 @@ Execution of the workflow is managed by [go-smart-launcher](go-smart-launcher.md
 ## Workflow
 
 The workflow follows the illustrated steps. It executes (in order), the [Needle
-Library](needlelibrary.md), the [meshers](mesher.md), the [mesh
+Library](needle-library.md), the [meshers](mesher.md), the [mesh
 optimizer](optimizer.md), [ElmerGrid](elmergrid.md), the [solver](elmer.md) then
 [lesion extraction](lesion.md) on the results. It may also, if configured, run
 [validation](validation.md).

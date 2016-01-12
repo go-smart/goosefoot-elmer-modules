@@ -1,6 +1,6 @@
 # Meshing Components in GSSF
 
-These wrap the two primary meshing tools in GSSF: [mesher-cgal](mesher-cgal.md) and
+These wrap the two primary meshing tools in GSSF: [mesher-cgal](../mesher-cgal.md) and
 [GMSH](http://gmsh.info). This gives rise to two (current) subclasses of
 `GoSmartMesher`, each providing a component class: [3D-CGAL](#cgal) and
 [2D-GMSH](#gmsh). The specific type of component is specified using

@@ -59,3 +59,10 @@ Argument                                    | Description
   --definition DEF [DEF ...]                | file(s) containing module / text of the definition node<br/>(which should exist but be empty in the GSSA file)
   --input IN [IN ...]                       | input files for surfaces, etc.
   --server SERVER                           | specific server to contact (UUID)
+
+### Description
+
+The client takes all of the definition files and wraps them in a TAR.GZ file,
+referencing it in the [GSSA-XML](../gssa-xml.md) file. It also wraps the input
+surfaces in a TAR.GZ file and adds it to a `tmp`-transferrer node (expected for
+these local client-server interactions).
