@@ -25,12 +25,12 @@ import asyncio
 from .transferrer import transferrer_register
 from zope.interface.verify import verifyObject
 from .transferrer import ITransferrer
-import .family as families
-import .shadow_watcher as shadow_watcher
+from . import family as families
 
 from lxml import etree as ET
 
 
+# Routines for working with a single specific simulation
 class GoSmartSimulationDefinition:
     _guid = None
     _dir = None
@@ -41,21 +41,28 @@ class GoSmartSimulationDefinition:
     _model_builder = None
     _shadowing = False
 
+    # Set the status to be recorded in the DB
     def set_exit_status(self, success, message=None):
         self._exit_status = (success, message)
 
     def get_exit_status(self):
         return self._exit_status
 
+    # Once we have a status connection from the simulation feed messages back to
+    # the server
     @asyncio.coroutine
     def _handle_percentage_connection(self, stream_reader, stream_writer):
         print('Got percentage connection')
         while True:
             line = yield from stream_reader.readline()
 
+            # Once we are out of data and the stream has closed, our job is done
             if not line:
                 break
 
+            # This is a very simplistic parsing approach, separating the string
+            # based on the first pipe character. The percentage is first, the
+            # status message the remainder.
             line = line.decode('utf-8').strip().split('|', maxsplit=1)
             percentage, message = (None, line[0]) if len(line) == 1 else line
 
@@ -64,18 +71,23 @@ class GoSmartSimulationDefinition:
             except ValueError:
                 percentage = None
 
+            # Call the server's callback
             self._update_status_callback(percentage, message)
 
+    # Start up the status server
     @asyncio.coroutine
     def init_percentage_socket_server(self):
         if self._shadowing:
             print('No percentages: shadowing')
             self._percentage_socket_server = None
             return
+
+        # Create the socket for the simulation to reach
         working_directory = self.get_dir()
         self._percentage_socket_location = self._model_builder.get_percentage_socket_location(working_directory)
         print('Status socket for %s : %s' % (self._guid, self._percentage_socket_location))
         try:
+            # Start the socket server
             self._percentage_socket_server = yield from asyncio.start_unix_server(
                 self._handle_percentage_connection,
                 self._percentage_socket_location
@@ -93,11 +105,13 @@ class GoSmartSimulationDefinition:
         self._update_status_callback = update_status_callback
         self._ignore_development = ignore_development
 
+        # Do first parse of the GSSA-XML
         try:
             self.create_xml_from_string(xml_string)
         except Exception as e:
             print(e)
 
+        # Create the input directory, ready for the STL surfaces
         input_dir = os.path.join(tmpdir, 'input')
         if not os.path.exists(input_dir):
             try:
@@ -105,21 +119,27 @@ class GoSmartSimulationDefinition:
             except Exception:
                 traceback.print_exc(file=sys.stderr)
 
+        # Write the GSSA-XML there for safekeeping
         with open(os.path.join(tmpdir, "original.xml"), "w") as f:
             f.write(xml_string)
 
+        # Make a note of the client GUID, in case we need to track backwards
         with open(os.path.join(tmpdir, "guid"), "w") as f:
             f.write(guid)
 
+    # This directory indicates where on the client's system we should be
+    # pulling/pushing from/to
     def get_remote_dir(self):
         return self._remote_dir
 
     def set_remote_dir(self, remote_dir):
         self._remote_dir = remote_dir
 
+    # Find the GUID
     def get_guid(self):
         return self._guid
 
+    # Turn the XML into an ElementTree object
     def create_xml_from_string(self, xml):
         self._finalized = False
 
@@ -131,12 +151,14 @@ class GoSmartSimulationDefinition:
 
         return True
 
+    # Wraps the file transferrer
     def update_files(self, files):
         self._files.update(files)
 
     def get_files(self):
         return self._files
 
+    # Do the heavy lifting of interpreting the GSSA-XML
     def finalize(self):
         print("Finalize - Translating Called")
         if self._xml is None:
@@ -144,30 +166,39 @@ class GoSmartSimulationDefinition:
 
         try:
             print("Instantiating transferrer")
+
+            # Discover what kind of transferrer (e.g. via /tmp, via SFTP) we
+            # have been asked to use and create it
             transferrer_node = self._xml.find('transferrer')
             cls = transferrer_node.get('class')
             self._transferrer = transferrer_register[cls]()
             verifyObject(ITransferrer, self._transferrer)
+            # Configure the transferrer from this node
             self._transferrer.configure_from_xml(transferrer_node)
 
             print("Starting to Translate")
+            # Run the translator, which understands the higher-level, generic
+            # concepts of the GSSA-XML
             family, numerical_model_node, parameters, algorithms = \
                 self._translator.translate(self._xml)
 
             if family is None or family not in families.register:
                 raise RuntimeError("Unknown family of models : %s" % family)
 
+            # If we must ignore DEVELOPMENT='true' runs, and if this is one, then do so
             if self._ignore_development and 'DEVELOPMENT' in parameters and parameters['DEVELOPMENT']:
                 self._shadowing = True
                 print("Shadowing mode ON for this definition")
             else:
                 files_required = self._translator.get_files_required()
 
+                # Set up the model, most of the rest of the work is done here
                 self._model_builder = families.register[family](files_required)
                 self._model_builder.load_definition(numerical_model_node, parameters=parameters, algorithms=algorithms)
 
                 self._files.update(files_required)
                 self._transferrer.connect()
+                # Pull down the input/definition files
                 self._transferrer.pull_files(self._files, self.get_dir(), self.get_remote_dir())
                 self._transferrer.disconnect()
         except Exception:
@@ -180,9 +211,11 @@ class GoSmartSimulationDefinition:
     def finalized(self):
         return self._finalized
 
+    # Return working directory
     def get_dir(self):
         return self._dir
 
+    # Clean out the working directory
     @asyncio.coroutine
     def clean(self):
         yield from self._model_builder.clean()
@@ -191,6 +224,7 @@ class GoSmartSimulationDefinition:
 
         return True
 
+    # Send back the results
     def push_files(self, files):
         if self._shadowing:
             print("Not simulating: shadowing mode ON for this definition")
@@ -216,16 +250,16 @@ class GoSmartSimulationDefinition:
         if self._shadowing:
             print("Not simulating: shadowing mode ON for this definition")
             raise RuntimeError("Failing here to leave simulation for external server control")
-            #task = yield from shadow_watcher.observe(self._guid, self._transferrer,
-            #                                         self._update_status_callback)
 
-            #return task
-
+        # Get our asyncio task from the model builder
         task = yield from self._model_builder.simulate(self.get_dir())
 
         output_directory = os.path.join(self.get_dir(), 'output')
         if not os.path.exists(output_directory):
             os.mkdir(output_directory)
+        # Get files output by the model into the output directory (I think this
+        # is primarily useful for the Docker modules, say, where they are not
+        # already there)
         self._model_builder.retrieve_files(output_directory)
 
         return task
@@ -236,6 +270,7 @@ class GoSmartSimulationDefinition:
             print("Not validating: shadowing mode ON for this definition")
             return None
 
+        # Run the validation step only
         task = yield from self._model_builder.validation(self.get_dir())
 
         return task

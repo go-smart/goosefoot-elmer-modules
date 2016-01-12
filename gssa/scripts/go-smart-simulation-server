@@ -20,7 +20,7 @@
 
 from autobahn.asyncio.wamp import ApplicationRunner
 
-from gssa.server import GoSmartSimulationComponent
+from gssa.server import GoSmartSimulationServerComponent
 from gssa.database import SQLiteSimulationDatabase
 
 import argparse
@@ -37,7 +37,7 @@ print(gosmart_sf_config.etc_location)
 # Note that we explicitly define the type of DB store - this should be made
 # configurable
 def launch(x, server_id, ignore_development=False):
-    component = GoSmartSimulationComponent(x, server_id, lambda: SQLiteSimulationDatabase("simulations.sqlite3"), ignore_development)
+    component = GoSmartSimulationServerComponent(x, server_id, lambda: SQLiteSimulationDatabase("simulations.sqlite3"), ignore_development)
 
     return component
 

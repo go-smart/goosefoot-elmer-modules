@@ -10,6 +10,7 @@ from .error import Error, makeError
 from .transferrer import ITransferrer
 
 
+# Gets input files from an HTTP source
 @implementer(ITransferrer)
 class HTTPTransferrer:
     def __init__(self):
@@ -21,6 +22,7 @@ class HTTPTransferrer:
     def disconnect(self):
         print("Disconnecting")
 
+    # Uses downloadFile to pull
     def pull_files(self, files, root, remote_root):
         for local, remote in files.items():
             remote_url = "%s/%s" % (self._url, remote)
@@ -33,6 +35,7 @@ class HTTPTransferrer:
 
             self.downloadFile(remote_url, absolute_path)
 
+    # Push using HTTP (unless we are told to use `tmp`)
     def push_files(self, files, root, remote_root):
         for local, remote in files.items():
             absolute_path = os.path.join(root, local)
@@ -44,6 +47,7 @@ class HTTPTransferrer:
                 print("Uploading from: " + absolute_path + " to:" + remote)
                 self.uploadFile(absolute_path, remote)
 
+    # This just grabs using urllib GET
     def downloadFile(self, sourceUrlStr, destinationStr):
         '''Downloads a file from the source URL to the destination (typically a folder)
 
@@ -65,6 +69,7 @@ class HTTPTransferrer:
             serverFile.close()
             localFile.close()
 
+    # This uploads with a POST
     def uploadFile(self, sourcePath, destinationUrl):
         '''Uploads the file located in sourcePath to the destinationUrl
 
@@ -85,6 +90,7 @@ class HTTPTransferrer:
         if (r.status_code != 200):
             print("Upload Failed")
 
+    # The XML should indicate the source/destination URL
     def configure_from_xml(self, xml):
         self._url = xml.find("url").text
         self._output = xml.find("output")

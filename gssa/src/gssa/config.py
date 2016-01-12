@@ -15,19 +15,9 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-import os
-import pkgutil
-import sys
 
+import gosmart_sf_config
 
-# Check through the current directory for modules and load them. If they contain
-# classes extending Family, the FamilyClass metaclass on which it is based will
-# add them to the family register
-def scan():
-    iter_modules = pkgutil.iter_modules([
-        os.path.dirname(os.path.realpath(__file__))
-    ])
-
-    for loader, name, ispkg in iter_modules:
-        if name not in sys.modules:
-            loader.find_module(name).load_module(name)
+# CMake generated module
+git_revision = gosmart_sf_config.git_revision
+etc_location = gosmart_sf_config.etc_location

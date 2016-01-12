@@ -27,7 +27,7 @@
          "components": [
             {
                 "type": "class",
-                "classname": "gssa.GoSmartSimulationComponent",
+                "classname": "gssa.GoSmartSimulationServerComponent",
                 "realm": "realm1"
             }
          ],

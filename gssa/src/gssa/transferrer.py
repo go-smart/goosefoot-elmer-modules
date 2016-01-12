@@ -45,6 +45,7 @@ from .sftp_transferrer import SFTPTransferrer
 from .tmp_transferrer import TmpTransferrer
 
 
+# Transferrers must be manually registered
 transferrer_register = {
     "http": HTTPTransferrer,
     "sftp": SFTPTransferrer,

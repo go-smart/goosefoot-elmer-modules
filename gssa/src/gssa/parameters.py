@@ -27,6 +27,7 @@ def convert_parameter(parameter, typ=None, try_json=True):
     if parameter == "null" or parameter is None:
         return None
 
+    # Some basic types will be done manually
     if typ == "float":
         cast = float
     elif typ == "integer":
@@ -38,12 +39,14 @@ def convert_parameter(parameter, typ=None, try_json=True):
     else:
         cast = None
 
+    # If we found one, pass the parameter
     if cast is not None:
         try:
             return cast(parameter)
         except ValueError:
             pass
 
+    # If we have had no success yet and should try converting from JSON, do so
     if try_json:
         try:
             return json.loads(parameter)

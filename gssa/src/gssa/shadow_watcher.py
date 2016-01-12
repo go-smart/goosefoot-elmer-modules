@@ -9,6 +9,12 @@ _TESTING = False
 _PROGRESS_FILE = 'progress.vtp'
 
 
+# This allows a development version of a code, say, to run, produce results and
+# have those results adopted by the stable version. This is normally indicated by
+# use of a parameter DEVELOPMENT=1. This allows the stable version to take care
+# of all normal runs except those for while an experimental set-up is requested.
+# However, this is very preliminary
+# functionality, tested in very specific situations
 @asyncio.coroutine
 def observe(guid, transferrer, update_callback):
     transferrer.connect()

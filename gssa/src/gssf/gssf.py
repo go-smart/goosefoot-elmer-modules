@@ -430,7 +430,7 @@ class GoSmartSimulationFramework:
         root = configtree.getroot()
 
         # Make sure we have the right type of file
-        if root.tag != "gosmart":
+        if root.tag != "gosmart" and root.tag != "gssf":
             if root.tag == "simulationDefinition":
                 self.logger.print_fatal("This settings file seems to be GSSA-XML, not GSSF-XML")
             else:

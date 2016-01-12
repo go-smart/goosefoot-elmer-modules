@@ -23,8 +23,10 @@ import os
 from .definition import GoSmartSimulationDefinition
 
 
+# SQLite database for storing information about active databases
 class SQLiteSimulationDatabase:
     def __init__(self, database):
+        # If we do not currently have a database file, we should make one
         should_create = not os.path.exists(database)
 
         self._db = sqlite3.connect(database)
@@ -33,6 +35,7 @@ class SQLiteSimulationDatabase:
         if should_create:
             self.create()
 
+    # Add the validation XML string to the simulation row
     def updateValidation(self, guid, validation_xml):
         cursor = self._db.cursor()
         cursor.execute('''
@@ -42,6 +45,7 @@ class SQLiteSimulationDatabase:
         ''', {'guid': guid, 'validation': validation_xml})
         self._db.commit()
 
+    # Return just the validation XML string for a simulation
     def getValidation(self, guid):
         cursor = self._db.cursor()
         cursor.execute('''
@@ -57,6 +61,7 @@ class SQLiteSimulationDatabase:
         validation = simulation_row[0]
         return validation
 
+    # Update the status of a simulation in the database
     def setStatus(self, guid, exit_code, status, percentage, timestamp):
         cursor = self._db.cursor()
         cursor.execute('''
@@ -66,6 +71,7 @@ class SQLiteSimulationDatabase:
             ''', {"guid": guid, "status": status, "percentage": percentage, "exit_code": exit_code, "timestamp": timestamp})
         self._db.commit()
 
+    # Return both status and validation
     def getStatusAndValidation(self, guid):
         cursor = self._db.cursor()
         cursor.execute('''
@@ -81,6 +87,7 @@ class SQLiteSimulationDatabase:
         status, percentage, exit_code, timestamp, validation = simulation_row
         return percentage, status, exit_code, timestamp, validation
 
+    # Set up the database
     def create(self):
         cursor = self._db.cursor()
         cursor.execute('''
@@ -99,6 +106,7 @@ class SQLiteSimulationDatabase:
         ''')
         self._db.commit()
 
+    # Update the simulation row or add a new one if not already here
     def addOrUpdate(self, simulation):
         try:
             cursor = self._db.cursor()
@@ -110,6 +118,7 @@ class SQLiteSimulationDatabase:
         except Exception:
             traceback.print_exc(file=sys.stderr)
 
+    # Mark simulations as exited if still appearing to run - usually on server start-up
     def markAllOld(self):
         cursor = self._db.cursor()
         cursor.execute('''
@@ -119,6 +128,7 @@ class SQLiteSimulationDatabase:
         ''')
         self._db.commit()
 
+    # Check how many simulations are still marked IN_PROGRESS
     def active_count(self):
         cursor = self._db.cursor()
         cursor.execute('''
@@ -138,6 +148,7 @@ class SQLiteSimulationDatabase:
         simulations = cursor.fetchall()
         return simulations
 
+    # Get a simulation by the client's GUID
     def retrieve(self, guid):
         cursor = self._db.cursor()
         cursor.execute('''
@@ -173,4 +184,5 @@ class SQLiteSimulationDatabase:
             ''', simulation.get_guid())
 
     def __del__(self):
+        # Tidy up before we leave
         self._db.close()

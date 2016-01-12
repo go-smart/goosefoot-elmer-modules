@@ -19,6 +19,7 @@
 from .parameters import read_parameters
 
 
+# This extracts basic information, common to all families, from GSSA-XML
 class GoSmartSimulationTranslator:
     def __init__(self):
         self._files_required = {}
@@ -30,11 +31,13 @@ class GoSmartSimulationTranslator:
         parameters = {}
         parameters_node = xml.find('parameters')
 
+        # The parameters should always be processed
         if parameters_node is not None:
             parameters = read_parameters(parameters_node)
 
         algorithms = {}
         algorithms_node = xml.find('algorithms')
+        # Algorithms are always defined here (if any)
         if algorithms_node is not None:
             for algorithm in algorithms_node:
                 arguments = []
@@ -48,6 +51,9 @@ class GoSmartSimulationTranslator:
                     "arguments": arguments
                 }
 
+        # The numerical model node contains all the information for the family
+        # specific set-up, but all we need now is the name of the family (and
+        # the definition to pass to it)
         numerical_model_node = xml.find('numericalModel')
         if numerical_model_node is None:
             raise RuntimeError("Numerical model missing")
