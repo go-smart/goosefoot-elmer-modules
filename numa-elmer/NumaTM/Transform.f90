@@ -53,14 +53,17 @@ SUBROUTINE Transform( Model,Solver,dt,TransientSimulation )
   TYPE(Model_t) :: Model
 
   REAL(KIND=dp) :: dt, minval
-  INTEGER :: t
+  INTEGER :: t, j, BC, n, i
   LOGICAL :: TransientSimulation, Backward, Found, DoExtrapolate
 
   TYPE(Mesh_t), POINTER :: Mesh
   TYPE(Variable_t), POINTER :: Var
+  TYPE(Element_t), POINTER :: Element
+  TYPE(ValueList_t), POINTER :: ValueList
 
   REAL(KIND=dp), DIMENSION(4,4), TARGET :: AffineTransformation
   REAL(KIND=dp), POINTER :: AffineBackTransformation(:,:)
+  REAL(KIND=dp), ALLOCATABLE :: Work(:)
   REAL(KIND=dp), DIMENSION(9,1) :: TransformationVector
   REAL(KIND=dp), DIMENSION(3,1) :: Translation
 
@@ -107,6 +110,28 @@ SUBROUTINE Transform( Model,Solver,dt,TransientSimulation )
         Var % Values (t) = MAX(minval, Var % Values(t))
       END DO
   END IF
+
+  ALLOCATE( Work(Model % Mesh % MaxElementDOFs) )
+  DO BC=1,Model % NumberOfBCs
+      IF (.NOT. ListCheckPresent( Model % BCs(bc) % Values, Var % Name )) CYCLE
+
+      DO t = Model % NumberOfBulkElements + 1, &
+        Model % NumberOfBulkElements + Model % NumberOfBoundaryElements
+          Element => Model % Elements(t)
+          IF ( Element % BoundaryInfo % Constraint /= Model % BCs(BC) % Tag ) CYCLE
+
+          Model % CurrentElement => Element
+          n = Element % Type % NumberOfNodes
+          ValueList => Model % BCs(BC) % Values
+
+          Work = ListGetReal( ValueList, Var % Name, n, Element % NodeIndexes, Found )
+          DO j = 1, n
+              i = Var % Perm(Element % NodeIndexes(j))
+              Var % Values(i) = Work(j)
+          END DO
+      END DO !Boundary elements
+  END DO !BC
+  DEALLOCATE(Work)
 
   Solver % Variable % Values = Var % Values
   Solver % Variable % Perm = Var % Perm
