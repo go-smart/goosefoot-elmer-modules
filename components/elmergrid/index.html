@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>CGAL Meshing (mesher-cgal) - Go-Smart Simulation Architecture Documentation</title>
+  <title>ElmerGrid Component - Go-Smart Simulation Architecture Documentation</title>
   
 
   <link rel="shortcut icon" href="../../img/favicon.ico">
@@ -21,7 +21,7 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "CGAL Meshing (mesher-cgal)";
+    var mkdocs_page_name = "ElmerGrid Component";
   </script>
   
   <script src="../../js/jquery-2.1.1.min.js"></script>
@@ -113,49 +113,60 @@
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../../components/needle-library/">Needle Library Component</a>
+        <a class="" href="../needle-library/">Needle Library Component</a>
         
     </li>
 
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../../components/mesher/">Meshing Components</a>
+        <a class="" href="../mesher/">Meshing Components</a>
         
     </li>
 
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../../components/optimizer/">Optimizer Component</a>
+        <a class="" href="../optimizer/">Optimizer Component</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 current">
+        <a class="current" href="./">ElmerGrid Component</a>
+        
+            <ul>
+            
+                <li class="toctree-l3"><a href="#elmergrid-gssf-component">ElmerGrid GSSF Component</a></li>
+                
+                    <li><a class="toctree-l4" href="#configuration">Configuration</a></li>
+                
+                    <li><a class="toctree-l4" href="#notes">Notes</a></li>
+                
+            
+            </ul>
         
     </li>
 
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../../components/elmergrid/">ElmerGrid Component</a>
+        <a class="" href="../elmer/">ElmerSolver Component</a>
         
     </li>
 
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../../components/elmer/">ElmerSolver Component</a>
+        <a class="" href="../lesion/">Lesion Component</a>
         
     </li>
 
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../../components/lesion/">Lesion Component</a>
-        
-    </li>
-
-        
-            
-    <li class="toctree-l1 ">
-        <a class="" href="../../components/validation/">Validation Component</a>
+        <a class="" href="../validation/">Validation Component</a>
         
     </li>
 
@@ -169,24 +180,15 @@
 
         
             
-    <li class="toctree-l1 current">
-        <a class="current" href="./">CGAL Meshing (mesher-cgal)</a>
-        
-            <ul>
-            
-                <li class="toctree-l3"><a href="#cgal-meshing-utility-mesher-cgal">CGAL Meshing Utility - mesher-cgal</a></li>
-                
-                    <li><a class="toctree-l4" href="#upstream-contribution">Upstream contribution</a></li>
-                
-            
-            </ul>
+    <li class="toctree-l1 ">
+        <a class="" href="../../tools/mesher-cgal/">CGAL Meshing (mesher-cgal)</a>
         
     </li>
 
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../numa-elmer/">Extensions to Elmer</a>
+        <a class="" href="../../tools/numa-elmer/">Extensions to Elmer</a>
         
     </li>
 
@@ -216,11 +218,11 @@
     
       
         
-          <li>Tools &raquo;</li>
+          <li>Components &raquo;</li>
         
       
     
-    <li>CGAL Meshing (mesher-cgal)</li>
+    <li>ElmerGrid Component</li>
     <li class="wy-breadcrumbs-aside">
       
     </li>
@@ -230,13 +232,30 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="cgal-meshing-utility-mesher-cgal">CGAL Meshing Utility - mesher-cgal</h1>
-<h2 id="upstream-contribution">Upstream contribution</h2>
-<p>Certain minor modifications to the CGAL core may be desirable upstream,
-particularly those relating to surface marking during volumetric meshing. Most
-aspects of mesher-cgal are context-specific, so unlikely to be suitable for
-inclusion in the CGAL project, but may be of use to other downstream users,
-independently.</p>
+                <h1 id="elmergrid-gssf-component">ElmerGrid GSSF Component</h1>
+<p><a href="ftp://ftp.funet.fi/index/elmer/doc/ElmerGridManual.pdf">ElmerGrid</a> is a tool in
+the Elmer suite for converting meshes from non-Elmer formats to formats suitable
+for the Elmer solver. It is capable of performing some other manipulations also,
+and is generally used for scaling the meshes to metres prior to simulation.</p>
+<p>The current implementation always adds a <code>-removeunused</code> flag. If the
+simulation will use <code>NP</code> multiple processes, <code>-metis NP</code> is appended, and
+<code>-scale X</code> if some global scaling is required. Note that the scaling for the
+simulation, from the original input mesh length-scale, normally takes place in
+this component.</p>
+<h2 id="configuration">Configuration</h2>
+<p>The ElmerGrid component is configured through an <code>&lt;elmergrid&gt;</code> node in the
+GSSF-XML, as a first-level child.</p>
+<pre><code>&lt;elmergrid [ scale="X Y Z" ] [ skip="SKIP_ELMERGRID:false" ]&gt;
+&lt;/elmergrid&gt;
+</code></pre>
+<p>If <code>simulationscaling</code> constant is set globally and the <code>scale</code> attribute is
+not provided, it will be used to set ElmerGrid scaling.</p>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>As the total simulation scaling is based on the scaling from the <a href="../needle-library/">Needle
+Library</a> and ElmerGrid components, they should appear in that
+order in the XML, for the moment. In general, order should be irrelevant (FIXME)</li>
+</ul>
               
             </div>
           </div>
@@ -244,10 +263,10 @@ independently.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../numa-elmer/" class="btn btn-neutral float-right" title="Extensions to Elmer"/>Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../elmer/" class="btn btn-neutral float-right" title="ElmerSolver Component"/>Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../../components/validation/" class="btn btn-neutral" title="Validation Component"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../optimizer/" class="btn btn-neutral" title="Optimizer Component"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -273,10 +292,10 @@ independently.</p>
     <span class="rst-current-version" data-toggle="rst-current-version">
       
       
-        <span><a href="../../components/validation/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../optimizer/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
-        <span style="margin-left: 15px"><a href="../numa-elmer/" style="color: #fcfcfc">Next &raquo;</a></span>
+        <span style="margin-left: 15px"><a href="../elmer/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>

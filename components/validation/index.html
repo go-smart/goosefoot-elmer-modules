@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>CGAL Meshing (mesher-cgal) - Go-Smart Simulation Architecture Documentation</title>
+  <title>Validation Component - Go-Smart Simulation Architecture Documentation</title>
   
 
   <link rel="shortcut icon" href="../../img/favicon.ico">
@@ -21,7 +21,7 @@
   
   <script>
     // Current page data
-    var mkdocs_page_name = "CGAL Meshing (mesher-cgal)";
+    var mkdocs_page_name = "Validation Component";
   </script>
   
   <script src="../../js/jquery-2.1.1.min.js"></script>
@@ -113,49 +113,58 @@
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../../components/needle-library/">Needle Library Component</a>
+        <a class="" href="../needle-library/">Needle Library Component</a>
         
     </li>
 
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../../components/mesher/">Meshing Components</a>
+        <a class="" href="../mesher/">Meshing Components</a>
         
     </li>
 
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../../components/optimizer/">Optimizer Component</a>
+        <a class="" href="../optimizer/">Optimizer Component</a>
         
     </li>
 
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../../components/elmergrid/">ElmerGrid Component</a>
+        <a class="" href="../elmergrid/">ElmerGrid Component</a>
         
     </li>
 
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../../components/elmer/">ElmerSolver Component</a>
+        <a class="" href="../elmer/">ElmerSolver Component</a>
         
     </li>
 
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../../components/lesion/">Lesion Component</a>
+        <a class="" href="../lesion/">Lesion Component</a>
         
     </li>
 
         
             
-    <li class="toctree-l1 ">
-        <a class="" href="../../components/validation/">Validation Component</a>
+    <li class="toctree-l1 current">
+        <a class="current" href="./">Validation Component</a>
+        
+            <ul>
+            
+                <li class="toctree-l3"><a href="#go-smart-simulation-framework-validation-component">Go-Smart Simulation Framework - Validation Component</a></li>
+                
+                    <li><a class="toctree-l4" href="#configuration">Configuration</a></li>
+                
+            
+            </ul>
         
     </li>
 
@@ -169,24 +178,15 @@
 
         
             
-    <li class="toctree-l1 current">
-        <a class="current" href="./">CGAL Meshing (mesher-cgal)</a>
-        
-            <ul>
-            
-                <li class="toctree-l3"><a href="#cgal-meshing-utility-mesher-cgal">CGAL Meshing Utility - mesher-cgal</a></li>
-                
-                    <li><a class="toctree-l4" href="#upstream-contribution">Upstream contribution</a></li>
-                
-            
-            </ul>
+    <li class="toctree-l1 ">
+        <a class="" href="../../tools/mesher-cgal/">CGAL Meshing (mesher-cgal)</a>
         
     </li>
 
         
             
     <li class="toctree-l1 ">
-        <a class="" href="../numa-elmer/">Extensions to Elmer</a>
+        <a class="" href="../../tools/numa-elmer/">Extensions to Elmer</a>
         
     </li>
 
@@ -216,11 +216,11 @@
     
       
         
-          <li>Tools &raquo;</li>
+          <li>Components &raquo;</li>
         
       
     
-    <li>CGAL Meshing (mesher-cgal)</li>
+    <li>Validation Component</li>
     <li class="wy-breadcrumbs-aside">
       
     </li>
@@ -230,13 +230,23 @@
           <div role="main">
             <div class="section">
               
-                <h1 id="cgal-meshing-utility-mesher-cgal">CGAL Meshing Utility - mesher-cgal</h1>
-<h2 id="upstream-contribution">Upstream contribution</h2>
-<p>Certain minor modifications to the CGAL core may be desirable upstream,
-particularly those relating to surface marking during volumetric meshing. Most
-aspects of mesher-cgal are context-specific, so unlikely to be suitable for
-inclusion in the CGAL project, but may be of use to other downstream users,
-independently.</p>
+                <h1 id="go-smart-simulation-framework-validation-component">Go-Smart Simulation Framework - Validation Component</h1>
+<p>This component manages the validation step, comparing the output STL ablation
+lesion surface and a separately provided segmented validation STL surface.</p>
+<p><strong>Note</strong>: this component is configured to wrap the (closed source) Aalto
+Validation Tool. For further details, please contact <a href="http://becs.aalto.fi/en/personnel/staff/pollari_mika.html">Aalto
+University</a>.</p>
+<h2 id="configuration">Configuration</h2>
+<p>This tool is configured as follows:</p>
+<pre><code class="xml">    &lt;validation reference=&quot;REFERENCEREGION&quot; [ registration=&quot;BOOL:true&quot; ] /&gt;
+</code></pre>
+
+<p>The <code>REFERENCEREGION</code> should be defined  in the <code>regions</code> section of
+<a href="../../xml/">GSSF-XML</a> and provides the surface to which the lesion output by the
+<a href="../lesion/">lesion</a> component will be compared. If <code>registration</code> is <code>true</code>, the
+comparison will be made after an error minimizing rigid transformation,
+effectively providing post-operative registration. If <code>false</code>, it assumes
+registration of post- to pre-operative images has already occurred.</p>
               
             </div>
           </div>
@@ -244,10 +254,10 @@ independently.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../numa-elmer/" class="btn btn-neutral float-right" title="Extensions to Elmer"/>Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../../tools/mesher-cgal/" class="btn btn-neutral float-right" title="CGAL Meshing (mesher-cgal)"/>Next <span class="icon icon-circle-arrow-right"></span></a>
       
       
-        <a href="../../components/validation/" class="btn btn-neutral" title="Validation Component"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../lesion/" class="btn btn-neutral" title="Lesion Component"><span class="icon icon-circle-arrow-left"></span> Previous</a>
       
     </div>
   
@@ -273,10 +283,10 @@ independently.</p>
     <span class="rst-current-version" data-toggle="rst-current-version">
       
       
-        <span><a href="../../components/validation/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+        <span><a href="../lesion/" style="color: #fcfcfc;">&laquo; Previous</a></span>
       
       
-        <span style="margin-left: 15px"><a href="../numa-elmer/" style="color: #fcfcfc">Next &raquo;</a></span>
+        <span style="margin-left: 15px"><a href="../../tools/mesher-cgal/" style="color: #fcfcfc">Next &raquo;</a></span>
       
     </span>
 </div>
