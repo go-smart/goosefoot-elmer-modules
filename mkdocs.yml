@@ -1,45 +1,24 @@
 site_name: Go-Smart Simulation Architecture Documentation
 pages:
-    - Home: index.md
-    - About: about.md
-    - Comparison: comparison.md
-    - Errors: errors.md
-    - GSSA XML Format: gssa-xml.md
-    - Families: families.md
-    - Clinical Domain Model:
-        - Overview: 'cdm/overview.md'
-        - Algorithms: 'cdm/algorithms.md'
-        - Contexts: 'cdm/contexts.md'
-        - Parameters: 'cdm/parameters.md'
-    - Server:
-        - Overview: 'server/overview.md'
-        - Router: 'server/router.md'
-        - Executables: 'server/executables.md'
-        - Database: 'server/database.md'
-        - Transferrers: 'server/transferrers.md'
+    - Overview: 'overview.md'
+    - go-smart-launcher: 'go-smart-launcher.md'
+    - GSSF XML Format: 'xml.md'
+    - Family in GSSA: 'family.md'
+    - Logging &amp; Errors: 'logging.md'
+    - Constants: 'constants.md'
+    - Regions &amp; Geometry: 'regions.md'
+    - Utilities: 'utilities.md'
+    - Components:
+        - Needle Library Component: 'components/needle-library.md'
+        - Meshing Components: 'components/mesher.md'
+        - Optimizer Component: 'components/optimizer.md'
+        - ElmerGrid Component: 'components/elmergrid.md'
+        - ElmerSolver Component: 'components/elmer.md'
+        - Lesion Component: 'components/lesion.md'
+        - Validation Component: 'components/validation.md'
     - Tools:
         - CGAL Meshing (mesher-cgal): 'tools/mesher-cgal.md'
-    - Docker Workflows:
-        - Overview: 'docker/overview.md'
-        - Python Container Module: 'docker/container-module.md'
-        - FEniCS Family: 'docker/fenics.md'
-    - GSSF:
-        - Overview: 'gssf/overview.md'
-        - go-smart-launcher: 'gssf/go-smart-launcher.md'
-        - GSSF XML Format: 'gssf/xml.md'
-        - Family in GSSA: 'gssf/family.md'
-        - Logging &amp; Errors: 'gssf/logging.md'
-        - Constants: 'gssf/constants.md'
-        - Regions &amp; Geometry: 'gssf/regions.md'
-        - Needle Library Component: 'gssf/needle-library.md'
-        - Meshing Components: 'gssf/mesher.md'
-        - Optimizer Component: 'gssf/optimizer.md'
-        - ElmerGrid Component: 'gssf/elmergrid.md'
-        - ElmerSolver Component: 'gssf/elmer.md'
-        - Lesion Component: 'gssf/lesion.md'
-        - Validation Component: 'gssf/validation.md'
-        - Extensions to Elmer: 'gssf/numa-elmer.md'
-        - Utilities: 'gssf/utilities.md'
+        - Extensions to Elmer: 'tools/numa-elmer.md'
 theme: readthedocs
 extra_css:
     - extra.css
