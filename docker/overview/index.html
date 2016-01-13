@@ -383,10 +383,10 @@
             <div class="section">
               
                 <h1 id="go-smart-simulation-architecture-docker-workflows">Go-Smart Simulation Architecture - Docker Workflows</h1>
-<p>This workflow consists of a per-<a href="families.md">family</a> Python module setting up
+<p>This workflow consists of a per-<a href="../../families/">family</a> Python module setting up
 configuration and a solver wrapped in a Docker image. Strictly, there are
 currently two Docker workflows: one entirely inside Docker and one using
-<a href="gssf/mesher.md">GSSF</a> volumetric meshing prior to running a Docker instance.</p>
+<a href="../../gssf/mesher/">GSSF</a> volumetric meshing prior to running a Docker instance.</p>
 <h2 id="definition">Definition</h2>
 <p>Definitions for families in this workflow should include a <code>start.py</code> file. This
 will be called with Python2 (TODO: Python3) in an environment containing the
@@ -396,12 +396,12 @@ will be called with Python2 (TODO: Python3) in an environment containing the
 <p>Any volumetric meshing must take place inside the Docker instance. This means
 that the image must contain both a solver and a mesher (if meshing is required).</p>
 <h3 id="dockercgal-workflow">Docker+CGAL Workflow</h3>
-<p>This hybrid scheme configures the <a href="gssf/mesher.md">GSSF mesher</a> as would be the
-case in <a href="gssf/overview.md">GSSF</a>, but stops after the volumetric
-(<a href="mesher-cgal.md">CGAL</a>) meshing step. This <a href="http://gmsh.info">MSH</a> file is
+<p>This hybrid scheme configures the <a href="../../gssf/mesher/">GSSF mesher</a> as would be the
+case in <a href="../../gssf/overview/">GSSF</a>, but stops after the volumetric
+(<a href="../../tools/mesher-cgal/">CGAL</a>) meshing step. This <a href="http://gmsh.info">MSH</a> file is
 provided as input to a simulation-only Docker instance. Combining these is
 achieved by use of a family mixin, a module that generates only
-<a href="gssf/mesher.md">mesher-cgal</a> relevant parts of <a href="gssf/xmd.md">GSSF-XML</a>,
+<a href="../../gssf/mesher/">mesher-cgal</a> relevant parts of <a href="../../gssf/xml/">GSSF-XML</a>,
 <code>gssa.families.mesher_gssf.MesherGSSFMixin</code>.
 This is included into, for instance, <code>gssa.families.fenics.FenicsFamily</code>. (In
 fact, the same mix-in is used by GSSF itself for meshing configuration).</p>

@@ -398,7 +398,7 @@ certain Pub-Sub
 notifications. Any client permitted on the WAMP router may manipulate it, so
 protection should be put in accordingly, especially until access control is
 established here.</p>
-<p>As with <a href="gssf/logging.md#statistics-monitoring">GSSF</a>, the GSSA server will
+<p>As with <a href="../../gssf/logging/#statistics-monitoring">GSSF</a>, the GSSA server will
 register with <a href="https://github.com/redbrain/vigilant">vigilant</a> if it finds it.
 However, this has not been fully tested, and is not part of our current use case;
 it will be more extensively documented when proved reliable.</p>
@@ -429,7 +429,7 @@ GSSA server. To provide the server-side WAMP session, the
 </tr>
 <tr>
 <td><code>com.gosmartsimulation.[ID].update_settings_xml(GUID, XML)</code></td>
-<td>Load the passed XML string as <a href="gssa-xml.md">GSSA-XML</a> for this simulation</td>
+<td>Load the passed XML string as <a href="../../gssa-xml/">GSSA-XML</a> for this simulation</td>
 </tr>
 <tr>
 <td><code>com.gosmartsimulation.[ID].update_files(GUID, FILES)</code></td>
@@ -510,7 +510,7 @@ events:</p>
 </tbody>
 </table>
 <p>Note that, with RPC calls, the server is configured to forward exceptions back
-to the client. In general, these should be <a href="errors.md">errors</a> defined for GSSA,
+to the client. In general, these should be <a href="../../errors/">errors</a> defined for GSSA,
 but your client should recognise the possibility that they are unhandled
 server-side errors and catch accordingly. If not a <code>GoSmartError</code>, this would indicate a bug-report
 should be filed against GSSA.</p>

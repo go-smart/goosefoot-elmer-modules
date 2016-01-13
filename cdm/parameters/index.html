@@ -383,12 +383,12 @@
             <div class="section">
               
                 <h1 id="go-smart-simulation-parameters">Go-Smart Simulation Parameters</h1>
-<p>Parameters, within a <a href="cdm/overview.md">CDM</a> context, are entities uniquely
+<p>Parameters, within a <a href="../overview/">CDM</a> context, are entities uniquely
 defined by their name, representing a value to be passed for simulation. This
 could be a solver setting, a physical constant, a representation of clinician
 behaviour over time, or essentially anything that can be encoded in a JSON
 object. Interpretation, on the simulation side, is the responsibility of the
-<a href="families.md">family</a> and/or the simulation tool. On the client side, it is the
+<a href="../../families/">family</a> and/or the simulation tool. On the client side, it is the
 responsibility of the UI engine to take the value and the widget definition and form a
 useful interface.</p>
 <p>While a Parameter has a specific value, type and UI widget when concretized, that is,
@@ -446,9 +446,9 @@ The exact choices in rendering this are the responsibility of the UI.</p>
 <p>This <em>attribution selection</em> creates an entity, a variation of
 Parameter tied to a Simulation with a unique set of field values provided by the
 winning Parameter Attribution (or user) - this is refered to as a <em>Concrete
-Parameter</em> and corresponds to the Parameter concept as seen by the <a href="server/overview.md">simulation
+Parameter</em> and corresponds to the Parameter concept as seen by the <a href="../../server/overview/">simulation
 server</a>.</p>
-<p>The Concrete Parameters for a simulation appear in the <a href="gssa-xml.md">GSSA-XML</a>
+<p>The Concrete Parameters for a simulation appear in the <a href="../../gssa-xml/">GSSA-XML</a>
 in the following format:</p>
 <pre><code class="xml">&lt;parameters&gt;
     &lt;parameter name=&quot;PARAMNAME&quot; value=&quot;PARAMATTRVALUE&quot; type=&quot;PARAMATTRTYPE&quot; /&gt;

@@ -387,7 +387,7 @@
             <div class="section">
               
                 <h1 id="meshing-components-in-gssf">Meshing Components in GSSF</h1>
-<p>These wrap the two primary meshing tools in GSSF: <a href="../mesher-cgal.md">mesher-cgal</a> and
+<p>These wrap the two primary meshing tools in GSSF: <a href="../../tools/mesher-cgal/">mesher-cgal</a> and
 <a href="http://gmsh.info">GMSH</a>. This gives rise to two (current) subclasses of
 <code>GoSmartMesher</code>, each providing a component class: <a href="#cgal">3D-CGAL</a> and
 <a href="#gmsh">2D-GMSH</a>. The specific type of component is specified using
@@ -424,7 +424,7 @@ only in the case of volumetric meshes, but strictly it could be extended to both
 <p><strong>TODO</strong>: Allow user-supplied inner templates. Account for multiple needles when
 using inner meshes.</p>
 <h2 id="3d-cgal">3D-CGAL</h2>
-<p>This is a component wrapping <a href="../mesher-cgal.md">mesher-cgal</a>.</p>
+<p>This is a component wrapping <a href="../../tools/mesher-cgal/">mesher-cgal</a>.</p>
 <h3 id="configuration_1">Configuration</h3>
 <p>This is configured, extending the <code>&lt;mesher&gt;</code> or <code>&lt;inner&gt;</code> sections, as follows:</p>
 <pre><code class="xml">   &lt;mesher|inner zone_boundaries=&quot;BOOL:false&quot;&gt;

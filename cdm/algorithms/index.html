@@ -381,13 +381,13 @@
             <div class="section">
               
                 <h1 id="go-smart-simulation-algorithms">Go-Smart Simulation Algorithms</h1>
-<p>These are members of the <a href="cdm.md">CDM</a> that provide something akin to lambda
+<p>These are members of the <a href="../overview/">CDM</a> that provide something akin to lambda
 calculus to Go-Smart. They are database defined, have textual body in an
 unspecified language, return a parameter as a <em>Result</em> and take named arguments
 that must be supplied by the numerical model as a condition of forming a valid
 <em>Combination</em>.</p>
 <h2 id="definition">Definition</h2>
-<p>They can be defined in <a href="gssa-xml.md">GSSA-XML</a>, within the <code>&lt;algorithms /&gt;</code> node
+<p>They can be defined in <a href="../../gssa-xml/">GSSA-XML</a>, within the <code>&lt;algorithms /&gt;</code> node
 as follows:</p>
 <pre><code class="xml">    &lt;algorithm result=&quot;RESULT&quot;&gt;
         &lt;arguments&gt;
@@ -401,8 +401,8 @@ as follows:</p>
 
 <p>The <code>ALGORITHMDEFINITION</code> may be defined in any language the simulation family
 will understand (or, more accurately, the ultimate third-party simulation tool).
-Examples include MATC (for <a href="gssf/overview.md">GSSF</a>) and Python (for
-<a href="docker/fenics.md">FEniCS</a>). The <code>RESULT</code> is conventionally an upper-case,
+Examples include MATC (for <a href="../../gssf/overview/">GSSF</a>) and Python (for
+<a href="../../docker/fenics/">FEniCS</a>). The <code>RESULT</code> is conventionally an upper-case,
 underscore-spaced slug that can be used in place of a conventional "constant"
 parameter. Arguments are specified solely by name, not type (as we do not even
 know the applicable language). They are expected to be supplied by the
