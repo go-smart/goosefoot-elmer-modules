@@ -19,7 +19,7 @@
         <xs:complexType>
             <xs:attribute name="name" />
             <xs:attribute name="value" />
-            <xs:attribute name="parameter" />
+            <xs:attribute name="type" />
         </xs:complexType>
     </xs:element>
 

@@ -3,17 +3,22 @@ pages:
     - Home: index.md
     - About: about.md
     - Comparison: comparison.md
-    - Clinical Domain Model: cdm.md
     - Errors: errors.md
     - GSSA XML Format: gssa-xml.md
     - Families: families.md
+    - Clinical Domain Model:
+        - Overview: 'cdm/overview.md'
+        - Algorithms: 'cdm/algorithms.md'
+        - Contexts: 'cdm/contexts.md'
+        - Parameters: 'cdm/parameters.md'
     - Server:
         - Overview: 'server/overview.md'
         - Router: 'server/router.md'
         - Executables: 'server/executables.md'
         - Database: 'server/database.md'
         - Transferrers: 'server/transferrers.md'
-    - mesher-cgal: 'mesher-cgal.md'
+    - Tools:
+        - CGAL Meshing (mesher-cgal): 'tools/mesher-cgal.md'
     - Docker Workflows:
         - Overview: 'docker/overview.md'
         - Python Container Module: 'docker/container-module.md'
@@ -24,7 +29,7 @@ pages:
         - GSSF XML Format: 'gssf/xml.md'
         - Family in GSSA: 'gssf/family.md'
         - Logging &amp; Errors: 'gssf/logging.md'
-        - Constants (Parameters): 'gssf/constants.md'
+        - Constants: 'gssf/constants.md'
         - Regions &amp; Geometry: 'gssf/regions.md'
         - Needle Library Component: 'gssf/needle-library.md'
         - Meshing Components: 'gssf/mesher.md'
