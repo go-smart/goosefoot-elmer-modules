@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Parameters - Go-Smart Simulation Architecture Documentation</title>
+  
+
+  <link rel="shortcut icon" href="../../img/favicon.ico">
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="../../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="../../css/highlight.css">
+  <link href="../../extra.css" rel="stylesheet">
+
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "Parameters";
+  </script>
+  
+  <script src="../../js/jquery-2.1.1.min.js"></script>
+  <script src="../../js/modernizr-2.8.3.min.js"></script>
+  <script type="text/javascript" src="../../js/highlight.pack.js"></script>
+  <script src="../../js/theme.js"></script> 
+
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href="../.." class="icon icon-home"> Go-Smart Simulation Architecture Documentation</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        <ul class="current">
+          
+            <li>
+    <li class="toctree-l1 ">
+        <a class="" href="../..">Home</a>
+        
+    </li>
+<li>
+          
+            <li>
+    <li class="toctree-l1 ">
+        <a class="" href="../../about/">About</a>
+        
+    </li>
+<li>
+          
+            <li>
+    <li class="toctree-l1 ">
+        <a class="" href="../../comparison/">Comparison</a>
+        
+    </li>
+<li>
+          
+            <li>
+    <li class="toctree-l1 ">
+        <a class="" href="../../errors/">Errors</a>
+        
+    </li>
+<li>
+          
+            <li>
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssa-xml/">GSSA XML Format</a>
+        
+    </li>
+<li>
+          
+            <li>
+    <li class="toctree-l1 ">
+        <a class="" href="../../families/">Families</a>
+        
+    </li>
+<li>
+          
+            <li>
+    <ul class="subnav">
+    <li><span>Clinical Domain Model</span></li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../overview/">Overview</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../algorithms/">Algorithms</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../contexts/">Contexts</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 current">
+        <a class="current" href="./">Parameters</a>
+        
+            <ul>
+            
+                <li class="toctree-l3"><a href="#go-smart-simulation-parameters">Go-Smart Simulation Parameters</a></li>
+                
+                    <li><a class="toctree-l4" href="#parameter-types">Parameter types</a></li>
+                
+                    <li><a class="toctree-l4" href="#parameter-attributions">Parameter Attributions</a></li>
+                
+            
+            </ul>
+        
+    </li>
+
+        
+    </ul>
+<li>
+          
+            <li>
+    <ul class="subnav">
+    <li><span>Server</span></li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../server/overview/">Overview</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../server/router/">Router</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../server/executables/">Executables</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../server/database/">Database</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../server/transferrers/">Transferrers</a>
+        
+    </li>
+
+        
+    </ul>
+<li>
+          
+            <li>
+    <ul class="subnav">
+    <li><span>Tools</span></li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../tools/mesher-cgal/">CGAL Meshing (mesher-cgal)</a>
+        
+    </li>
+
+        
+    </ul>
+<li>
+          
+            <li>
+    <ul class="subnav">
+    <li><span>Docker Workflows</span></li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../docker/overview/">Overview</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../docker/container-module/">Python Container Module</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../docker/fenics/">FEniCS Family</a>
+        
+    </li>
+
+        
+    </ul>
+<li>
+          
+            <li>
+    <ul class="subnav">
+    <li><span>GSSF</span></li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/overview/">Overview</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/go-smart-launcher/">go-smart-launcher</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/xml/">GSSF XML Format</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/family/">Family in GSSA</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/logging/">Logging &amp; Errors</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/constants/">Constants</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/regions/">Regions &amp; Geometry</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/needle-library/">Needle Library Component</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/mesher/">Meshing Components</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/optimizer/">Optimizer Component</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/elmergrid/">ElmerGrid Component</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/elmer/">ElmerSolver Component</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/lesion/">Lesion Component</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/validation/">Validation Component</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/numa-elmer/">Extensions to Elmer</a>
+        
+    </li>
+
+        
+            
+    <li class="toctree-l1 ">
+        <a class="" href="../../gssf/utilities/">Utilities</a>
+        
+    </li>
+
+        
+    </ul>
+<li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../..">Go-Smart Simulation Architecture Documentation</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../..">Docs</a> &raquo;</li>
+    
+      
+        
+          <li>Clinical Domain Model &raquo;</li>
+        
+      
+    
+    <li>Parameters</li>
+    <li class="wy-breadcrumbs-aside">
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="go-smart-simulation-parameters">Go-Smart Simulation Parameters</h1>
+<p>Parameters, within a <a href="cdm/overview.md">CDM</a> context, are entities uniquely
+defined by their name, representing a value to be passed for simulation. This
+could be a solver setting, a physical constant, a representation of clinician
+behaviour over time, or essentially anything that can be encoded in a JSON
+object. Interpretation, on the simulation side, is the responsibility of the
+<a href="families.md">family</a> and/or the simulation tool. On the client side, it is the
+responsibility of the UI engine to take the value and the widget definition and form a
+useful interface.</p>
+<p>While a Parameter has a specific value, type and UI widget when concretized, that is,
+prepared for
+a specific simulation, it may, in the abstract, have many <em>Parameter Attributions</em>
+each attributing it to a different valid Combination, potentially with a different value,
+type and UI widget each.</p>
+<h2 id="parameter-types">Parameter types</h2>
+<p>The Parameter type is specified in a string field. It should be lowercase,
+holding the name of a basic type (e.g. <code>string</code>, <code>integer</code>, <code>boolean</code>, <code>float</code>)
+or, if an array, it should be written <code>array(BASICTYPE)</code> where <code>TYPE</code> is
+the type of elements of the array. If it is an array of tuples, it should be
+written <code>array(BASICTYPE1, BASICTYPE2)</code>, etc.</p>
+<h2 id="parameter-attributions">Parameter Attributions</h2>
+<p>A <em>Parameter Attribution</em>
+is an attachment record, linking a Parameter to another CDM entity, such as a
+Numerical Model or Needle. A Parameter Attribution has similar columns to a
+Parameter, although not a name, instead referencing a ParameterId.</p>
+<p>Parameter Attributions are matched to components in a limiting fashion. That is, a
+Parameter Attribution can apply to a specific Numerical Model, or a specific
+(Numerical Model, Protocol) pair, or a specific (Numerical Model, Context, Needle)
+triple, and so forth. A Parameter Attribution always applies to a Combination of
+entities <em>unless</em> at least one of the entities referenced in the Parameter
+Attribution is different
+to those named in the Combination. Consequently, a Parameter Attribution
+having no entity field filled in, will attribute a Parameter to all Combinations. (This may
+be the case for universal constants, but is otherwise not especially useful).</p>
+<p>Each Parameter Attribution only be attributed to one specific component of
+each type. This does not prevent multiple otherwise identical Parameter
+Attributions from coexisting, each applying to a different Context, say.</p>
+<h3 id="placeholders">Placeholders</h3>
+<p>A Parameter Attribution with a null value is referred to as a Placeholder. When
+it applies to a given Combination, this
+indicates to the Combination-forming procedure that another Parameter
+Attribution applying to that Combination <strong>must</strong> provide a non-null value for that
+Parameter, or the whole Combination is invalid. This is used by a Numerical
+Model, for instance, to require a value for an essential Parameter; it could
+provide a Placeholder entry for <code>SETTING_FINAL_TIMESTEP</code>, thereby ensuring any
+Combination incorporating it must have <code>SETTING_FINAL_TIMESTEP</code> provided by
+another component, say, a Protocol.</p>
+<p>It is possible for a Parameter Attribution to specify slightly more flexible
+behaviour in this case - this is defined by a Parameter Attribution enum field.
+Instead of barring the formation of the Combination, it could prompt the
+simulating user with an interactive widget when the Combination is used. Bear in
+mind, particularly in a medical setting, that this may be a clinician and not a
+technical user.</p>
+<h3 id="concrete-parameters">Concrete Parameters</h3>
+<p>When a Simulation is to be run, all of the Parameter Attributions applying to
+its Combination
+are grouped. A hierarchical algorithm picks one Parameter Attribution for each
+Parameter that appears. Any Parameters that has a placeholder but no
+value-supplying Parameter Attributions must be given values by the end-user. For
+this purpose, Parameter Attributions (so the placeholder) have a <code>widget</code> field.
+The exact choices in rendering this are the responsibility of the UI.</p>
+<p>This <em>attribution selection</em> creates an entity, a variation of
+Parameter tied to a Simulation with a unique set of field values provided by the
+winning Parameter Attribution (or user) - this is refered to as a <em>Concrete
+Parameter</em> and corresponds to the Parameter concept as seen by the <a href="server/overview.md">simulation
+server</a>.</p>
+<p>The Concrete Parameters for a simulation appear in the <a href="gssa-xml.md">GSSA-XML</a>
+in the following format:</p>
+<pre><code class="xml">&lt;parameters&gt;
+    &lt;parameter name=&quot;PARAMNAME&quot; value=&quot;PARAMATTRVALUE&quot; type=&quot;PARAMATTRTYPE&quot; /&gt;
+    ...
+&lt;/parameters&gt;
+</code></pre>
+
+<p>The <code>PARAMATTRTYPE</code> defines the type of <code>PARRAMATTRVALUE</code> and should be a type
+as described in the <a href="#parameter-types">Parameter types</a> section.</p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../../server/overview/" class="btn btn-neutral float-right" title="Overview"/>Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../contexts/" class="btn btn-neutral" title="Contexts"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+	  
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+<div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+      
+        <span><a href="../contexts/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../../server/overview/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+
+</body>
+</html>
