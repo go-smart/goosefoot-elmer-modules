@@ -28,7 +28,7 @@ import json
 
 from .globals import slugify, colorama_imported
 from . import config
-from gssa.error import Error as ErrorCode
+from .errors import Error as ErrorCode
 
 if colorama_imported:
     import colorama

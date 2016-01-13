@@ -18,7 +18,7 @@ notifications. Any client permitted on the WAMP router may manipulate it, so
 protection should be put in accordingly, especially until access control is
 established here.
 
-As with [GSSF](gssf/logging.md#statistics-monitoring), the GSSA server will
+As with [GSSF](../gssf/logging.md#statistics-monitoring), the GSSA server will
 register with [vigilant](https://github.com/redbrain/vigilant) if it finds it.
 However, this has not been fully tested, and is not part of our current use case;
 it will be more extensively documented when proved reliable.
@@ -39,7 +39,7 @@ Method | Description
 -------|------------
 `com.gosmartsimulation.[ID].init(GUID)` | Notify server that a simulation will be set up (dummy method at present)
 `com.gosmartsimulation.[ID].start(GUID)` | Begin simulating simulation with given GUID
-`com.gosmartsimulation.[ID].update_settings_xml(GUID, XML)` | Load the passed XML string as [GSSA-XML](gssa-xml.md) for this simulation
+`com.gosmartsimulation.[ID].update_settings_xml(GUID, XML)` | Load the passed XML string as [GSSA-XML](../gssa-xml.md) for this simulation
 `com.gosmartsimulation.[ID].update_files(GUID, FILES)` | Add the passed files map (basenames to remote locations relative to the transferrer) to the simulation's input file map
 `com.gosmartsimulation.[ID].request_files(GUID, FILES)` | Send the requested output files (basenames to remote locations relative to the transferrer)
 `com.gosmartsimulation.[ID].finalize(GUID)` | Do any remaining XML processing or file transferring, to be ready for the simulation to begin
@@ -72,7 +72,7 @@ Event | Description
 `com.gosmartsimulation.update_status` | Indicates a simulation failure. Arguments: *(simulation_id, (percentage, PROGRESS_STATUS), working_directory, timestamp, validation_xml)*
 
 Note that, with RPC calls, the server is configured to forward exceptions back
-to the client. In general, these should be [errors](errors.md) defined for GSSA,
+to the client. In general, these should be [errors](../errors.md) defined for GSSA,
 but your client should recognise the possibility that they are unhandled
 server-side errors and catch accordingly. If not a `GoSmartError`, this would indicate a bug-report
 should be filed against GSSA.

@@ -29,7 +29,7 @@ contains a module for compiling GSSA-XML to GSSF-XML, if possible.
 It is entirely reasonable to use GSSF separately from the rest of the GSSA
 architecture, starting with a GSSF-XML settings file and appropriately laid out
 directory. This is especially useful for offline debugging of simulation
-settings, which you may (or may not) want to update in the [CDM](../cdm.md) later,
+settings, which you may (or may not) want to update in the [CDM](../cdm/overview.md) later,
 but, in general, provides a simple workflow for taking STL surfaces, producing a
 volumetric mesh, running an Elmer simulation and returning a clean STL
 isosurface. Moreover, it is scriptable and using fairly flexible command-line

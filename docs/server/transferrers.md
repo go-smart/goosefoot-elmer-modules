@@ -2,7 +2,7 @@
 
 These are classes that handle moving of input files (other than GSSA-XML) back
 and forward from the simulation server to the client. This is configured using a
-second-level `<transferrer/>` section in the [GSSA-XML](gssa-xml.md). The
+second-level `<transferrer/>` section in the [GSSA-XML](../gssa-xml.md). The
 current set of transferrers assume that the medium is secure (network or local
 machine) - this will be
 partially improved with the reinstating of SFTPTransferrer, but alternative

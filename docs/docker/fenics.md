@@ -2,7 +2,7 @@
 
 This is a family within the [Docker+CGAL
 workflow](overview.md#dockercgal-workflow), incorporating meshing from
-[mesher-cgal](mesher-cgal.md) and simulation provided by
+[mesher-cgal](../tools/mesher-cgal.md) and simulation provided by
 [FEniCS](http://fenicsproject.org/). FEniCS is a general-purpose finite element
 framework, capable of automated solution of PDEs.
 

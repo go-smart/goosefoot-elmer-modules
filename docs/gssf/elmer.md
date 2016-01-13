@@ -24,7 +24,7 @@ not. As such, if running GSSF separately **you should only accept SIF templates 
 Specifically, several MATC functions provide access to the filesystem or printf,
 so precautions should be taken.
 
-[Algorithms](../cdm.md#algorithms) in MATC will be written to a file with a unique
+[Algorithms](../cdm/algorithms.md) in MATC will be written to a file with a unique
 ID. A line sourcing it will be added at the end of the SIF, and the constant
 representing the result, will be substituted with a call to it. For instance,
 `Electric conductivity = {{ p.ELECTRIC_CONDUCTIVITY }}`, when with an algorithm

@@ -17,7 +17,7 @@ The script takes only two arguments: the files to be compared.
 ## Methodology
 
 The ``gssa.comparator`` module loads each file into a
-``SimulationDefinition`` object, which has a [CDM](cdm.md)-based understanding
+``SimulationDefinition`` object, which has a [CDM](cdm/overview.md)-based understanding
 of its content. Moreover, it is capable of diffing itself against another
 ``SimulationDefinition``. The ``SimulationDefinition`` of the first file passed
 to the ``Comparator`` object (the first file argument to

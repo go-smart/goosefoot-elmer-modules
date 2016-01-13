@@ -13,7 +13,7 @@ Column | Type | Description
 id | integer | Row in the database, not the GUID of the simulation
 guid | guid | GUID of the simulation, as used by the client
 directory | text | Location of the simulation's (last known) working directory
-exit_code | text(null) | [Error](errors.md) code on simulation exit
+exit_code | text(null) | [Error](../errors.md) code on simulation exit
 status | text | Last status update from the simulation
 percentage | real | Completion percentage
 timestamp | real | Time of last status update

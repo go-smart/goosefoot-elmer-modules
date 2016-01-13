@@ -44,8 +44,8 @@ sars = [d[len(sars_prefix):] for d in glob.glob(sars_prefix + 'data/power_profil
 # loaded from configuration files ultimately
 setup(name='Go-Smart Simulation',
       version='${PACKAGE_VERSION}',
-      packages=['gssf', 'gssf', 'gssf.comparator', 'gssa', 'gssa.families', 'gosmart_sf_config'],
-      package_dir={'gssf': '${CMAKE_CURRENT_SOURCE_DIR}/src/gssf', 'gssa': '${CMAKE_CURRENT_SOURCE_DIR}/src/gssa', 'gosmart_sf_config': config_directory},
+      packages=['gssf', 'gssf', 'gosmart_sf_config'],
+      package_dir={'gssf': '${CMAKE_CURRENT_SOURCE_DIR}/src/gssf', 'gosmart_sf_config': config_directory},
       package_data={'gssf': [
           'data/go-smart-probe-location-template.txt',
           'data/go-smart-power-over-time.txt',
@@ -92,7 +92,4 @@ setup(name='Go-Smart Simulation',
 
       scripts=[
           '${CMAKE_CURRENT_SOURCE_DIR}' + '/scripts/go-smart-launcher',
-          '${CMAKE_CURRENT_SOURCE_DIR}' + '/scripts/go-smart-simulation-server',
-          '${CMAKE_CURRENT_SOURCE_DIR}' + '/scripts/go-smart-simulation-client',
-          '${CMAKE_CURRENT_SOURCE_DIR}' + '/scripts/go-smart-comparator',
       ])

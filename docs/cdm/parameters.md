@@ -1,11 +1,11 @@
 # Go-Smart Simulation Parameters
 
-Parameters, within a [CDM](cdm/overview.md) context, are entities uniquely
+Parameters, within a [CDM](overview.md) context, are entities uniquely
 defined by their name, representing a value to be passed for simulation. This
 could be a solver setting, a physical constant, a representation of clinician
 behaviour over time, or essentially anything that can be encoded in a JSON
 object. Interpretation, on the simulation side, is the responsibility of the
-[family](families.md) and/or the simulation tool. On the client side, it is the
+[family](../families.md) and/or the simulation tool. On the client side, it is the
 responsibility of the UI engine to take the value and the widget definition and form a
 useful interface.
 
@@ -77,9 +77,9 @@ This *attribution selection* creates an entity, a variation of
 Parameter tied to a Simulation with a unique set of field values provided by the
 winning Parameter Attribution (or user) - this is refered to as a *Concrete
 Parameter* and corresponds to the Parameter concept as seen by the [simulation
-server](server/overview.md).
+server](../server/overview.md).
 
-The Concrete Parameters for a simulation appear in the [GSSA-XML](gssa-xml.md)
+The Concrete Parameters for a simulation appear in the [GSSA-XML](../gssa-xml.md)
 in the following format:
 
 ```xml
