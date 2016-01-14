@@ -81,8 +81,6 @@ SET(CMAKE_Fortran_MODULE_DESTINATION
     ${CMAKE_INSTALL_PREFIX}/include/elmer/f90 CACHE PATH "Destination for Fortran modules."
 )
 
-ADD_SUBDIRECTORY(lesion)
-ADD_SUBDIRECTORY(gssf)
 ADD_SUBDIRECTORY(numa-elmer)
 
 MESSAGE(STATUS "------------------------------------------------")

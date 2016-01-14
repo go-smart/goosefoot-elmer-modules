@@ -1,1 +1,0 @@
-/home/soreilly/.local/bin/bin/surface-deviation

@@ -1,9 +1,0 @@
-<inner type="axisymmetric" needle="inner only">
-	<template name="basic-mwa_needleless" width="30.0" height="80.0">
-		<dimension name="MW catheter radius (outer)" value="0.895" />
-		<dimension name="MW slot elevation" value="6" />
-		<dimension name="MW slot height" value="1" />
-		<dimension name="MW dielectric extension" value="0.135" />
-	</template>
-	<lengthscales nearfield="0.5" farfield="10.0" />
-</inner>
