@@ -1,4 +1,4 @@
-site_name: Go-Smart Simulation Framework Documentation
+site_name: GSSF Supplementary Elmer Modules
 pages:
     - Home: 'index.md'
     - Modules:
@@ -16,4 +16,4 @@ pages:
         - NumaProgress: 'numa-progress.md'
         - NumaTM: 'numa-tm.md'
         - OptimizedHeatSolver: 'optimized-heat-solver.md'
-theme: amelia
+theme: cyborg
