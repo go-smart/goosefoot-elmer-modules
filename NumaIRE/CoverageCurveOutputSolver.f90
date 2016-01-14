@@ -17,7 +17,8 @@
 !  * You should have received a copy of the GNU Affero General Public License
 !  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
 !  */
-! 
+!
+
 SUBROUTINE CoverageCurveOutputSolver(Model, Solver, Timestep, TransientSimulation)
       USE DefUtils
 
@@ -50,6 +51,7 @@ SUBROUTINE CoverageCurveOutputSolver(Model, Solver, Timestep, TransientSimulatio
 
       SolverParams => GetSolverParams()
 
+      ! Set up the array of thresholds that must be accounted for
       IF (.NOT. AllocationsDone) THEN
           thresholdBottom = GetConstReal(SolverParams, "Minimum Coverage")
           thresholdTop = GetConstReal(SolverParams, "Maximum Coverage")
@@ -72,10 +74,13 @@ SUBROUTINE CoverageCurveOutputSolver(Model, Solver, Timestep, TransientSimulatio
           AllocationsDone = .TRUE.
       END IF
 
+      ! This variable is the maximum energy deposition over all previous
+      ! timesteps, at each point
       MaxEVar => VariableGet(Solver % Mesh % Variables, "Max_E")
       MaxE => MaxEVar % Values
       MaxEPerm => MaxEVar % Perm
 
+      ! This variable is the present energy deposition at each point
       EVar => VariableGet(Solver % Mesh % Variables, "E")
       E => EVar % Values
 
@@ -83,19 +88,23 @@ SUBROUTINE CoverageCurveOutputSolver(Model, Solver, Timestep, TransientSimulatio
       tumour_volume = 0.0
       integ_E = 0.0
 
+      ! Start counting over all bulk elements
       DO t=1,Solver % Mesh % NumberOfBulkElements
         Element => Solver % Mesh % Elements(t)
         Model % CurrentElement => Solver % Mesh % Elements(t)
 
+        ! If this element is not a tet, skip it
         IF (Element % TYPE % ElementCode == 101) CYCLE
 
         j = GetInteger(Model % Bodies(Element % BodyId) % Values, "Material")
         Material => Model % Materials(j) % Values
 
+        ! If this material is not tumour tissue, we do not count it
         InTumour = GetLogical(Material, "Tumour", Found)
         InTumour = Found .AND. InTumour
         IF (.NOT. InTumour) CYCLE
 
+        ! Get the integration points
         IntegStuff = GaussPoints(Element)
         NodeIndexes => Element % NodeIndexes
         CALL GetElementNodes(ElementNodes)
@@ -105,6 +114,7 @@ SUBROUTINE CoverageCurveOutputSolver(Model, Solver, Timestep, TransientSimulatio
         contribution = 0.0
         volume = 0.0
 
+        ! Sum over the integration points
         DO j=1,IntegStuff % n
           U = IntegStuff % U(j)
           V = IntegStuff % V(j)
@@ -113,17 +123,24 @@ SUBROUTINE CoverageCurveOutputSolver(Model, Solver, Timestep, TransientSimulatio
           stat = ElementInfo(Element, ElementNodes, U, V, W, SqrtElementMetric, Basis)
           CALL CoordinateSystemInfo(Metric, SqrtMetric, Symb, dSymb, x, y, z)
 
+          ! Get the integration factor
           s = SqrtMetric * SqrtElementMetric * IntegStuff % s(j)
 
+          ! Integrate MaxE over this cell
           contribution = contribution + &
               s * SUM(MaxE(MaxEPerm(NodeIndexes(1:N))) * Basis(1:N))
+          ! Integrate E over this cell
           integ_E = integ_E + &
               s * SUM(E(MaxEPerm(NodeIndexes(1:n))) * Basis(1:N))
+
+          ! This is cell volume
           volume = volume + s
+
+          ! This is total volume of tumour tissue
           tumour_volume = tumour_volume + s
         END DO
 
-        !PRINT *, contribution / volume, contribution, volume
+        ! For each division, add the cell's volume if its MaxE per unit vol is higher than the threshold
         DO j=1,divisions
           IF (thresholds(j) > contribution / volume) THEN
               !PRINT *, thresholds(j), j, contribution / volume, t, volume, elim(j)
@@ -137,6 +154,7 @@ SUBROUTINE CoverageCurveOutputSolver(Model, Solver, Timestep, TransientSimulatio
 10    FORMAT("coverage_", I0.3, ".txt")
       OPEN(UNIT=out_unit, FILE=filename, ACTION="WRITE", STATUS="REPLACE")
 
+      ! Write out an easily plottable file
       DO i=1,divisions
         WRITE(out_unit, *) thresholds(i) / 100, elim(i) / tumour_volume
       END DO

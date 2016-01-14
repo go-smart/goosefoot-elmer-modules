@@ -77,6 +77,8 @@ SUBROUTINE Transform( Model,Solver,dt,TransientSimulation )
       Backward = .FALSE.
   END IF
 
+  ! Build up the affine transform
+  !
   TransformationVector = ListGetConstRealArray(GetSolverParams(), 'Transformation Matrix', Found)
   !ERROR IF NOT
   AffineTransformation(1:3,1:3) = RESHAPE(TransformationVector, (/3,3/))
@@ -85,6 +87,7 @@ SUBROUTINE Transform( Model,Solver,dt,TransientSimulation )
   !ERROR IF NOT
   AffineTransformation(4,1:3) = Translation(1:3,1)
 
+  ! Invert if requested
   IF (Backward) THEN
       CALL InvertMatrix(AffineTransformation, 4)
   END IF
@@ -94,23 +97,21 @@ SUBROUTINE Transform( Model,Solver,dt,TransientSimulation )
   CALL InvalidateVariable( CurrentModel % Meshes, Solver % Mesh, &
         GetVarName(Solver % Variable))
 
+  ! Find the variable we should transform
   Var => VariableGet( Mesh % Variables, GetString(GetSolverParams(),'Interpolant'), &
       ThisOnly=.TRUE., AffineBackTransformation=AffineBackTransformation)
 
+  ! Invalidate it to ensure interpolation actually performed
   IF (ASSOCIATED(Var)) THEN
     Var % Valid = .FALSE.
     Var % ValuesChanged = .TRUE.
   END IF
+
+  ! Recalculate for this solver's space
   Var => VariableGet( Mesh % Variables, GetString(GetSolverParams(),'Interpolant'), &
       AffineBackTransformation=AffineBackTransformation)
-  minval = GetCReal(GetSolverParams(), 'Minimum Value', Found)
 
-  IF (Found) THEN
-      DO t=1,SIZE(Var % Values) ! RMV
-        Var % Values (t) = MAX(minval, Var % Values(t))
-      END DO
-  END IF
-
+  ! Assign boundary conditions if they should be applied
   ALLOCATE( Work(Model % Mesh % MaxElementDOFs) )
   DO BC=1,Model % NumberOfBCs
       IF (.NOT. ListCheckPresent( Model % BCs(bc) % Values, Var % Name )) CYCLE

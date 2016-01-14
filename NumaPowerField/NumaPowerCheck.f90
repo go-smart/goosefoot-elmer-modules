@@ -85,8 +85,8 @@ SUBROUTINE NumaPowerFieldTrigger( Model,Solver,Timestep,TransientSimulation )
 
     SAVE AllocationsDone, &
         PreviousPower, PhasePtr, PowerPtr, RecalculatePowerPtr
-        !, PhasePtr
 
+    ! Find list of phases and changeover times (two rows)
     PhasesPtr => ListGetConstRealArray( Solver % Values, 'Phases', Found)
     IF (.NOT. Found) THEN
         CALL Fatal("NumaPowerFieldTrigger", "Phases must be set")
@@ -94,12 +94,14 @@ SUBROUTINE NumaPowerFieldTrigger( Model,Solver,Timestep,TransientSimulation )
 
     TimeVar => VariableGet(Model % Variables, 'Time')
 
+    ! Work out which phase we are presently in
     DO CurrentPhase = 1, SIZE(PhasesPtr, 2)
         IF (PhasesPtr(1, CurrentPhase) >= TimeVar % Values(1) - 1e-5) THEN
           EXIT
         END IF
     END DO
 
+    ! If we have passed the last phase, then we exit
     IF (CurrentPhase > SIZE(PhasesPtr, 2)) THEN
         PRINT *, "Current time larger than final power end, taken as an indication to stop simulation"
         Exiting = .TRUE.
@@ -108,6 +110,7 @@ SUBROUTINE NumaPowerFieldTrigger( Model,Solver,Timestep,TransientSimulation )
 
         PRINT *, "Protocol power is ", PresentPower, " on phase ", CurrentPhase, " at time ", TimeVar % Values(1)
 
+        ! If our global power has changed, we must recalculate our heat field
         IF (PresentPower /= PreviousPower) THEN
             RecalculatePower = .TRUE.
             PRINT *, "Protocol power changed"
@@ -117,15 +120,18 @@ SUBROUTINE NumaPowerFieldTrigger( Model,Solver,Timestep,TransientSimulation )
 
         PreviousPower = PresentPower
 
+        ! If we get negative power, we stop - this allows a power function to control the simulation
         IF ( PresentPower < 0 ) THEN
             PRINT *, "Negative Power detected, taken as an indication to stop simulation"
             Exiting = .TRUE.
         END IF
     END IF
 
+    ! To exit we set the exit condition, this tells Elmer to gracefully let us escape
     IF (Exiting) THEN
         CALL ListAddConstReal(Model % Simulation, 'Exit Condition', 1.0_dp)
     ELSE
+        ! Update the Phase variable for other solvers to use
         PhaseVar => VariableGet(Model % Variables, 'Phase')
         IF ( .NOT. ASSOCIATED(PhasePtr) ) THEN
             NULLIFY(PhasePtr)
@@ -135,6 +141,7 @@ SUBROUTINE NumaPowerFieldTrigger( Model,Solver,Timestep,TransientSimulation )
         END IF
         PhaseVar % Values(1) = CurrentPhase
 
+        ! Also update the present power
         PowerVar => VariableGet(Model % Variables, 'Power')
         IF ( .NOT. ASSOCIATED(PowerPtr) ) THEN
             NULLIFY(PowerPtr)
@@ -144,12 +151,15 @@ SUBROUTINE NumaPowerFieldTrigger( Model,Solver,Timestep,TransientSimulation )
         END IF
         PowerVar % Values(1) = REAL(PresentPower)
 
+        ! This should be (most likely) a DataToFieldSolver
         j = ListGetInteger(Solver % Values, 'Data Solver', Found)
         IF ( .NOT. Found ) THEN
             CALL Fatal("NumaPowerCheck", "Need a target data solver to update filename")
         END IF
         DataSolver => Model % Solvers(j)
 
+        ! We must have a source of information for the power deposition field
+        ! (to multiply by the present power)
         DataSolverPrefix = GetString(Solver % Values, 'Profile File Prefix', Found)
         IF ( .NOT. Found ) THEN
             DataSolverPrefix = "sar-"
@@ -167,6 +177,7 @@ SUBROUTINE NumaPowerFieldTrigger( Model,Solver,Timestep,TransientSimulation )
             RecalculatePowerVar => VariableGet(Model % Variables, 'RecalculatePower')
         END IF
 
+        ! If the power should be recalculated, then we flag this up for a later solver
         IF (RecalculatePower) THEN
             RecalculatePowerVar % Values(1) = 1
         ELSE

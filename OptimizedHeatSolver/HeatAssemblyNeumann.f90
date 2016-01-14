@@ -96,7 +96,6 @@ MODULE HeatAssemblyNeumann
 
         HeatFluxBC = GetLogical( BC, 'Heat Flux BC', Found )
         IF ( Found .AND. .NOT. HeatFluxBC ) CYCLE
-!        WRITE(*,*) 'HeatFluxBC', 
         HeatGapBC = ListGetLogical( BC, 'Heat Gap', Found )
 
         CALL AddHeatFluxBC(Model, Solver, Element, ElementNodes, ForceVector, ConstantBulk, &

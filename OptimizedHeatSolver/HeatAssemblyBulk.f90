@@ -171,28 +171,6 @@ MODULE HeatAssemblyBulk
       zv = 0.0
 
       N = Solver % Mesh % MaxElementNodes
-      !IF (ActiveCells /= Solver % NumberOfActiveElements) THEN
-      !    RecalculateElectricTips = .TRUE.
-
-      !    IF (ActiveCells > 0) THEN
-      !        DEALLOCATE(HeatSourceCache)
-      !    END IF
-
-      !    ALLOCATE(HeatSourceCache(Solver % NumberOfActiveElements, N))
-
-      !    ActiveCells = Solver % NumberOfActiveElements
-      !    PRINT *, 'B', ActiveCells
-      !ELSE
-      !    RecalculateElectricTips = CheckTipsUpdate(Model, Time)
-      !    PRINT *, 'A'
-      !END IF
-
-      !ReassemblePower = FirstTime .OR. RecalculateElectricTips
-
-      !IF (ReassemblePower) THEN
-      !    PRINT *, "Reassembling Power"
-      !    PowerProfileVector = 0
-      !END IF
 
       LoadVar => VariableGet(Solver % Mesh % Variables, 'Deposition')
       LoadVar % Values = 0._dp

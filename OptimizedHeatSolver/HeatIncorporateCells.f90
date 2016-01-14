@@ -109,6 +109,7 @@ MODULE HeatIncorporateCells
                   coeff = Density
               END IF
 
+              ! This reduces deposition to dead-levels where the cell death exceeds a value
               Material => GetMaterial()
               DeadCutOff = GetConstReal(Material, "Coagulation Cut Off", ElectricPowerCutOff)
               CutOffCoefficient = 1.0_dp
@@ -133,6 +134,7 @@ MODULE HeatIncorporateCells
                   END IF
               END IF
 
+              ! This reduces deposition to dead-levels where the temperature exceeds a value
               TempCutOff = GetConstReal(Material, "Vapourization Cut Off", ElectricPowerCutOff)
               CutOffCoefficient = 1.0_dp
               IF (ElectricPowerCutOff) THEN
@@ -189,9 +191,11 @@ MODULE HeatIncorporateCells
               TYPE(ValueList_t), POINTER :: Material
               LOGICAL :: Found
 
+              ! This is the normal perfusion rate
               ParPtr => GetReal( Material, 'Perfusion Rate', Found )
               PerfusionRate = ParPtr
 
+              ! This perfusion rate applies when the cell-death threshold is crossed
               DeathPerfusionRate = GetConstReal( Material, &
                   'Death Perfusion Rate', Found )
               IF ( .NOT.Found ) THEN
@@ -437,6 +441,8 @@ MODULE HeatIncorporateCells
                   CLOSE(1)
               END IF ! ControlMaxTemperature
 
+              !!! THIS IS DEPRECATED!
+              !
               !--------------------------------------------------------------------------- 
               !       Get electric power geometry if interpolated (multi)line source:
               !--------------------------------------------------------------------------- 
@@ -660,13 +666,8 @@ MODULE HeatIncorporateCells
               !------------------------------------------------------------------------------ 
               !       Read the death model in input file
               !------------------------------------------------------------------------------ 
-              CellStateModel = GetInteger( Model % Simulation,'Cell State Model', Found )
-              IF ( .NOT.Found ) CellStateModel = 2
 
-
-              IF (CellStateModel == 2) THEN
-                      DeadThreshold = GetConstReal( SolverParams, 'Model 2 Dead Threshold', Found )
-              END IF
+              DeadThreshold = GetConstReal( SolverParams, 'Dead Threshold', Found )
               IF ( .NOT.Found ) DeadThreshold = 0.8
               !------------------------------------------------------------------------------ 
               !   Read some solver options in the input file

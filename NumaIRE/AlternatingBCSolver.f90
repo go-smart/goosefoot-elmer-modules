@@ -34,28 +34,25 @@ SUBROUTINE AlternatingBCSolver( Model,Solver,Timestep,TransientSimulation)
           nodes(MAX_ELEMENT_NODES), eio_info, bodyid
       REAL(KIND=dp), POINTER :: coord(:,:)
       INTEGER, POINTER :: anode(:), cathode(:)
-      LOGICAL :: AllocationsDone = .FALSE., Found, AlternatingBoundary
-
-      IF (.NOT. AllocationsDone) THEN
-          maxN = Model % Solver % Mesh % MaxElementNodes
-          ALLOCATE(anode(maxN), cathode(maxN))
-
-          AllocationsDone = .TRUE.
-      END IF
+      LOGICAL :: Found, AlternatingBoundary
 
       Simulation => GetSimulation()
 
+      ! Get the lists of anodes/cathodes per timestep
       anode => ListGetIntegerArray(Simulation, 'Anode', Found)
       cathode => ListGetIntegerArray(Simulation, 'Cathode', Found)
 
+      ! Not same length doesn't make sense
       IF (SIZE(anode) /= SIZE(cathode)) THEN
           CALL Fatal('AlternatingBCSolver', &
               'Number of alternations unclear - &
               &anode and cathode counts differ')
       END IF
 
+      ! If we go over the end of the arrays, use the last element
       step = MIN(SIZE(anode), GetTimestep())
 
+      ! Loop through boundary elements
       DO i = Solver % Mesh % NumberOfBulkElements + 1, &
              Solver % Mesh % NumberOfBulkElements + &
              Solver % Mesh % NumberOfBoundaryElements
@@ -63,17 +60,25 @@ SUBROUTINE AlternatingBCSolver( Model,Solver,Timestep,TransientSimulation)
         BoundaryElement => Solver % Mesh % Elements(i)
         bndry = BoundaryElement % BodyId
 
+        ! Check each BC to see if it is an ABC
         DO j = 1, Model % NumberOfBCs
           AlternatingBoundary = GetLogical(Model % BCs(j) % Values, &
                      'Alternating Boundary Condition', Found )
+          ! If it is, update status
           IF ( Found .AND. AlternatingBoundary ) THEN
+              ! Get the Body Id of this BC
               bodyid = ListGetInteger(Model % BCs(j) % Values, &
                          'Body Id', Found)
+
               IF ( .NOT. Found ) THEN
                   CALL Fatal('AlternatingBCSolver', &
                       'Alternating boundary condition must have a body id')
               END IF
+
+              ! If the current element is in this boundary..
               IF ( bndry == bodyid ) THEN
+                  ! If the current anode or cathode matches, turn the BC on here,
+                  ! otherwise off
                   IF (anode(step) == bndry .OR. cathode(step) == bndry) THEN
                       BoundaryElement % BoundaryInfo % Constraint = j
                   ELSE

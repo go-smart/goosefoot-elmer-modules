@@ -37,7 +37,7 @@ MODULE HeatAddGlobalTime
        USE MaterialModels
        USE HeatPhaseDefs
        IMPLICIT NONE
-  
+
        TYPE(Solver_t) :: Solver
        REAL(KIND=dp) :: dt
   !------------------------------------------------------------------------------
@@ -46,7 +46,7 @@ MODULE HeatAddGlobalTime
        REAL(KIND=dp), POINTER :: SaveValues(:) => NULL()
        SAVE STIFF, MASS, X
        REAL(KIND=dp), ALLOCATABLE :: STIFF(:,:),MASS(:,:), X(:,:)
-  
+
        IF ( .NOT.ASSOCIATED(Solver % Variable % Values, SaveValues) ) THEN
           IF ( ALLOCATED(STIFF) ) DEALLOCATE( STIFF,MASS,X )
           n = 0
@@ -55,10 +55,10 @@ MODULE HeatAddGlobalTime
           END DO
           k = SIZE(Solver % Variable % PrevValues,2)
           ALLOCATE( STIFF(1,n),MASS(1,n),X(n,k) )
-   
+
           SaveValues => Solver % Variable % Values
        END IF
-  
+
        DO i=1,Solver % Matrix % NumberOFRows
          n = 0
          DO j=Solver % Matrix % Rows(i),Solver % Matrix % Rows(i+1)-1
@@ -71,7 +71,7 @@ MODULE HeatAddGlobalTime
          Solver % Matrix % Force(i,1) = FORCE(1)
          k = MIN( Solver % DoneTime, Solver % Order )
          CALL BDFLocal( n, dt, MASS, STIFF, FORCE, X, k )
-  
+
          n = 0
          DO j=Solver % Matrix % Rows(i),Solver % Matrix % Rows(i+1)-1
             n=n+1

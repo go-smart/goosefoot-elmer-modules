@@ -1,3 +1,7 @@
+! This solver seems to be redundant, if so remove it!
+! (Does appear in SIFs but not with anything useful)
+! Probably superseded by DataToFieldSolver
+!
 SUBROUTINE NumaPowerFieldSolver_init( Model,Solver,Timestep,TransientSimulation )
      USE DefUtils
      USE NumaElectricTips

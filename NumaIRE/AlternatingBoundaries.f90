@@ -30,16 +30,9 @@ FUNCTION AlternatingBoundaryCondition(Model, n, time) RESULT(potential)
       TYPE(Element_t), POINTER :: BoundaryElement
       TYPE(ValueList_t), POINTER :: BC, Simulation
       INTEGER :: bc_id, nboundary, maxN, step
-      LOGICAL :: AllocationsDone = .FALSE., Found
+      LOGICAL :: Found
       INTEGER, POINTER :: anode(:), cathode(:)
       REAL(KIND=dp), POINTER :: potential_values(:,:)
-
-      IF (.NOT. AllocationsDone) THEN
-          maxN = Model % Solver % Mesh % MaxElementNodes
-          ALLOCATE(anode(maxN), cathode(maxN))
-
-          AllocationsDone = .TRUE.
-      END IF
 
       BoundaryElement => Model % CurrentElement
       BC => GetBC()
@@ -53,12 +46,16 @@ FUNCTION AlternatingBoundaryCondition(Model, n, time) RESULT(potential)
       potential_values => ListGetConstRealArray(Simulation, &
             'Potential Consecutive Values', Found)
 
+      ! Check the current step
       step = MIN(SIZE(potential_values, 2), GetTimestep())
       IF (step < 1) THEN
           potential = 0
           RETURN
       END IF
 
+      ! If this boundary element is an anode, we
+      ! take from the PCV top row, if a cathode
+      ! then the bottom row
       IF (bc_id == anode(step)) THEN
           potential = potential_values(1, step)
       ELSE IF (bc_id == cathode(step)) THEN

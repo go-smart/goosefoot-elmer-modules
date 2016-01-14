@@ -46,6 +46,7 @@ MODULE NumaElectricTips
         TYPE(Solver_t) :: Solver
         INTEGER :: LocalNodes
 
+        ! Normalized Electric Distribution
         IF (.NOT. ASSOCIATED(Gaussian)) THEN
             LocalNodes = COUNT(Solver % Variable % Perm > 0)
             ALLOCATE(Gaussian(LocalNodes))
@@ -71,6 +72,7 @@ MODULE NumaElectricTips
 
         SAVE ThermocoupleTemperatures, ElementValues, AllocationsDone
 
+        ! Get the profile from a file
         CALL ReadElectricTips(Model, Solver)
 
         IF (.NOT. AllocationsDone) THEN
@@ -87,14 +89,19 @@ MODULE NumaElectricTips
             AllocationsDone = .TRUE.
         END IF
 
+        ! Go through each tip and set the thermocouple temperatures
         DO i = 1, thermocouples % nbtips
+            ! If the thermocouple is not in an element (outside the mesh), then switch it off
+            ! We use a sub-abs-zero temperature to indicate this
             IF (thermocouples % elements(i) < 0) THEN
                 ThermocoupleTemperatures(i) = -1000  ! Below absolute zero, even in Celsius
             ELSE
+                ! Get the element in which the thermocouple lies
                 CurrentElement => Solver % Mesh % Elements(thermocouples % elements(i))
                 n = CurrentElement % TYPE % NumberOfNodes
                 NodeIndexes => CurrentElement % NodeIndexes
 
+                ! Take the cell average of the temperature
                 IF (ALL(Temperature % Perm(NodeIndexes(1:n)) > 0)) THEN
                     ElementValues(1:n) = Temperature % Values(Temperature % Perm(NodeIndexes(1:n)))
                     ThermocoupleTemperatures(i) = SUM(thermocouples % coordinatesBasis(i,1:n) * ElementValues(1:n))
@@ -102,6 +109,7 @@ MODULE NumaElectricTips
                     ThermocoupleTemperatures(i) = 0_dp
                 END IF
 
+                ! If parallel, we need to pull all these together
                 IF (ParEnv % PEs > 1) THEN
                     CALL MPI_ALLREDUCE(ThermocoupleTemperatures(i), ParVal, 1, &
                         MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)

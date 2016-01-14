@@ -45,22 +45,45 @@ SUBROUTINE MaxESolver( Model,Solver,Timestep,TransientSimulation)
 
       SAVE ElectricConductivity, E, S, ElectricConductivityVector, ElementNodes
 
+      ! Get the Joule Heating from the, say, electric potential solver
       JouleHeatingVar => VariableGet(Solver % Mesh % Variables, "Joule Heating")
       JouleHeating => JouleHeatingVar % Values
       JouleHeatingPerm => JouleHeatingVar % Perm
 
+      ! MaxE is our own variable
       MaxE => Solver % Variable % Values
       MaxEPerm => Solver % Variable % Perm
       MaxEPrev => Solver % Variable % PrevValues(:,1)
+
+      ! We also output a survival variable, based on the pulse number
       SurvivalVar => VariableGet(Solver % Mesh % Variables, "Survival")
       S => SurvivalVar % Values
 
       N = SIZE(MaxEPerm)
       PulseNumber = GetInteger(Solver % Values, 'Pulse Number', Found)
-      E0 = 399600.0
-      A0 = 144100.0
-      K1 = 0.03
-      K2 = 0.06
+
+      ! From Garcia et al, 2014 (http://lbk.fe.uni-lj.si/pdfs/plos2014.pdf)
+      ! Note that these numbers are not based on human in vivo tissue, and
+      ! better numbers should be used when research is available
+      E0 = GetConstReal(Solver % Values, 'E0', Found)
+      IF (.NOT. Found) THEN
+          E0 = 399600.0
+      END IF
+
+      A0 = GetConstReal(Solver % Values, 'A0', Found)
+      IF (.NOT. Found) THEN
+          A0 = 144100.0
+      END IF
+
+      K1 = GetConstReal(Solver % Values, 'K1', Found)
+      IF (.NOT. Found) THEN
+          K1 = 0.03
+      END IF
+
+      K2 = GetConstReal(Solver % Values, 'K2', Found)
+      IF (.NOT. Found) THEN
+          K2 = 0.06
+      END IF
 
       IF (.NOT. AllocationsDone) THEN
           ALLOCATE(ElectricConductivity(1:Solver % Mesh % MaxElementNodes))
@@ -68,21 +91,20 @@ SUBROUTINE MaxESolver( Model,Solver,Timestep,TransientSimulation)
           ALLOCATE(E(1:N), S(1:N))
           ALLOCATE(ElementNodes(1:Solver % Mesh % MaxElementNodes))
 
+          ! Output updated electric conducitivity
           CALL VariableAdd(Solver % Mesh % Variables, Solver % Mesh, &
               Solver, 'Electric Conductivity', 1, &
               ElectricConductivityVector, MaxEPerm)
 
+          ! Also output the present energy deposition
           CALL VariableAdd( Solver % Mesh % Variables, Solver % Mesh, &
               Solver, 'E', 1, &
               E, MaxEPerm )
 
-          !CALL VariableAdd( Solver % Mesh % Variables, Solver % Mesh, &
-          !    Solver, 'Survival', 1, &
-          !    S, MaxEPerm )
-
           AllocationsDone = .TRUE.
       END IF
 
+      ! For each element, update the element-wise conductivity
       DO i=1,Solver % NumberOfActiveElements
         Element => GetActiveElement(i)
         NodeCount = GetElementNOFNodes()
@@ -98,6 +120,8 @@ SUBROUTINE MaxESolver( Model,Solver,Timestep,TransientSimulation)
             ElectricConductivityVector(MaxEPerm(j)) = ElectricConductivity(k)
         END DO
       END DO
+
+      ! Now go through nodes, and update the non-material-dependent variables nodally
       DO j = 1, SIZE(MaxEPerm)
         jh = JouleHeating(MaxEPerm(j))
         cond = ElectricConductivityVector(MaxEPerm(j))
