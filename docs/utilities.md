@@ -23,7 +23,7 @@ This utility is especially useful for translating needles from reference
 coordinates to the embedded location and for moving backwards and forwards between
 an axisymmetric problem and its 3D embedding. Note that reference needles in the
 GSSF library are aligned to `(0, 0, 1)`, not `(0, 1, 0)`. However, library
-axisymmetric meshes lie in this plane. [Extensions](numa-elmer.md) to the mesh
+axisymmetric meshes lie in this plane. [Extensions](tools/numa-elmer.md) to the mesh
 interpolation functionality in Elmer allow
 
 ## slugify

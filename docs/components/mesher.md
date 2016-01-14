@@ -38,7 +38,7 @@ The `inner` parameter `template`, allows you to specify the template used for
 the inner mesh - this is normally an axisymmetric needle geometry from the GSSF
 library. The `needle` attribute allows you to indicate in which mesh the needle
 should be embedded, (although axisymmetric templates may not always adjust for
-this parameter). The `INNERREGION` allows you to specify a [region](regions.md)
+this parameter). The `INNERREGION` allows you to specify a [region](../regions.md)
 that should form an outer boundary for the inner mesh - this is currently implemented
 only in the case of volumetric meshes, but strictly it could be extended to both.
 
@@ -73,7 +73,7 @@ This is configured, extending the `<mesher>` or `<inner>` sections, as follows:
 ```
 
 The `surface` is any boundary region (was previously `vessel`) and requires only
-the name of the `region` as expressed in the [regions](regions.md) section. All
+the name of the `region` as expressed in the [regions](../regions.md) section. All
 global discretization information is contained in the lengthscales tag, which
 provides parameters for the characteristic length field. The `extent` may be
 supplied as a radius about the `centre` or as a region. The `organ`, which is
@@ -112,7 +112,7 @@ dimension `XYZ` and `$INNERHEIGHT` or `$INNERWIDTH` to refer to `HEIGHT` or
 `WIDTH`, respectively. It may use `$NEARFIELD` and `$FARFIELD` to get the
 `NEARFIELD` and `FARFIELD` parameters, which should together be sufficient to
 set the characteristic lengths for GMSH. The template also has access to the
-[region](regions.md) IDs, which is prior to renumbering, but allows multiple
+[region](../regions.md) IDs, which is prior to renumbering, but allows multiple
 mesher components to number consistently. These use the same constant naming
 scheme as the [Elmer](elmer.md) SIF template (`REGION_ORGAN`, etc.). To parse
 the template,

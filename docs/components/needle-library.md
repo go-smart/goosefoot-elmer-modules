@@ -56,7 +56,7 @@ The corresponding GSSF component forms a fairly transparent wrapper for
 
 ### Configuration
 
-The second-level [GSSF-XML](xml.md) tag is as follows:
+The second-level [GSSF-XML](../xml.md) tag is as follows:
 
 ```xml
     <needlelibrary [ skip="BOOL:false" ]>

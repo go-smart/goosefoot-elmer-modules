@@ -10,7 +10,7 @@ percentage progress.
 The Elmer SIF provides the configuration of the solver. It is generated from
 a [Jinja2](http://jinja.pocoo.org/) template, which is supplied in the GSSF-XML.
 Parameter dictionaries provide access to the global GSSF parameter list
-from the template - see [Constants (Parameters)](constants.md) for more detail.
+from the template - see [Constants (Parameters)](../constants.md) for more detail.
 
 In addition to the global parameter dictionary, `p`, and the dictionary of
 needle parameter dictionaries `needles`, there is a counter dictionary, `c`. It may used
@@ -24,7 +24,7 @@ not. As such, if running GSSF separately **you should only accept SIF templates 
 Specifically, several MATC functions provide access to the filesystem or printf,
 so precautions should be taken.
 
-[Algorithms](../cdm/algorithms.md) in MATC will be written to a file with a unique
+[Algorithms](https://go-smart.github.io/gssa/algorithms/) in MATC will be written to a file with a unique
 ID. A line sourcing it will be added at the end of the SIF, and the constant
 representing the result, will be substituted with a call to it. For instance,
 `Electric conductivity = {{ p.ELECTRIC_CONDUCTIVITY }}`, when with an algorithm

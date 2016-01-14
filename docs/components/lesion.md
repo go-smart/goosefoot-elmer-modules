@@ -17,7 +17,7 @@ When running *go-smart-lesion* as part of the GSSF workflow, the Python componen
 ```
 
 If `scaling` is omitted, the inverse of
-[`simulationscaling`](regions.md#geometry) is used. This returns the simulation
+[`simulationscaling`](../regions.md#geometry) is used. This returns the simulation
 to the original, input length scale. If `connectivity` is `true`, the largest
 component only will be extracted. To choose a specific simulation timeslice for
 input, the `selection` attribute can be set to either `most-recent`, for the

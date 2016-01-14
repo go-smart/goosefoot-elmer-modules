@@ -4,7 +4,7 @@ This is an extremely basic component, wrapping [GMSH](http://gmsh.info) for mesh
 
 ## Configuration
 
-The second-level [GSSF-XML](xml.md) element is as follows:
+The second-level [GSSF-XML](../xml.md) element is as follows:
 
 ```xml
    <optimizer [ method="(gmsh|netgen):gmsh" ] />

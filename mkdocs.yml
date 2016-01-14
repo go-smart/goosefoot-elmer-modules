@@ -1,6 +1,6 @@
 site_name: Go-Smart Simulation Architecture Documentation
 pages:
-    - Overview: 'overview.md'
+    - Home: 'index.md'
     - go-smart-launcher: 'go-smart-launcher.md'
     - GSSF XML Format: 'xml.md'
     - Family in GSSA: 'family.md'

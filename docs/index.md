@@ -1,6 +1,16 @@
 # Go-Smart Simulation Framework
 
-The simulation framework (as opposed to the architecture) is a single specific
+
+**Primary authors** : [NUMA Engineering Services Ltd](http://www.numa.ie) (NUMA), Dundalk, Ireland<br/>
+**Project website** : [http://www.gosmart-project.eu/](http://www.gosmart-project.eu/)
+
+This project is co-funded by the European Commission under grant agreement no. 600641.
+
+The GSSF tool provides the necessary scripts and libraries to run a simulation workflow beginning from STL and VTP surfaces, configuring a [CGAL](https://cgal.org)-based tool for volumetric meshing, running [Elmer](https://elmerfem.org) for finite element simulation, and ending with a [VTK](https://vtk.org)-extracted isosurface.
+
+## Introduction
+
+The simulation framework (as opposed to the [GSSA](https://go-smart.github.io/gssa/) architecture) is a single specific
 workflow that allows a user to provide a set of STL surfaces and Elmer
 configuration, and get back a lesion surface.
 
@@ -29,7 +39,8 @@ contains a module for compiling GSSA-XML to GSSF-XML, if possible.
 It is entirely reasonable to use GSSF separately from the rest of the GSSA
 architecture, starting with a GSSF-XML settings file and appropriately laid out
 directory. This is especially useful for offline debugging of simulation
-settings, which you may (or may not) want to update in the [CDM](../cdm/overview.md) later,
+settings, which you may (or may not) want to update in the
+[CDM](https://go-smart.github.io/gssa/cdm/overview/) later,
 but, in general, provides a simple workflow for taking STL surfaces, producing a
 volumetric mesh, running an Elmer simulation and returning a clean STL
 isosurface. Moreover, it is scriptable and using fairly flexible command-line
@@ -40,10 +51,10 @@ Execution of the workflow is managed by [go-smart-launcher](go-smart-launcher.md
 ## Workflow
 
 The workflow follows the illustrated steps. It executes (in order), the [Needle
-Library](needle-library.md), the [meshers](mesher.md), the [mesh
-optimizer](optimizer.md), [ElmerGrid](elmergrid.md), the [solver](elmer.md) then
-[lesion extraction](lesion.md) on the results. It may also, if configured, run
-[validation](validation.md).
+Library](components/needle-library.md), the [meshers](components/mesher.md), the [mesh
+optimizer](components/optimizer.md), [ElmerGrid](components/elmergrid.md), the [solver](components/elmer.md) then
+[lesion extraction](components/lesion.md) on the results. It may also, if configured, run
+[validation](components/validation.md).
 
 ![GSSF Workflow](images/workflow.svg)
 

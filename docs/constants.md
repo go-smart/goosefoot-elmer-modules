@@ -14,7 +14,7 @@ another uses it.
 
 ## Parameters in the Elmer SIF template
 
-The [SIF template](elmer.md#elmer-sif-template) is a
+The [SIF template](components/elmer.md#elmer-sif-template) is a
 [Jinja2](http://jinja.pocoo.org/) template. As such, Python parameter
 dictionaries are used to pass parameters into the template. These are named `p`
 and `needles`, being the global and needle-specific parameters, respectively. The

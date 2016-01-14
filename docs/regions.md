@@ -26,12 +26,12 @@ one of the three tags:
 ```
 
 The `REGIONNAME` may be any string used to refer to the region elsewhere in the
-configuration (such as the [mesher](mesher.md)) and the `INPUTLOCATION` is
+configuration (such as the [mesher](components/mesher.md)) and the `INPUTLOCATION` is
 usually the filename of the STL surface defining the region. This may be given
 relative to the working directory. Generally, STL files are kept in an `input/`
 subdirectory.
 
-The [Needle Library](needle-library.md) may add regions representing needles, as
+The [Needle Library](components/needle-library.md) may add regions representing needles, as
 `NEEDLE_[NEEDLEID]` (and `NEEDLE_[NEEDLEID]_ACTIVE`,
 `NEEDLE_[NEEDLEID]_INACTIVE` if appropriate).
 

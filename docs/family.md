@@ -1,6 +1,6 @@
 # Go-Smart Simulation Framework Family in GSSA
 
-GSSA [families](../families.md) prepare configuration for running a solver, in
+GSSA [families](https://go-smart.github.io/gssa/families/) prepare configuration for running a solver, in
 this case GSSF. This is in the form of a Python class extending
 `gssa.family.Family`. There are actually two components comprising the GSSF
 Family.
