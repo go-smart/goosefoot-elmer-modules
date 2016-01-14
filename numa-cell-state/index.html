@@ -69,27 +69,7 @@
                         </li>
                     
                         <li >
-                            <a href="../numa-heat-solver/">NumaHeatSolver</a>
-                        </li>
-                    
-                        <li >
                             <a href="../numa-ire/">NumaIRE</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-init-boundary-conditions/">NumaInitBoundaryConditions</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-init-boundary-conditions_gs/">NumaInitBoundaryConditions_gs</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-legacy-cell-state/">NumaLegacyCellState</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-legacy-heat-solver/">NumaLegacyHeatSolver</a>
                         </li>
                     
                         <li >
@@ -130,7 +110,7 @@
                     </a>
                 </li>
                 <li >
-                    <a rel="prev" href="../numa-heat-solver/">
+                    <a rel="prev" href="../numa-ire/">
                         Next <i class="fa fa-arrow-right"></i>
                     </a>
                 </li>
@@ -146,12 +126,107 @@
     
         <li class="main active"><a href="#numacellstate-module">NumaCellState Module</a></li>
         
+            <li><a href="#numacellstatesolver">NumaCellStateSolver</a></li>
+        
     
     </ul>
 </div></div>
             <div class="col-md-9" role="main">
 
-<h1 id="numacellstate-module">NumaCellState Module</h1></div>
+<h1 id="numacellstate-module">NumaCellState Module</h1>
+<p>This is an implementation of a <a href="http://www.ncbi.nlm.nih.gov/pubmed/20924678">three-state cell death
+model</a>, an evolution equation with
+Alive, Vulnerable and Dead states. All three transition to the next, based on
+temperature, while Vulnerable is additionally able to transition to Alive.</p>
+<p>This builds to <code>libnuma-cellstate.so</code>.</p>
+<h2 id="numacellstatesolver">NumaCellStateSolver</h2>
+<p>As no spatial derivatives are involved, this solver does not require an FE
+matrix solution. Instead it uses RK4 timestepping with the secant method for
+obtaining an iterative series of approximations.</p>
+<h3 id="parameters">Parameters</h3>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Location</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Temperature</td>
+<td>-</td>
+<td>Variable</td>
+<td>-</td>
+<td>Used for temperature-dependent coefficients (req)</td>
+</tr>
+<tr>
+<td>Time</td>
+<td>-</td>
+<td>Variable</td>
+<td>-</td>
+<td>Simulation time (req)</td>
+</tr>
+<tr>
+<td>Nonlinear System Max Iterations</td>
+<td>Solver</td>
+<td>Integer</td>
+<td>1</td>
+<td>Maximum internal iterations</td>
+</tr>
+<tr>
+<td>Nonlinear System Abort Not Converged</td>
+<td>Solver</td>
+<td>Logical</td>
+<td>TRUE</td>
+<td>Stop if not converged</td>
+</tr>
+<tr>
+<td>Nonlinear System Convergence Tolerance</td>
+<td>Solver</td>
+<td>Real</td>
+<td>3.0</td>
+<td>Stop when error is below this</td>
+</tr>
+<tr>
+<td>Nonlinear System Relaxation Factor</td>
+<td>Solver</td>
+<td>Real</td>
+<td>1.0</td>
+<td>Relaxation factor</td>
+</tr>
+<tr>
+<td>Forward Rate</td>
+<td>Solver</td>
+<td>Real</td>
+<td>0.00333</td>
+<td>$ k_f $</td>
+</tr>
+<tr>
+<td>Backward Rate</td>
+<td>Solver</td>
+<td>Real</td>
+<td>0.00777</td>
+<td>$ k_b $</td>
+</tr>
+<tr>
+<td>Exponential Rate</td>
+<td>Solver</td>
+<td>Real</td>
+<td>40.5</td>
+<td>$ T_k $</td>
+</tr>
+<tr>
+<td>Enforce Variable Bounds</td>
+<td>Solver</td>
+<td>Logical</td>
+<td>FALSE</td>
+<td>Max/min pointwise values at theoretical max/min (0.0/1.0)</td>
+</tr>
+</tbody>
+</table></div>
         </div>
 
         <footer class="col-md-12">

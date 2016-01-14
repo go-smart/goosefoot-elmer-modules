@@ -69,27 +69,7 @@
                         </li>
                     
                         <li >
-                            <a href="../numa-heat-solver/">NumaHeatSolver</a>
-                        </li>
-                    
-                        <li >
                             <a href="../numa-ire/">NumaIRE</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-init-boundary-conditions/">NumaInitBoundaryConditions</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-init-boundary-conditions_gs/">NumaInitBoundaryConditions_gs</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-legacy-cell-state/">NumaLegacyCellState</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-legacy-heat-solver/">NumaLegacyHeatSolver</a>
                         </li>
                     
                         <li >
@@ -146,12 +126,68 @@
     
         <li class="main active"><a href="#numapowerfield-module">NumaPowerField Module</a></li>
         
+            <li><a href="#numapowerfieldtrigger">NumaPowerFieldTrigger</a></li>
+        
     
     </ul>
 </div></div>
             <div class="col-md-9" role="main">
 
-<h1 id="numapowerfield-module">NumaPowerField Module</h1></div>
+<h1 id="numapowerfield-module">NumaPowerField Module</h1>
+<p>Produces <code>libnuma-powerfield.so</code> module.</p>
+<h2 id="numapowerfieldtrigger">NumaPowerFieldTrigger</h2>
+<p>This solver relates time to a sequence of <em>phases</em> with different powers. Each
+power should correspond to an pre-defined input field. When the phase changes,
+this solver updates the solver loading the field data with the new filename and
+instructs it to recalculate. This is intended to work with NumaPowerFieldSolver.</p>
+<p>This sets a Phase variable, a sequential integer indicating the present phase, a
+Power variable, indicating the total power for this phase, and a RecalculatePower
+flag variable (positive when set) to tell the data solver to reload its
+data. This works well with a DataToFieldSolver when the Exec Condition for that
+solver is set to be this solvers RecalculatePower variable, as it updates the
+Point Data Filename property.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Location</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Time</td>
+<td>-</td>
+<td>Variable</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>Phases</td>
+<td>Solver</td>
+<td>Real Array (2xN)</td>
+<td>-</td>
+<td>An ordered row of final times for each phase over a row of new powers at those times. If the timestep exceeds the final phase end, or a negative power is encountered, the simulation exits</td>
+</tr>
+<tr>
+<td>Data Solver</td>
+<td>Solver</td>
+<td>Integer</td>
+<td>-</td>
+<td>The index of the solver which should have the Point Data Filename property set on it</td>
+</tr>
+<tr>
+<td>Profile File Prefix</td>
+<td>Solver</td>
+<td>String</td>
+<td><code>sar-</code></td>
+<td>Prefix used to obtain the deposition profile (in the form "sar-PPPP.dat", say)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>TODO</strong>: make the data solver optional</p></div>
         </div>
 
         <footer class="col-md-12">

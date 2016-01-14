@@ -69,27 +69,7 @@
                         </li>
                     
                         <li >
-                            <a href="../numa-heat-solver/">NumaHeatSolver</a>
-                        </li>
-                    
-                        <li >
                             <a href="../numa-ire/">NumaIRE</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-init-boundary-conditions/">NumaInitBoundaryConditions</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-init-boundary-conditions_gs/">NumaInitBoundaryConditions_gs</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-legacy-cell-state/">NumaLegacyCellState</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-legacy-heat-solver/">NumaLegacyHeatSolver</a>
                         </li>
                     
                         <li >
@@ -147,11 +127,65 @@
         <li class="main active"><a href="#numatm-module">NumaTM Module</a></li>
         
     
+        <li class="main "><a href="#numatmharmonicsolver">NumaTMHarmonicSolver</a></li>
+        
+    
+        <li class="main "><a href="#transform">Transform</a></li>
+        
+    
     </ul>
 </div></div>
             <div class="col-md-9" role="main">
 
-<h1 id="numatm-module">NumaTM Module</h1></div>
+<h1 id="numatm-module">NumaTM Module</h1>
+<p>Produces <code>libnuma-tm.so</code> module.</p>
+<h1 id="numatmharmonicsolver">NumaTMHarmonicSolver</h1>
+<p>Minorly adjusted version of the upstream Elmer MagnetoDynamics2DHarmonic solver.
+(TODO: is this still necessary?)</p>
+<h1 id="transform">Transform</h1>
+<p>Routine to transform a solution to somewhere else in 3D. Used in conjunction
+with 2D-&gt;3D rotational extrapolation enhancements to embed axisymmetric problems.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Location</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Backward</td>
+<td>Solver</td>
+<td>Logical</td>
+<td>FALSE</td>
+<td>Reverse the transformation</td>
+</tr>
+<tr>
+<td>Transformation Matrix</td>
+<td>Solver</td>
+<td>Real Array (3x3)</td>
+<td>-</td>
+<td>Matrix representing the linear part of the transformation</td>
+</tr>
+<tr>
+<td>Translation</td>
+<td>Solver</td>
+<td>Real Array (3)</td>
+<td>-</td>
+<td>Offset representing the affine part of the transformation</td>
+</tr>
+<tr>
+<td>Interpolant</td>
+<td>Solver</td>
+<td>String</td>
+<td>-</td>
+<td>Name of variable that should be interpolated to new location</td>
+</tr>
+</tbody>
+</table></div>
         </div>
 
         <footer class="col-md-12">

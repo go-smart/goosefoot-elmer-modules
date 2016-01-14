@@ -17,143 +17,158 @@
         }, 
         {
             "location": "/numa-alternating/", 
-            "text": "NumaAlternating Module", 
+            "text": "NumaAlternating Module\n\n\nThis builds to \nlibnuma-alternatebc.so\n.\n\n\nNumaAlternatingBCSolver\n\n\nThis solver switches boundary conditions between Dirichlet and Neumann based on\na \nAlternating Boundary Condition\n 0D value in each \nBoundaryCondition\n. When it is found, the\nsolver checks if is positive and sets the Dirichlet flag for its elements, when\nnot, it removes the Dirichlet flag.\n\n\nThis is primarily useful when \nAlternating Boundary Condition\n is, for example, a variable of\ntime or another 0D variable (total power, etc.). For this to work correctly, all\nboundary conditions intended to alternate should have both Dirichlet and Neumann\nconditions set.", 
             "title": "NumaAlternating"
         }, 
         {
             "location": "/numa-alternating/#numaalternating-module", 
-            "text": "", 
+            "text": "This builds to  libnuma-alternatebc.so .", 
             "title": "NumaAlternating Module"
         }, 
         {
+            "location": "/numa-alternating/#numaalternatingbcsolver", 
+            "text": "This solver switches boundary conditions between Dirichlet and Neumann based on\na  Alternating Boundary Condition  0D value in each  BoundaryCondition . When it is found, the\nsolver checks if is positive and sets the Dirichlet flag for its elements, when\nnot, it removes the Dirichlet flag.  This is primarily useful when  Alternating Boundary Condition  is, for example, a variable of\ntime or another 0D variable (total power, etc.). For this to work correctly, all\nboundary conditions intended to alternate should have both Dirichlet and Neumann\nconditions set.", 
+            "title": "NumaAlternatingBCSolver"
+        }, 
+        {
             "location": "/numa-cell-state/", 
-            "text": "NumaCellState Module", 
+            "text": "NumaCellState Module\n\n\nThis is an implementation of a \nthree-state cell death\nmodel\n, an evolution equation with\nAlive, Vulnerable and Dead states. All three transition to the next, based on\ntemperature, while Vulnerable is additionally able to transition to Alive.\n\n\nThis builds to \nlibnuma-cellstate.so\n.\n\n\nNumaCellStateSolver\n\n\nAs no spatial derivatives are involved, this solver does not require an FE\nmatrix solution. Instead it uses RK4 timestepping with the secant method for\nobtaining an iterative series of approximations.\n\n\nParameters\n\n\n\n\n\n\n\n\nParameter\n\n\nLocation\n\n\nType\n\n\nDefault\n\n\nDescription\n\n\n\n\n\n\n\n\n\n\nTemperature\n\n\n-\n\n\nVariable\n\n\n-\n\n\nUsed for temperature-dependent coefficients (req)\n\n\n\n\n\n\nTime\n\n\n-\n\n\nVariable\n\n\n-\n\n\nSimulation time (req)\n\n\n\n\n\n\nNonlinear System Max Iterations\n\n\nSolver\n\n\nInteger\n\n\n1\n\n\nMaximum internal iterations\n\n\n\n\n\n\nNonlinear System Abort Not Converged\n\n\nSolver\n\n\nLogical\n\n\nTRUE\n\n\nStop if not converged\n\n\n\n\n\n\nNonlinear System Convergence Tolerance\n\n\nSolver\n\n\nReal\n\n\n3.0\n\n\nStop when error is below this\n\n\n\n\n\n\nNonlinear System Relaxation Factor\n\n\nSolver\n\n\nReal\n\n\n1.0\n\n\nRelaxation factor\n\n\n\n\n\n\nForward Rate\n\n\nSolver\n\n\nReal\n\n\n0.00333\n\n\n$ k_f $\n\n\n\n\n\n\nBackward Rate\n\n\nSolver\n\n\nReal\n\n\n0.00777\n\n\n$ k_b $\n\n\n\n\n\n\nExponential Rate\n\n\nSolver\n\n\nReal\n\n\n40.5\n\n\n$ T_k $\n\n\n\n\n\n\nEnforce Variable Bounds\n\n\nSolver\n\n\nLogical\n\n\nFALSE\n\n\nMax/min pointwise values at theoretical max/min (0.0/1.0)", 
             "title": "NumaCellState"
         }, 
         {
             "location": "/numa-cell-state/#numacellstate-module", 
-            "text": "", 
+            "text": "This is an implementation of a  three-state cell death\nmodel , an evolution equation with\nAlive, Vulnerable and Dead states. All three transition to the next, based on\ntemperature, while Vulnerable is additionally able to transition to Alive.  This builds to  libnuma-cellstate.so .", 
             "title": "NumaCellState Module"
         }, 
         {
-            "location": "/numa-heat-solver/", 
-            "text": "NumaHeatSolver Module", 
-            "title": "NumaHeatSolver"
-        }, 
-        {
-            "location": "/numa-heat-solver/#numaheatsolver-module", 
-            "text": "", 
-            "title": "NumaHeatSolver Module"
+            "location": "/numa-cell-state/#numacellstatesolver", 
+            "text": "As no spatial derivatives are involved, this solver does not require an FE\nmatrix solution. Instead it uses RK4 timestepping with the secant method for\nobtaining an iterative series of approximations.  Parameters     Parameter  Location  Type  Default  Description      Temperature  -  Variable  -  Used for temperature-dependent coefficients (req)    Time  -  Variable  -  Simulation time (req)    Nonlinear System Max Iterations  Solver  Integer  1  Maximum internal iterations    Nonlinear System Abort Not Converged  Solver  Logical  TRUE  Stop if not converged    Nonlinear System Convergence Tolerance  Solver  Real  3.0  Stop when error is below this    Nonlinear System Relaxation Factor  Solver  Real  1.0  Relaxation factor    Forward Rate  Solver  Real  0.00333  $ k_f $    Backward Rate  Solver  Real  0.00777  $ k_b $    Exponential Rate  Solver  Real  40.5  $ T_k $    Enforce Variable Bounds  Solver  Logical  FALSE  Max/min pointwise values at theoretical max/min (0.0/1.0)", 
+            "title": "NumaCellStateSolver"
         }, 
         {
             "location": "/numa-ire/", 
-            "text": "NumaIRE Module", 
+            "text": "NumaIRE Module\n\n\nThis is a macro-scale IRE solver based on solving Laplace's equation with a\ndeposition-dependent electric conductivity (using a similar approach to e.g.\n\nGarcia et al, 2014\n).\n\n\nThe IRE protocol is formed of a sequence of pairings of \nin situ\n needles. For\ninstance, six needles may be attached to the generator and placed in the liver,\npreferably to be parallel. The protocol may be, say, nine consecutive pairings\nof needles with one as acting an anode and another as a cathode. The remainder\nare inert for that protocol step.\n\n\nAs each step is treated as a steady-state problem, we use timestepping to move\nfrom one pair to the next - in the example above, we use nine timesteps.\n\n\nGlobal Parameters\n\n\n\n\n\n\n\n\nParameter\n\n\nLocation\n\n\nType\n\n\nDefault\n\n\nDescription\n\n\n\n\n\n\n\n\n\n\nAnode\n\n\nSimulation\n\n\nInteger Array (size N)\n\n\n-\n\n\nThis is a list of boundary IDs, one for each timestep, indicating the erstwhile anode boundary (req)\n\n\n\n\n\n\nCathode\n\n\nSimulation\n\n\nInteger Array (size N)\n\n\n-\n\n\nThis is a list of boundary IDs, one for each timestep, indicating the erstwhile cathode boundary (req)\n\n\n\n\n\n\nPotential Consecutive Values\n\n\nSimulation\n\n\nReal Array (size 2xN)\n\n\n-\n\n\nThe first row lists potential values on the anode, the second those on the cathode\n\n\n\n\n\n\n\n\nThe Anode, Cathode and Potential Consecutive Values arrays must be the same\nlength, with the PCV array having two rows.\n\n\nAlternatingBCSolver (libnuma-ire)\n\n\nThis is an upstream version of \nNumaAlternating\n, working with two\nlists of embedded boundaries, switching between a Dirichlet condition and no\ncondition at all. It searches for boundary conditions with an \nAlternating Boundary\nCondition\n parameter set to \nTRUE\n and turns them on when the BC's \nBody Id\n\nmatches the current Anode or Cathode value.\n\n\nAlternatingBoundaryCondition\n\n\nThis is a user-defined function that returns the potential Dirichlet condition\nvalue based on whether the boundary element to which it is being applied is an\nanode or a cathode (zero otherwise, but when used in conjunction with the\nAlternatingBCSolver, this will be ignored).\n\n\nCoverageCurveOutputSolver\n\n\nThe coverage curve output solver calculates, for each energy deposition level\n$ E $, the cumulative volume of tumour which has experienced maximum\ndeposition above that level. This is a common way of reporting IRE efficacy as,\nfor a chosen death threshold, the lesion size can be read off a plot.\n\n\nAt each timestep, it outputs a file, \"coverage_TTT.txt\", where TTT is the\ntimestep. Each line has the format: \nThreshold (V/cm), Fraction of tumour volume\n.\nThis solver contains a simple example of succinctly integrating a function over\na domain, which may be a useful starting point for other authors.\n\n\n\n\n\n\n\n\nParameter\n\n\nLocation\n\n\nType\n\n\nDefault\n\n\nDescription\n\n\n\n\n\n\n\n\n\n\nE\n\n\n-\n\n\nVariable\n\n\n-\n\n\nMost recent energy deposition at a point (req)\n\n\n\n\n\n\nMax E\n\n\n-\n\n\nVariable\n\n\n-\n\n\nMaximum energy deposition at a point (req)\n\n\n\n\n\n\nMinimum Coverage\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nLowest energy level to calculate (req)\n\n\n\n\n\n\nMaximum Coverage\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nHigher energy level to calculate (req)\n\n\n\n\n\n\nDivisions\n\n\nSolver\n\n\nInteger\n\n\n-\n\n\nNumber of energy levels (req)\n\n\n\n\n\n\nTumour\n\n\nMaterial\n\n\nLogical\n\n\nFALSE\n\n\nWhether or not this cell should be counted as tumour tissues, that is, whether it contributes to the totals\n\n\n\n\n\n\n\n\nMaxESolver\n\n\nProvides the maximum energy deposition over previous time as a variable (MaxE), along\nwith energy deposition at present time (E), electric conductivity based on\nenergy deposition (Electric Conductivity) and survival, based on the \nGarcia et\nal, 2014\n model relating pulse number\nto death threshold. Note that the constants here are not based on in vivo human\nstudies, so improved values should be used when available.\n\n\n\n\n\n\n\n\nParameter\n\n\nLocation\n\n\nType\n\n\nDefault\n\n\nDescription\n\n\n\n\n\n\n\n\n\n\nJoule Heating\n\n\n-\n\n\nVariable\n\n\n-\n\n\nOutput Joule Heating of, say, Elmer's electric potential solver\n\n\n\n\n\n\nPulse Number\n\n\nSolver\n\n\nInteger\n\n\n-\n\n\nNumber of pulses at each protocol step (req)\n\n\n\n\n\n\nE0\n\n\nSolver\n\n\nReal\n\n\n399600.0\n\n\nModelling parameter in Garcia et al, 2014\n\n\n\n\n\n\nA0\n\n\nSolver\n\n\nReal\n\n\n144100.0\n\n\nModelling parameter in Garcia et al, 2014\n\n\n\n\n\n\nK1\n\n\nSolver\n\n\nReal\n\n\n0.03\n\n\nModelling parameter in Garcia et al, 2014\n\n\n\n\n\n\nK2\n\n\nSolver\n\n\nReal\n\n\n0.06\n\n\nModelling parameter in Garcia et al, 2014", 
             "title": "NumaIRE"
         }, 
         {
             "location": "/numa-ire/#numaire-module", 
-            "text": "", 
+            "text": "This is a macro-scale IRE solver based on solving Laplace's equation with a\ndeposition-dependent electric conductivity (using a similar approach to e.g. Garcia et al, 2014 ).  The IRE protocol is formed of a sequence of pairings of  in situ  needles. For\ninstance, six needles may be attached to the generator and placed in the liver,\npreferably to be parallel. The protocol may be, say, nine consecutive pairings\nof needles with one as acting an anode and another as a cathode. The remainder\nare inert for that protocol step.  As each step is treated as a steady-state problem, we use timestepping to move\nfrom one pair to the next - in the example above, we use nine timesteps.  Global Parameters     Parameter  Location  Type  Default  Description      Anode  Simulation  Integer Array (size N)  -  This is a list of boundary IDs, one for each timestep, indicating the erstwhile anode boundary (req)    Cathode  Simulation  Integer Array (size N)  -  This is a list of boundary IDs, one for each timestep, indicating the erstwhile cathode boundary (req)    Potential Consecutive Values  Simulation  Real Array (size 2xN)  -  The first row lists potential values on the anode, the second those on the cathode     The Anode, Cathode and Potential Consecutive Values arrays must be the same\nlength, with the PCV array having two rows.", 
             "title": "NumaIRE Module"
         }, 
         {
-            "location": "/numa-init-boundary-conditions/", 
-            "text": "NumaInitBoundaryConditions Module", 
-            "title": "NumaInitBoundaryConditions"
+            "location": "/numa-ire/#alternatingbcsolver-libnuma-ire", 
+            "text": "This is an upstream version of  NumaAlternating , working with two\nlists of embedded boundaries, switching between a Dirichlet condition and no\ncondition at all. It searches for boundary conditions with an  Alternating Boundary\nCondition  parameter set to  TRUE  and turns them on when the BC's  Body Id \nmatches the current Anode or Cathode value.", 
+            "title": "AlternatingBCSolver (libnuma-ire)"
         }, 
         {
-            "location": "/numa-init-boundary-conditions/#numainitboundaryconditions-module", 
-            "text": "", 
-            "title": "NumaInitBoundaryConditions Module"
+            "location": "/numa-ire/#alternatingboundarycondition", 
+            "text": "This is a user-defined function that returns the potential Dirichlet condition\nvalue based on whether the boundary element to which it is being applied is an\nanode or a cathode (zero otherwise, but when used in conjunction with the\nAlternatingBCSolver, this will be ignored).", 
+            "title": "AlternatingBoundaryCondition"
         }, 
         {
-            "location": "/numa-init-boundary-conditions_gs/", 
-            "text": "NumaInitBoundaryConditions_gs Module", 
-            "title": "NumaInitBoundaryConditions_gs"
+            "location": "/numa-ire/#coveragecurveoutputsolver", 
+            "text": "The coverage curve output solver calculates, for each energy deposition level\n$ E $, the cumulative volume of tumour which has experienced maximum\ndeposition above that level. This is a common way of reporting IRE efficacy as,\nfor a chosen death threshold, the lesion size can be read off a plot.  At each timestep, it outputs a file, \"coverage_TTT.txt\", where TTT is the\ntimestep. Each line has the format:  Threshold (V/cm), Fraction of tumour volume .\nThis solver contains a simple example of succinctly integrating a function over\na domain, which may be a useful starting point for other authors.     Parameter  Location  Type  Default  Description      E  -  Variable  -  Most recent energy deposition at a point (req)    Max E  -  Variable  -  Maximum energy deposition at a point (req)    Minimum Coverage  Solver  Real  -  Lowest energy level to calculate (req)    Maximum Coverage  Solver  Real  -  Higher energy level to calculate (req)    Divisions  Solver  Integer  -  Number of energy levels (req)    Tumour  Material  Logical  FALSE  Whether or not this cell should be counted as tumour tissues, that is, whether it contributes to the totals", 
+            "title": "CoverageCurveOutputSolver"
         }, 
         {
-            "location": "/numa-init-boundary-conditions_gs/#numainitboundaryconditions_gs-module", 
-            "text": "", 
-            "title": "NumaInitBoundaryConditions_gs Module"
-        }, 
-        {
-            "location": "/numa-legacy-cell-state/", 
-            "text": "NumaCellState Module", 
-            "title": "NumaLegacyCellState"
-        }, 
-        {
-            "location": "/numa-legacy-cell-state/#numacellstate-module", 
-            "text": "", 
-            "title": "NumaCellState Module"
-        }, 
-        {
-            "location": "/numa-legacy-heat-solver/", 
-            "text": "NumaLegacyHeatSolver Module", 
-            "title": "NumaLegacyHeatSolver"
-        }, 
-        {
-            "location": "/numa-legacy-heat-solver/#numalegacyheatsolver-module", 
-            "text": "", 
-            "title": "NumaLegacyHeatSolver Module"
+            "location": "/numa-ire/#maxesolver", 
+            "text": "Provides the maximum energy deposition over previous time as a variable (MaxE), along\nwith energy deposition at present time (E), electric conductivity based on\nenergy deposition (Electric Conductivity) and survival, based on the  Garcia et\nal, 2014  model relating pulse number\nto death threshold. Note that the constants here are not based on in vivo human\nstudies, so improved values should be used when available.     Parameter  Location  Type  Default  Description      Joule Heating  -  Variable  -  Output Joule Heating of, say, Elmer's electric potential solver    Pulse Number  Solver  Integer  -  Number of pulses at each protocol step (req)    E0  Solver  Real  399600.0  Modelling parameter in Garcia et al, 2014    A0  Solver  Real  144100.0  Modelling parameter in Garcia et al, 2014    K1  Solver  Real  0.03  Modelling parameter in Garcia et al, 2014    K2  Solver  Real  0.06  Modelling parameter in Garcia et al, 2014", 
+            "title": "MaxESolver"
         }, 
         {
             "location": "/numa-lesion/", 
-            "text": "NumaLesion Module", 
+            "text": "NumaLesion Module\n\n\nProduces \nlibnuma-lesion.so\n module.\n\n\nLesionExtract\n\n\nReturns the lowest temperature pointwise over time. It should be used as a body force UDF. This allows\nan isovolume to be taken at the last timestep that includes any cell passing a\nlethal point at any point in time. Primarily useful for cryoablation.\n\n\n\n\n\n\n\n\nParameter\n\n\nLocation\n\n\nType\n\n\nDefault\n\n\nDescription\n\n\n\n\n\n\n\n\n\n\nLesionPrevious\n\n\n-\n\n\nVariable\n\n\n-\n\n\nStores previous value of this variable\n\n\n\n\n\n\nFreezable\n\n\nMaterial\n\n\nLogical\n\n\nTRUE\n\n\nIf a material is explicitly marked unfreezable, the return value will the max of its temperature and 0C (in K)\n\n\n\n\n\n\n\n\nTODO: refactor", 
             "title": "NumaLesion"
         }, 
         {
             "location": "/numa-lesion/#numalesion-module", 
-            "text": "", 
+            "text": "Produces  libnuma-lesion.so  module.", 
             "title": "NumaLesion Module"
         }, 
         {
+            "location": "/numa-lesion/#lesionextract", 
+            "text": "Returns the lowest temperature pointwise over time. It should be used as a body force UDF. This allows\nan isovolume to be taken at the last timestep that includes any cell passing a\nlethal point at any point in time. Primarily useful for cryoablation.     Parameter  Location  Type  Default  Description      LesionPrevious  -  Variable  -  Stores previous value of this variable    Freezable  Material  Logical  TRUE  If a material is explicitly marked unfreezable, the return value will the max of its temperature and 0C (in K)     TODO: refactor", 
+            "title": "LesionExtract"
+        }, 
+        {
             "location": "/numa-power-field/", 
-            "text": "NumaPowerField Module", 
+            "text": "NumaPowerField Module\n\n\nProduces \nlibnuma-powerfield.so\n module.\n\n\nNumaPowerFieldTrigger\n\n\nThis solver relates time to a sequence of \nphases\n with different powers. Each\npower should correspond to an pre-defined input field. When the phase changes,\nthis solver updates the solver loading the field data with the new filename and\ninstructs it to recalculate. This is intended to work with NumaPowerFieldSolver.\n\n\nThis sets a Phase variable, a sequential integer indicating the present phase, a\nPower variable, indicating the total power for this phase, and a RecalculatePower\nflag variable (positive when set) to tell the data solver to reload its\ndata. This works well with a DataToFieldSolver when the Exec Condition for that\nsolver is set to be this solvers RecalculatePower variable, as it updates the\nPoint Data Filename property.\n\n\n\n\n\n\n\n\nParameter\n\n\nLocation\n\n\nType\n\n\nDefault\n\n\nDescription\n\n\n\n\n\n\n\n\n\n\nTime\n\n\n-\n\n\nVariable\n\n\n-\n\n\n\n\n\n\n\n\nPhases\n\n\nSolver\n\n\nReal Array (2xN)\n\n\n-\n\n\nAn ordered row of final times for each phase over a row of new powers at those times. If the timestep exceeds the final phase end, or a negative power is encountered, the simulation exits\n\n\n\n\n\n\nData Solver\n\n\nSolver\n\n\nInteger\n\n\n-\n\n\nThe index of the solver which should have the Point Data Filename property set on it\n\n\n\n\n\n\nProfile File Prefix\n\n\nSolver\n\n\nString\n\n\nsar-\n\n\nPrefix used to obtain the deposition profile (in the form \"sar-PPPP.dat\", say)\n\n\n\n\n\n\n\n\nTODO\n: make the data solver optional", 
             "title": "NumaPowerField"
         }, 
         {
             "location": "/numa-power-field/#numapowerfield-module", 
-            "text": "", 
+            "text": "Produces  libnuma-powerfield.so  module.", 
             "title": "NumaPowerField Module"
         }, 
         {
+            "location": "/numa-power-field/#numapowerfieldtrigger", 
+            "text": "This solver relates time to a sequence of  phases  with different powers. Each\npower should correspond to an pre-defined input field. When the phase changes,\nthis solver updates the solver loading the field data with the new filename and\ninstructs it to recalculate. This is intended to work with NumaPowerFieldSolver.  This sets a Phase variable, a sequential integer indicating the present phase, a\nPower variable, indicating the total power for this phase, and a RecalculatePower\nflag variable (positive when set) to tell the data solver to reload its\ndata. This works well with a DataToFieldSolver when the Exec Condition for that\nsolver is set to be this solvers RecalculatePower variable, as it updates the\nPoint Data Filename property.     Parameter  Location  Type  Default  Description      Time  -  Variable  -     Phases  Solver  Real Array (2xN)  -  An ordered row of final times for each phase over a row of new powers at those times. If the timestep exceeds the final phase end, or a negative power is encountered, the simulation exits    Data Solver  Solver  Integer  -  The index of the solver which should have the Point Data Filename property set on it    Profile File Prefix  Solver  String  sar-  Prefix used to obtain the deposition profile (in the form \"sar-PPPP.dat\", say)     TODO : make the data solver optional", 
+            "title": "NumaPowerFieldTrigger"
+        }, 
+        {
             "location": "/numa-power-generator/", 
-            "text": "NumaPowerGenerator Module", 
+            "text": "NumaPowerGenerator Module\n\n\nProduces \nlibnuma-powergenerator.so\n module. This module is used to approximate\nthe behaviour of an radiofrequency ablation power generator, which takes\nreadings from several thermocouples and distributes power to a series of tines,\nspreading out from the end of a percutaneous needle.\n\n\nNumaPowerGeneratorSolver\n\n\nUpdates the power field based on the present phase. If the phase changes, the\ndistribution field profile is recalculated. If the power is negative, the simulation\ngracefully exits. If the overall input power is controlled by a PID controller,\nthis is also taken into account and calculated. Output variables are Electric\nDistribution (normalized field), ObservedTemperature (from the thermocouples),\nImpedance (FIXME: requires work), Applied Power (post-PID total output) and\nPhase. All but the first are global (0D) variables.\n\n\n\n\n\n\n\n\nParameter\n\n\nLocation\n\n\nType\n\n\nDefault\n\n\nDescription\n\n\n\n\n\n\n\n\n\n\nTemperature\n\n\n-\n\n\nVariable\n\n\n-\n\n\n\n\n\n\n\n\nPresent Phase\n\n\nSolver\n\n\nInteger\n\n\n-\n\n\nSets the phase for the present timestep (req)\n\n\n\n\n\n\nThermocouple Cut-Off Temperature\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nTines controlled by this thermocouple are shut off when its reading exceeds this temperature\n\n\n\n\n\n\nThermocouple Cut-Off Temperature\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nTines controlled by this thermocouple are reactivated (if they were shut off) when its reading drops below this temperature\n\n\n\n\n\n\nElectric Power\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nPower factor to product with distribution field profile\n\n\n\n\n\n\nImpedance Voltage\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nVoltage used to calculate impedance\n\n\n\n\n\n\nTemperature Controlled Electric Power\n\n\nSolver\n\n\nLogical\n\n\nFALSE\n\n\nWhether to base power delivery on a PID controller\n\n\n\n\n\n\nTarget Temperature\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nUsed by the PID controller\n\n\n\n\n\n\nProportional Gain for Electric Power Control\n\n\nSolver\n\n\nReal\n\n\n0.0\n\n\nUsed by the PID controller\n\n\n\n\n\n\nDerivative Gain for Electric Power Control\n\n\nSolver\n\n\nReal\n\n\n0.0\n\n\nUsed by the PID controller\n\n\n\n\n\n\nIntegral Gain for Electric Power Control\n\n\nSolver\n\n\nReal\n\n\n0.0\n\n\nUsed by the PID controller\n\n\n\n\n\n\nIntegral Length for Electric Power Control\n\n\nSolver\n\n\nReal\n\n\n0.0\n\n\nUsed by the PID controller\n\n\n\n\n\n\nElectric Power Filename\n\n\nSimulation\n\n\nString\n\n\n-\n\n\nName of the file containing the power distribution between tines", 
             "title": "NumaPowerGenerator"
         }, 
         {
             "location": "/numa-power-generator/#numapowergenerator-module", 
-            "text": "", 
+            "text": "Produces  libnuma-powergenerator.so  module. This module is used to approximate\nthe behaviour of an radiofrequency ablation power generator, which takes\nreadings from several thermocouples and distributes power to a series of tines,\nspreading out from the end of a percutaneous needle.", 
             "title": "NumaPowerGenerator Module"
         }, 
         {
+            "location": "/numa-power-generator/#numapowergeneratorsolver", 
+            "text": "Updates the power field based on the present phase. If the phase changes, the\ndistribution field profile is recalculated. If the power is negative, the simulation\ngracefully exits. If the overall input power is controlled by a PID controller,\nthis is also taken into account and calculated. Output variables are Electric\nDistribution (normalized field), ObservedTemperature (from the thermocouples),\nImpedance (FIXME: requires work), Applied Power (post-PID total output) and\nPhase. All but the first are global (0D) variables.     Parameter  Location  Type  Default  Description      Temperature  -  Variable  -     Present Phase  Solver  Integer  -  Sets the phase for the present timestep (req)    Thermocouple Cut-Off Temperature  Solver  Real  -  Tines controlled by this thermocouple are shut off when its reading exceeds this temperature    Thermocouple Cut-Off Temperature  Solver  Real  -  Tines controlled by this thermocouple are reactivated (if they were shut off) when its reading drops below this temperature    Electric Power  Solver  Real  -  Power factor to product with distribution field profile    Impedance Voltage  Solver  Real  -  Voltage used to calculate impedance    Temperature Controlled Electric Power  Solver  Logical  FALSE  Whether to base power delivery on a PID controller    Target Temperature  Solver  Real  -  Used by the PID controller    Proportional Gain for Electric Power Control  Solver  Real  0.0  Used by the PID controller    Derivative Gain for Electric Power Control  Solver  Real  0.0  Used by the PID controller    Integral Gain for Electric Power Control  Solver  Real  0.0  Used by the PID controller    Integral Length for Electric Power Control  Solver  Real  0.0  Used by the PID controller    Electric Power Filename  Simulation  String  -  Name of the file containing the power distribution between tines", 
+            "title": "NumaPowerGeneratorSolver"
+        }, 
+        {
             "location": "/numa-progress/", 
-            "text": "NumaProgress Module", 
+            "text": "NumaProgress Module\n\n\nProduces the \nlibnuma-progress.so\n module.\n\n\nNumaProgressSolver\n\n\nThis solver connects to a socket called \npercentage.sock\n and sends messages of\nthe form:\n\n\nPERCT||Elmer in progress: TIME\n\n\n\nwhere PERCT is the percentage progress and TIME is the current time variable.\n\n\n\n\n\n\n\n\nParameter\n\n\nLocation\n\n\nType\n\n\nDefault\n\n\nDescription\n\n\n\n\n\n\n\n\n\n\nTime\n\n\n-\n\n\nVariable\n\n\n-\n\n\n\n\n\n\n\n\nPercentage Progress\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nUse this to set the progress to be reported, via, say, a MATC function", 
             "title": "NumaProgress"
         }, 
         {
             "location": "/numa-progress/#numaprogress-module", 
-            "text": "", 
+            "text": "Produces the  libnuma-progress.so  module.", 
             "title": "NumaProgress Module"
         }, 
         {
+            "location": "/numa-progress/#numaprogresssolver", 
+            "text": "This solver connects to a socket called  percentage.sock  and sends messages of\nthe form:  PERCT||Elmer in progress: TIME  where PERCT is the percentage progress and TIME is the current time variable.     Parameter  Location  Type  Default  Description      Time  -  Variable  -     Percentage Progress  Solver  Real  -  Use this to set the progress to be reported, via, say, a MATC function", 
+            "title": "NumaProgressSolver"
+        }, 
+        {
             "location": "/numa-tm/", 
-            "text": "NumaTM Module", 
+            "text": "NumaTM Module\n\n\nProduces \nlibnuma-tm.so\n module.\n\n\nNumaTMHarmonicSolver\n\n\nMinorly adjusted version of the upstream Elmer MagnetoDynamics2DHarmonic solver.\n(TODO: is this still necessary?)\n\n\nTransform\n\n\nRoutine to transform a solution to somewhere else in 3D. Used in conjunction\nwith 2D-\n3D rotational extrapolation enhancements to embed axisymmetric problems.\n\n\n\n\n\n\n\n\nParameter\n\n\nLocation\n\n\nType\n\n\nDefault\n\n\nDescription\n\n\n\n\n\n\n\n\n\n\nBackward\n\n\nSolver\n\n\nLogical\n\n\nFALSE\n\n\nReverse the transformation\n\n\n\n\n\n\nTransformation Matrix\n\n\nSolver\n\n\nReal Array (3x3)\n\n\n-\n\n\nMatrix representing the linear part of the transformation\n\n\n\n\n\n\nTranslation\n\n\nSolver\n\n\nReal Array (3)\n\n\n-\n\n\nOffset representing the affine part of the transformation\n\n\n\n\n\n\nInterpolant\n\n\nSolver\n\n\nString\n\n\n-\n\n\nName of variable that should be interpolated to new location", 
             "title": "NumaTM"
         }, 
         {
             "location": "/numa-tm/#numatm-module", 
-            "text": "", 
+            "text": "Produces  libnuma-tm.so  module.", 
             "title": "NumaTM Module"
         }, 
         {
+            "location": "/numa-tm/#numatmharmonicsolver", 
+            "text": "Minorly adjusted version of the upstream Elmer MagnetoDynamics2DHarmonic solver.\n(TODO: is this still necessary?)", 
+            "title": "NumaTMHarmonicSolver"
+        }, 
+        {
+            "location": "/numa-tm/#transform", 
+            "text": "Routine to transform a solution to somewhere else in 3D. Used in conjunction\nwith 2D- 3D rotational extrapolation enhancements to embed axisymmetric problems.     Parameter  Location  Type  Default  Description      Backward  Solver  Logical  FALSE  Reverse the transformation    Transformation Matrix  Solver  Real Array (3x3)  -  Matrix representing the linear part of the transformation    Translation  Solver  Real Array (3)  -  Offset representing the affine part of the transformation    Interpolant  Solver  String  -  Name of variable that should be interpolated to new location", 
+            "title": "Transform"
+        }, 
+        {
             "location": "/optimized-heat-solver/", 
-            "text": "OptimizedHeatSolver Module", 
+            "text": "OptimizedHeatSolver Module\n\n\nProduces the \nlibnuma-eheatsolver.so\n module. This is a refactoring of the upstream\nHeatSolver module into separate much more manageable routines. It also adds\nsupport for \ncell-death\n dependent parameters.\n\n\nHeatSolve\n\n\nOnly differences from the upstream HeatSolve are documented here. The cell death\nextensions include new parameters for coagulation (cell-death based power deposition\nadjustment) and vapourization (temperature-based power deposition adjustment).\nPerfusion rate is also variable based on a cell-death status. Can output a Heat\nSource variable that shows the profile going into the Pennes\nequation.\n\n\nCode\nimprovements include splitting routines between files to ensure namespacing,\nproper declarations for routines, ensuring only used variables are allocated,\nconsistent capitalization, ensuring only used variables are declared.\n\n\nTODO\n: this code included initial work on assembling only cells that had\nchanged (e.g. cell-death status). This needs to be finished.\n\n\n\n\n\n\n\n\nParameter\n\n\nLocation\n\n\nType\n\n\nDefault\n\n\nDescription\n\n\n\n\n\n\n\n\n\n\nCoagulation Cut Off\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nLevel over which cell-death value indicates no local heating\n\n\n\n\n\n\nCoagulation Gradient\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nSlope backward from cell-death cut off as a coefficient for local heating (slope stops when it hits x1)\n\n\n\n\n\n\nCoagulation Minimum Deposition\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nLevel below which cell-death-based coefficient cannot drop\n\n\n\n\n\n\nVapourization Cut Off\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nLevel over which temperature value indicates no local heating\n\n\n\n\n\n\nVapourization Gradient\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nSlope backward from temperature cut off as a coefficient for local heating (slope stops when it hits x1)\n\n\n\n\n\n\nVapourization Minimum Deposition\n\n\nSolver\n\n\nReal\n\n\n-\n\n\nLevel below which temperature-based coefficient cannot drop\n\n\n\n\n\n\nDead Threshold\n\n\nSolver\n\n\nReal\n\n\n0.8\n\n\nValue above which a cell is considered dead. This is separate from coagulation and vapourization.\n\n\n\n\n\n\nDeath Perfusion Rate\n\n\nSolver\n\n\nReal\n\n\n0.0\n\n\nPerfusion rate for cells identified as dead\n\n\n\n\n\n\nDeath Heat Capacity\n\n\nSolver\n\n\nReal\n\n\n670.0\n\n\nHeat capacity for cells identified as dead\n\n\n\n\n\n\nHeat Source Visualization\n\n\nSolver\n\n\nLogical\n\n\nFALSE\n\n\nCalculate a Heat Source variable showing the final, combined heating", 
             "title": "OptimizedHeatSolver"
         }, 
         {
             "location": "/optimized-heat-solver/#optimizedheatsolver-module", 
-            "text": "", 
+            "text": "Produces the  libnuma-eheatsolver.so  module. This is a refactoring of the upstream\nHeatSolver module into separate much more manageable routines. It also adds\nsupport for  cell-death  dependent parameters.", 
             "title": "OptimizedHeatSolver Module"
+        }, 
+        {
+            "location": "/optimized-heat-solver/#heatsolve", 
+            "text": "Only differences from the upstream HeatSolve are documented here. The cell death\nextensions include new parameters for coagulation (cell-death based power deposition\nadjustment) and vapourization (temperature-based power deposition adjustment).\nPerfusion rate is also variable based on a cell-death status. Can output a Heat\nSource variable that shows the profile going into the Pennes\nequation.  Code\nimprovements include splitting routines between files to ensure namespacing,\nproper declarations for routines, ensuring only used variables are allocated,\nconsistent capitalization, ensuring only used variables are declared.  TODO : this code included initial work on assembling only cells that had\nchanged (e.g. cell-death status). This needs to be finished.     Parameter  Location  Type  Default  Description      Coagulation Cut Off  Solver  Real  -  Level over which cell-death value indicates no local heating    Coagulation Gradient  Solver  Real  -  Slope backward from cell-death cut off as a coefficient for local heating (slope stops when it hits x1)    Coagulation Minimum Deposition  Solver  Real  -  Level below which cell-death-based coefficient cannot drop    Vapourization Cut Off  Solver  Real  -  Level over which temperature value indicates no local heating    Vapourization Gradient  Solver  Real  -  Slope backward from temperature cut off as a coefficient for local heating (slope stops when it hits x1)    Vapourization Minimum Deposition  Solver  Real  -  Level below which temperature-based coefficient cannot drop    Dead Threshold  Solver  Real  0.8  Value above which a cell is considered dead. This is separate from coagulation and vapourization.    Death Perfusion Rate  Solver  Real  0.0  Perfusion rate for cells identified as dead    Death Heat Capacity  Solver  Real  670.0  Heat capacity for cells identified as dead    Heat Source Visualization  Solver  Logical  FALSE  Calculate a Heat Source variable showing the final, combined heating", 
+            "title": "HeatSolve"
         }
     ]
 }

@@ -69,27 +69,7 @@
                         </li>
                     
                         <li >
-                            <a href="../numa-heat-solver/">NumaHeatSolver</a>
-                        </li>
-                    
-                        <li >
                             <a href="../numa-ire/">NumaIRE</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-init-boundary-conditions/">NumaInitBoundaryConditions</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-init-boundary-conditions_gs/">NumaInitBoundaryConditions_gs</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-legacy-cell-state/">NumaLegacyCellState</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-legacy-heat-solver/">NumaLegacyHeatSolver</a>
                         </li>
                     
                         <li class="active">
@@ -125,7 +105,7 @@
             <!-- Search, Navigation and Repo links -->
             <ul class="nav navbar-nav navbar-right">
                 <li >
-                    <a rel="next" href="../numa-legacy-heat-solver/">
+                    <a rel="next" href="../numa-ire/">
                         <i class="fa fa-arrow-left"></i> Previous
                     </a>
                 </li>
@@ -146,12 +126,47 @@
     
         <li class="main active"><a href="#numalesion-module">NumaLesion Module</a></li>
         
+            <li><a href="#lesionextract">LesionExtract</a></li>
+        
     
     </ul>
 </div></div>
             <div class="col-md-9" role="main">
 
-<h1 id="numalesion-module">NumaLesion Module</h1></div>
+<h1 id="numalesion-module">NumaLesion Module</h1>
+<p>Produces <code>libnuma-lesion.so</code> module.</p>
+<h2 id="lesionextract">LesionExtract</h2>
+<p>Returns the lowest temperature pointwise over time. It should be used as a body force UDF. This allows
+an isovolume to be taken at the last timestep that includes any cell passing a
+lethal point at any point in time. Primarily useful for cryoablation.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Location</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LesionPrevious</td>
+<td>-</td>
+<td>Variable</td>
+<td>-</td>
+<td>Stores previous value of this variable</td>
+</tr>
+<tr>
+<td>Freezable</td>
+<td>Material</td>
+<td>Logical</td>
+<td>TRUE</td>
+<td>If a material is explicitly marked unfreezable, the return value will the max of its temperature and 0C (in K)</td>
+</tr>
+</tbody>
+</table>
+<p>TODO: refactor</p></div>
         </div>
 
         <footer class="col-md-12">

@@ -24,37 +24,7 @@
     </url>
         
     <url>
-     <loc>None/numa-heat-solver/</loc>
-     <lastmod>2016-01-14</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-        
-    <url>
      <loc>None/numa-ire/</loc>
-     <lastmod>2016-01-14</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-        
-    <url>
-     <loc>None/numa-init-boundary-conditions/</loc>
-     <lastmod>2016-01-14</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-        
-    <url>
-     <loc>None/numa-init-boundary-conditions_gs/</loc>
-     <lastmod>2016-01-14</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-        
-    <url>
-     <loc>None/numa-legacy-cell-state/</loc>
-     <lastmod>2016-01-14</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-        
-    <url>
-     <loc>None/numa-legacy-heat-solver/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>

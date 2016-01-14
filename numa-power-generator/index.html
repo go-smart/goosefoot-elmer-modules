@@ -69,27 +69,7 @@
                         </li>
                     
                         <li >
-                            <a href="../numa-heat-solver/">NumaHeatSolver</a>
-                        </li>
-                    
-                        <li >
                             <a href="../numa-ire/">NumaIRE</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-init-boundary-conditions/">NumaInitBoundaryConditions</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-init-boundary-conditions_gs/">NumaInitBoundaryConditions_gs</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-legacy-cell-state/">NumaLegacyCellState</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-legacy-heat-solver/">NumaLegacyHeatSolver</a>
                         </li>
                     
                         <li >
@@ -146,12 +126,130 @@
     
         <li class="main active"><a href="#numapowergenerator-module">NumaPowerGenerator Module</a></li>
         
+            <li><a href="#numapowergeneratorsolver">NumaPowerGeneratorSolver</a></li>
+        
     
     </ul>
 </div></div>
             <div class="col-md-9" role="main">
 
-<h1 id="numapowergenerator-module">NumaPowerGenerator Module</h1></div>
+<h1 id="numapowergenerator-module">NumaPowerGenerator Module</h1>
+<p>Produces <code>libnuma-powergenerator.so</code> module. This module is used to approximate
+the behaviour of an radiofrequency ablation power generator, which takes
+readings from several thermocouples and distributes power to a series of tines,
+spreading out from the end of a percutaneous needle.</p>
+<h2 id="numapowergeneratorsolver">NumaPowerGeneratorSolver</h2>
+<p>Updates the power field based on the present phase. If the phase changes, the
+distribution field profile is recalculated. If the power is negative, the simulation
+gracefully exits. If the overall input power is controlled by a PID controller,
+this is also taken into account and calculated. Output variables are Electric
+Distribution (normalized field), ObservedTemperature (from the thermocouples),
+Impedance (FIXME: requires work), Applied Power (post-PID total output) and
+Phase. All but the first are global (0D) variables.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Location</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Temperature</td>
+<td>-</td>
+<td>Variable</td>
+<td>-</td>
+<td></td>
+</tr>
+<tr>
+<td>Present Phase</td>
+<td>Solver</td>
+<td>Integer</td>
+<td>-</td>
+<td>Sets the phase for the present timestep (req)</td>
+</tr>
+<tr>
+<td>Thermocouple Cut-Off Temperature</td>
+<td>Solver</td>
+<td>Real</td>
+<td>-</td>
+<td>Tines controlled by this thermocouple are shut off when its reading exceeds this temperature</td>
+</tr>
+<tr>
+<td>Thermocouple Cut-Off Temperature</td>
+<td>Solver</td>
+<td>Real</td>
+<td>-</td>
+<td>Tines controlled by this thermocouple are reactivated (if they were shut off) when its reading drops below this temperature</td>
+</tr>
+<tr>
+<td>Electric Power</td>
+<td>Solver</td>
+<td>Real</td>
+<td>-</td>
+<td>Power factor to product with distribution field profile</td>
+</tr>
+<tr>
+<td>Impedance Voltage</td>
+<td>Solver</td>
+<td>Real</td>
+<td>-</td>
+<td>Voltage used to calculate impedance</td>
+</tr>
+<tr>
+<td>Temperature Controlled Electric Power</td>
+<td>Solver</td>
+<td>Logical</td>
+<td>FALSE</td>
+<td>Whether to base power delivery on a PID controller</td>
+</tr>
+<tr>
+<td>Target Temperature</td>
+<td>Solver</td>
+<td>Real</td>
+<td>-</td>
+<td>Used by the PID controller</td>
+</tr>
+<tr>
+<td>Proportional Gain for Electric Power Control</td>
+<td>Solver</td>
+<td>Real</td>
+<td>0.0</td>
+<td>Used by the PID controller</td>
+</tr>
+<tr>
+<td>Derivative Gain for Electric Power Control</td>
+<td>Solver</td>
+<td>Real</td>
+<td>0.0</td>
+<td>Used by the PID controller</td>
+</tr>
+<tr>
+<td>Integral Gain for Electric Power Control</td>
+<td>Solver</td>
+<td>Real</td>
+<td>0.0</td>
+<td>Used by the PID controller</td>
+</tr>
+<tr>
+<td>Integral Length for Electric Power Control</td>
+<td>Solver</td>
+<td>Real</td>
+<td>0.0</td>
+<td>Used by the PID controller</td>
+</tr>
+<tr>
+<td>Electric Power Filename</td>
+<td>Simulation</td>
+<td>String</td>
+<td>-</td>
+<td>Name of the file containing the power distribution between tines</td>
+</tr>
+</tbody>
+</table></div>
         </div>
 
         <footer class="col-md-12">

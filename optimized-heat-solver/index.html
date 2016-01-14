@@ -69,27 +69,7 @@
                         </li>
                     
                         <li >
-                            <a href="../numa-heat-solver/">NumaHeatSolver</a>
-                        </li>
-                    
-                        <li >
                             <a href="../numa-ire/">NumaIRE</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-init-boundary-conditions/">NumaInitBoundaryConditions</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-init-boundary-conditions_gs/">NumaInitBoundaryConditions_gs</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-legacy-cell-state/">NumaLegacyCellState</a>
-                        </li>
-                    
-                        <li >
-                            <a href="../numa-legacy-heat-solver/">NumaLegacyHeatSolver</a>
                         </li>
                     
                         <li >
@@ -146,12 +126,113 @@
     
         <li class="main active"><a href="#optimizedheatsolver-module">OptimizedHeatSolver Module</a></li>
         
+            <li><a href="#heatsolve">HeatSolve</a></li>
+        
     
     </ul>
 </div></div>
             <div class="col-md-9" role="main">
 
-<h1 id="optimizedheatsolver-module">OptimizedHeatSolver Module</h1></div>
+<h1 id="optimizedheatsolver-module">OptimizedHeatSolver Module</h1>
+<p>Produces the <code>libnuma-eheatsolver.so</code> module. This is a refactoring of the upstream
+HeatSolver module into separate much more manageable routines. It also adds
+support for <a href="../numa-cell-state/">cell-death</a> dependent parameters.</p>
+<h2 id="heatsolve">HeatSolve</h2>
+<p>Only differences from the upstream HeatSolve are documented here. The cell death
+extensions include new parameters for coagulation (cell-death based power deposition
+adjustment) and vapourization (temperature-based power deposition adjustment).
+Perfusion rate is also variable based on a cell-death status. Can output a Heat
+Source variable that shows the profile going into the Pennes
+equation.</p>
+<p>Code
+improvements include splitting routines between files to ensure namespacing,
+proper declarations for routines, ensuring only used variables are allocated,
+consistent capitalization, ensuring only used variables are declared.</p>
+<p><strong>TODO</strong>: this code included initial work on assembling only cells that had
+changed (e.g. cell-death status). This needs to be finished.</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Location</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Coagulation Cut Off</td>
+<td>Solver</td>
+<td>Real</td>
+<td>-</td>
+<td>Level over which cell-death value indicates no local heating</td>
+</tr>
+<tr>
+<td>Coagulation Gradient</td>
+<td>Solver</td>
+<td>Real</td>
+<td>-</td>
+<td>Slope backward from cell-death cut off as a coefficient for local heating (slope stops when it hits x1)</td>
+</tr>
+<tr>
+<td>Coagulation Minimum Deposition</td>
+<td>Solver</td>
+<td>Real</td>
+<td>-</td>
+<td>Level below which cell-death-based coefficient cannot drop</td>
+</tr>
+<tr>
+<td>Vapourization Cut Off</td>
+<td>Solver</td>
+<td>Real</td>
+<td>-</td>
+<td>Level over which temperature value indicates no local heating</td>
+</tr>
+<tr>
+<td>Vapourization Gradient</td>
+<td>Solver</td>
+<td>Real</td>
+<td>-</td>
+<td>Slope backward from temperature cut off as a coefficient for local heating (slope stops when it hits x1)</td>
+</tr>
+<tr>
+<td>Vapourization Minimum Deposition</td>
+<td>Solver</td>
+<td>Real</td>
+<td>-</td>
+<td>Level below which temperature-based coefficient cannot drop</td>
+</tr>
+<tr>
+<td>Dead Threshold</td>
+<td>Solver</td>
+<td>Real</td>
+<td>0.8</td>
+<td>Value above which a cell is considered dead. This is separate from coagulation and vapourization.</td>
+</tr>
+<tr>
+<td>Death Perfusion Rate</td>
+<td>Solver</td>
+<td>Real</td>
+<td>0.0</td>
+<td>Perfusion rate for cells identified as dead</td>
+</tr>
+<tr>
+<td>Death Heat Capacity</td>
+<td>Solver</td>
+<td>Real</td>
+<td>670.0</td>
+<td>Heat capacity for cells identified as dead</td>
+</tr>
+<tr>
+<td>Heat Source Visualization</td>
+<td>Solver</td>
+<td>Logical</td>
+<td>FALSE</td>
+<td>Calculate a Heat Source variable showing the final, combined heating</td>
+</tr>
+</tbody>
+</table></div>
         </div>
 
         <footer class="col-md-12">
