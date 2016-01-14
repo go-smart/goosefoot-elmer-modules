@@ -1,38 +1,43 @@
-GO-SMART SIMULATION ARCHITECTURE
-====================================================================
-NUMA ENGINEERING SERVICES LTD (NUMA)
-Dundalk, Ireland
+Go-Smart Simulation Architecture (GSSA)
+=======================================
+
+Primary authors: [NUMA Engineering Services Ltd](http://www.numa.ie) (NUMA), Dundalk, Ireland
 
 This project is co-funded by: European Commission under grant agreement no. 600641.
-http://www.gosmart-project.eu/
+
+Project website: http://www.gosmart-project.eu/
 
 This tool provides the necessary scripts and libraries to run the Go-Smart server and architecture.
 
-DEPENDENCIES
+Dependencies
 ------------
 
 * Python 2.7
 * Python 3
-* Elmer (with NUMA modifications)
-* Crossbar.io
+* [Elmer (with NUMA modifications)](https://github.com/go-smart/gssf-elmer)
 * GMSH
 * VTK 5.8
 * libjsoncpp-dev
-* (Python 3) munkres pyyaml crossbar docker
-* (Python 2) hachiko paramiko
+* (Python 3) munkres pyyaml
+* (Python 2) PythonOCC
 
-INSTALLATION
+Documentation
+-------------
+
+Documentation for this component is available at https://go-smart.github.io/gssf
+
+Installation
 ------------
 
 CMake installation is recommended from an out-of-source build directory.
 
-USAGE
+Usage
 -----
 
-The simulation server (GSSA) may be launched by the command
+The simulation workflow may be launched by the command
 
-  crossbar --debug start --cbdir path/to/directory(web)[default gssf-release/web]
-  go-smart-simulation-server --host HOSTADDRESS/localhost --websocket-port PORTNUMBER
-  go-smart-simulation-client --gssa-file XMLFILE --websocket-port PORTNUMBER --host HOSTADDRESS/localhost --definitions path/to/file.py --skip-clean --output Lesion.vtp
+```sh
+  go-smart-launcher settings.xml
+```
 
-Adding --help will show documentation of command line arguments. You should start Crossbar.io in the gssf/web directory of the build folder before launching this script. Ensure that the configuration in the web directory matches the port and host to which go-smart-simulation-server will connect for WAMP interaction.
+where `settings.xml` is a GSSF-XML file. Adding --help will show documentation of command line arguments.
