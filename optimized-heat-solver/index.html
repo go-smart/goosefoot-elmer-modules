@@ -7,14 +7,14 @@
         
         
         
-        <link rel="shortcut icon" href="./img/favicon.ico">
+        <link rel="shortcut icon" href="../img/favicon.ico">
 
-	<title>GSSF Supplementary Elmer Modules</title>
+	<title>OptimizedHeatSolver - GSSF Supplementary Elmer Modules</title>
 
-        <link href="./css/bootstrap-custom.min.css" rel="stylesheet">
-        <link href="./css/font-awesome-4.0.3.css" rel="stylesheet">
-        <link rel="stylesheet" href="./css/highlight.css">
-        <link href="./css/base.css" rel="stylesheet">
+        <link href="../css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="../css/font-awesome-4.0.3.css" rel="stylesheet">
+        <link rel="stylesheet" href="../css/highlight.css">
+        <link href="../css/base.css" rel="stylesheet">
 
         <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
         <!--[if lt IE 9]>
@@ -41,7 +41,7 @@
             </button>
 
             <!-- Main title -->
-            <a class="navbar-brand" href=".">GSSF Supplementary Elmer Modules</a>
+            <a class="navbar-brand" href="..">GSSF Supplementary Elmer Modules</a>
         </div>
 
         <!-- Expanded navigation -->
@@ -50,70 +50,70 @@
             <ul class="nav navbar-nav">
             
             
-                <li class="active">
-                    <a href=".">Home</a>
+                <li >
+                    <a href="..">Home</a>
                 </li>
             
             
             
-                <li class="dropdown">
+                <li class="dropdown active">
                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Modules <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                     
                         <li >
-                            <a href="numa-alternating/">NumaAlternating</a>
+                            <a href="../numa-alternating/">NumaAlternating</a>
                         </li>
                     
                         <li >
-                            <a href="numa-cell-state/">NumaCellState</a>
+                            <a href="../numa-cell-state/">NumaCellState</a>
                         </li>
                     
                         <li >
-                            <a href="numa-heat-solver/">NumaHeatSolver</a>
+                            <a href="../numa-heat-solver/">NumaHeatSolver</a>
                         </li>
                     
                         <li >
-                            <a href="numa-ire/">NumaIRE</a>
+                            <a href="../numa-ire/">NumaIRE</a>
                         </li>
                     
                         <li >
-                            <a href="numa-init-boundary-conditions/">NumaInitBoundaryConditions</a>
+                            <a href="../numa-init-boundary-conditions/">NumaInitBoundaryConditions</a>
                         </li>
                     
                         <li >
-                            <a href="numa-init-boundary-conditions_gs/">NumaInitBoundaryConditions_gs</a>
+                            <a href="../numa-init-boundary-conditions_gs/">NumaInitBoundaryConditions_gs</a>
                         </li>
                     
                         <li >
-                            <a href="numa-legacy-cell-state/">NumaLegacyCellState</a>
+                            <a href="../numa-legacy-cell-state/">NumaLegacyCellState</a>
                         </li>
                     
                         <li >
-                            <a href="numa-legacy-heat-solver/">NumaLegacyHeatSolver</a>
+                            <a href="../numa-legacy-heat-solver/">NumaLegacyHeatSolver</a>
                         </li>
                     
                         <li >
-                            <a href="numa-lesion/">NumaLesion</a>
+                            <a href="../numa-lesion/">NumaLesion</a>
                         </li>
                     
                         <li >
-                            <a href="numa-power-field/">NumaPowerField</a>
+                            <a href="../numa-power-field/">NumaPowerField</a>
                         </li>
                     
                         <li >
-                            <a href="numa-power-generator/">NumaPowerGenerator</a>
+                            <a href="../numa-power-generator/">NumaPowerGenerator</a>
                         </li>
                     
                         <li >
-                            <a href="numa-progress/">NumaProgress</a>
+                            <a href="../numa-progress/">NumaProgress</a>
                         </li>
                     
                         <li >
-                            <a href="numa-tm/">NumaTM</a>
+                            <a href="../numa-tm/">NumaTM</a>
                         </li>
                     
-                        <li >
-                            <a href="optimized-heat-solver/">OptimizedHeatSolver</a>
+                        <li class="active">
+                            <a href="./">OptimizedHeatSolver</a>
                         </li>
                     
                     </ul>
@@ -124,13 +124,13 @@
 
             <!-- Search, Navigation and Repo links -->
             <ul class="nav navbar-nav navbar-right">
-                <li class="disabled">
-                    <a rel="next" >
+                <li >
+                    <a rel="next" href="../numa-tm/">
                         <i class="fa fa-arrow-left"></i> Previous
                     </a>
                 </li>
-                <li >
-                    <a rel="prev" href="numa-alternating/">
+                <li class="disabled">
+                    <a rel="prev" >
                         Next <i class="fa fa-arrow-right"></i>
                     </a>
                 </li>
@@ -144,22 +144,14 @@
             <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
     <ul class="nav bs-sidenav">
     
-        <li class="main active"><a href="#supplementary-elmer-modules">Supplementary Elmer Modules</a></li>
-        
-            <li><a href="#developed-for-the-go-smart-simulation-framework-gssf">Developed for the Go-Smart Simulation Framework (GSSF)</a></li>
+        <li class="main active"><a href="#optimizedheatsolver-module">OptimizedHeatSolver Module</a></li>
         
     
     </ul>
 </div></div>
             <div class="col-md-9" role="main">
 
-<h1 id="supplementary-elmer-modules">Supplementary Elmer Modules</h1>
-<h2 id="developed-for-the-go-smart-simulation-framework-gssf">Developed for the Go-Smart Simulation Framework (GSSF)</h2>
-<p><strong>Primary authors</strong> : <a href="http://www.numa.ie">NUMA Engineering Services Ltd</a> (NUMA), Dundalk, Ireland<br/>
-<strong>Project website</strong> : <a href="http://www.gosmart-project.eu/">http://www.gosmart-project.eu/</a></p>
-<p>This project is co-funded by the European Commission under grant agreement no. 600641.</p>
-<p>These modules should be compiled as any other Elmer modules, and provide some additional bits of functionality - some is specific to a cancer ablation context,
-but some of these may be more generally useful.</p></div>
+<h1 id="optimizedheatsolver-module">OptimizedHeatSolver Module</h1></div>
         </div>
 
         <footer class="col-md-12">
@@ -168,9 +160,9 @@ but some of these may be more generally useful.</p></div>
             <center>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</center>
         </footer>
 
-        <script src="./js/jquery-1.10.2.min.js"></script>
-        <script src="./js/bootstrap-3.0.3.min.js"></script>
-        <script src="./js/highlight.pack.js"></script>
-        <script src="./js/base.js"></script>
+        <script src="../js/jquery-1.10.2.min.js"></script>
+        <script src="../js/bootstrap-3.0.3.min.js"></script>
+        <script src="../js/highlight.pack.js"></script>
+        <script src="../js/base.js"></script>
     </body>
 </html>

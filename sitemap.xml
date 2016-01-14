@@ -12,105 +12,85 @@
     
         
     <url>
-     <loc>None/go-smart-launcher/</loc>
+     <loc>None/numa-alternating/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/xml/</loc>
+     <loc>None/numa-cell-state/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/family/</loc>
+     <loc>None/numa-heat-solver/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/logging/</loc>
+     <loc>None/numa-ire/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/constants/</loc>
+     <loc>None/numa-init-boundary-conditions/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/regions/</loc>
+     <loc>None/numa-init-boundary-conditions_gs/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/utilities/</loc>
-     <lastmod>2016-01-14</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-        
-    
-
-    
-        
-    <url>
-     <loc>None/components/needle-library/</loc>
+     <loc>None/numa-legacy-cell-state/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/components/mesher/</loc>
+     <loc>None/numa-legacy-heat-solver/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/components/optimizer/</loc>
+     <loc>None/numa-lesion/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/components/elmergrid/</loc>
+     <loc>None/numa-power-field/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/components/elmer/</loc>
+     <loc>None/numa-power-generator/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/components/lesion/</loc>
+     <loc>None/numa-progress/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/components/validation/</loc>
-     <lastmod>2016-01-14</lastmod>
-     <changefreq>daily</changefreq>
-    </url>
-        
-    
-
-    
-        
-    <url>
-     <loc>None/tools/mesher-cgal/</loc>
+     <loc>None/numa-tm/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
         
     <url>
-     <loc>None/tools/numa-elmer/</loc>
+     <loc>None/optimized-heat-solver/</loc>
      <lastmod>2016-01-14</lastmod>
      <changefreq>daily</changefreq>
     </url>
