@@ -1,13 +1,13 @@
-Go-Smart Simulation Architecture (GSSA)
-=======================================
+Go-Smart Simulation Framework (GSSF)
+====================================
 
-Primary authors: [NUMA Engineering Services Ltd](http://www.numa.ie) (NUMA), Dundalk, Ireland
+**Primary authors** : [NUMA Engineering Services Ltd](http://www.numa.ie) (NUMA), Dundalk, Ireland
+
+**Project website** : http://www.gosmart-project.eu/
 
 This project is co-funded by: European Commission under grant agreement no. 600641.
 
-Project website: http://www.gosmart-project.eu/
-
-This tool provides the necessary scripts and libraries to run the Go-Smart server and architecture.
+This tool, GSSF, provides the necessary scripts and libraries to run a simulation workflow beginning from STL and VTP surfaces, configuring a [CGAL](https://cgal.org)-based tool for volumetric meshing, running [Elmer](https://elmerfem.org) for finite element simulation, and ending with a [VTK](https://vtk.org)-extracted isosurface.
 
 Dependencies
 ------------
