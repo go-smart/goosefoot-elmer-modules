@@ -1,23 +1,19 @@
 site_name: Go-Smart Simulation Framework Documentation
 pages:
     - Home: 'index.md'
-    - Core:
-        - go-smart-launcher: 'go-smart-launcher.md'
-        - GSSF XML Format: 'xml.md'
-        - Family in GSSA: 'family.md'
-        - Logging &amp; Errors: 'logging.md'
-        - Constants: 'constants.md'
-        - Regions &amp; Geometry: 'regions.md'
-        - Utilities: 'utilities.md'
-    - Components:
-        - Needle Library Component: 'components/needle-library.md'
-        - Meshing Components: 'components/mesher.md'
-        - Optimizer Component: 'components/optimizer.md'
-        - ElmerGrid Component: 'components/elmergrid.md'
-        - ElmerSolver Component: 'components/elmer.md'
-        - Lesion Component: 'components/lesion.md'
-        - Validation Component: 'components/validation.md'
-    - Tools:
-        - CGAL Meshing (mesher-cgal): 'tools/mesher-cgal.md'
-        - Extensions to Elmer: 'tools/numa-elmer.md'
-theme: flatly
+    - Modules:
+        - NumaAlternating: 'numa-alternating.md'
+        - NumaCellState: 'numa-cell-state.md'
+        - NumaHeatSolver: 'numa-heat-solver.md'
+        - NumaIRE: 'numa-ire.md'
+        - NumaInitBoundaryConditions: 'numa-init-boundary-conditions.md'
+        - NumaInitBoundaryConditions_gs: 'numa-init-boundary-conditions_gs.md'
+        - NumaLegacyCellState: 'numa-legacy-cell-state.md'
+        - NumaLegacyHeatSolver: 'numa-legacy-heat-solver.md'
+        - NumaLesion: 'numa-lesion.md'
+        - NumaPowerField: 'numa-power-field.md'
+        - NumaPowerGenerator: 'numa-power-generator.md'
+        - NumaProgress: 'numa-progress.md'
+        - NumaTM: 'numa-tm.md'
+        - OptimizedHeatSolver: 'optimized-heat-solver.md'
+theme: amelia
