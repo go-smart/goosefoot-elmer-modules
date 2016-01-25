@@ -83,17 +83,12 @@ SET(CMAKE_Fortran_MODULE_DESTINATION
 
 include_directories(${CMAKE_INSTALL_PREFIX}/include/elmer/f90)
 
-add_subdirectory(NumaHeatSolver)
 add_subdirectory(OptimizedHeatSolver)
-add_subdirectory(NumaInitBoundaryConditions)
-add_subdirectory(NumaInitBoundaryConditions_gs)
 add_subdirectory(NumaCellState)
 add_subdirectory(NumaIRE)
 add_subdirectory(NumaAlternating)
 add_subdirectory(NumaLesion)
 add_subdirectory(NumaTM)
-add_subdirectory(NumaLegacyCellState)
-add_subdirectory(NumaLegacyHeatSolver)
 add_subdirectory(NumaPowerGenerator)
 add_subdirectory(NumaPowerField)
 add_subdirectory(NumaProgress)
