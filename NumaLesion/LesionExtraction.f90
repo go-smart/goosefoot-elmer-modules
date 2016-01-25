@@ -42,10 +42,11 @@ FUNCTION LesionExtract( Model, n, T ) RESULT(Lesion)
           IF (.NOT. Found .OR. Model % CurrentElement % TYPE % dimension < 3) Freezable = .TRUE.
       END IF
 
+      LesionPerm=>LesionPar%Perm
+
       ! If a material is specifically marked as unfreezable,
       ! we set it to 0C or above
       IF (Freezable) THEN
-          LesionPerm=>LesionPar%Perm
           ! T(2) is time
           IF(T(2)>2) THEN
             LesionMin=LesionPar%Values(LesionPerm(n))      
