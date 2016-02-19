@@ -63,11 +63,3 @@ This describes the general format of a GSSF-XML file.
 
 The XML version is given by `GSSF_XML_VERSION`. The latest version, described
 here, is `0.1.0`. Note European spelling of `centre`.
-
-## XML Schema
-
-This is a **TODO**. For the moment, the documentation here should be adequate
-to perform basic creation and manipulation of GSSF-XML.
-However, in keeping with the increasing importance of
-Docker-workflow and the presence of an automatic GSSA-XML &rarr; GSSF-XML
-generator, this is secondary to the GSSA-XML formalization.

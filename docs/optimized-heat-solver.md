@@ -18,8 +18,7 @@ improvements include splitting routines between files to ensure namespacing,
 proper declarations for routines, ensuring only used variables are allocated,
 consistent capitalization, ensuring only used variables are declared.
 
-**TODO**: this code included initial work on assembling only cells that had
-changed (e.g. cell-death status). This needs to be finished.
+**TODO**: this code included initial work on assembling only cells that had changed (e.g. cell-death status). This needs to be finished.
 
 Parameter | Location | Type | Default | Description
 ----------|----------|------|---------|--
