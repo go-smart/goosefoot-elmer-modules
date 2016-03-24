@@ -51,6 +51,9 @@ SUBROUTINE AlternatingBCSolver( Model,Solver,Timestep,TransientSimulation)
                         Solver % Mesh % NumberOfBoundaryElements
 
                   BoundaryElement => Solver % Mesh % Elements(i)
+                  ! The BodyId is set in MeshUtils and (for a boundary)
+                  ! is /dictated/ by the Body Id in the Boundary Condition
+                  ! that applies to it.
                   bndry = BoundaryElement % BodyId
                   k = SIZE(body_list)
                   DO ks = 1, k

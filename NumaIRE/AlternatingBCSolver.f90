@@ -69,6 +69,9 @@ SUBROUTINE AlternatingBCSolver( Model,Solver,Timestep,TransientSimulation)
               ! Get the Body Id of this BC
               bodyid = ListGetInteger(Model % BCs(j) % Values, &
                          'Body Id', Found)
+              ! The BodyId is set in MeshUtils and (for a boundary)
+              ! is /dictated/ by the Body Id in the Boundary Condition
+              ! that applies to it.
 
               IF ( .NOT. Found ) THEN
                   CALL Fatal('AlternatingBCSolver', &
