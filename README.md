@@ -16,4 +16,4 @@ but some of these may be more generally useful.
 Documentation
 -------------
 
-Documentation for this component is available at https://go-smart.github.io/gssf-elmer-modules
+Documentation for this component is available at https://go-smart.github.io/goosefoot-elmer-modules
